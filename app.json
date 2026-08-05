@@ -10,15 +10,22 @@
     "newArchEnabled": true,
     "splash": {
       "image": "./assets/logo.png",
-      "resizeMode": "contain"
+      "resizeMode": "contain",
+      "backgroundColor": "#F7CAC5"
     },
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.anonymous.saydle-mobile",
+      "entitlements": {
+        "com.apple.security.application-groups": [
+          "group.com.anonymous.saydle-mobile.widget"
+        ]
+      }
     },
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/logo.png",
-        "backgroundColor": "#ffffff"
+        "backgroundColor": "#F7CAC5"
       },
       "edgeToEdgeEnabled": true
     },
@@ -26,7 +33,55 @@
       "favicon": "./assets/logo.png"
     },
     "plugins": [
-      "expo-router"
+      "expo-router",
+      "expo-secure-store",
+      "expo-font",
+      [
+        "expo-splash-screen",
+        {
+          "backgroundColor": "#F7CAC5",
+          "image": "./assets/logo.png",
+          "imageWidth": 180,
+          "resizeMode": "contain"
+        }
+      ],
+      [
+        "expo-notifications",
+        {
+          "color": "#FF6F61"
+        }
+      ],
+      "@react-native-community/datetimepicker",
+      "expo-localization",
+      [
+        "@bittingz/expo-widgets",
+        {
+          "ios": {
+            "src": "./widgets/ios",
+            "devTeamId": "$APPLE_TEAM_ID",
+            "mode": "development",
+            "moduleDependencies": [
+              "Module.swift"
+            ],
+            "useLiveActivities": false,
+            "frequentUpdates": false,
+            "entitlements": {
+              "com.apple.security.application-groups": [
+                "group.com.anonymous.saydle-mobile.widget"
+              ]
+            }
+          },
+          "android": {
+            "src": "./widgets/android",
+            "widgets": [
+              {
+                "name": "SaydleWidgetProvider",
+                "resourceName": "@xml/saydle_widget_info"
+              }
+            ]
+          }
+        }
+      ]
     ]
   }
 }

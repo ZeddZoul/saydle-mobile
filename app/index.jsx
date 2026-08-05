@@ -1,55 +1,126 @@
-import { Link } from 'expo-router'
-import { StyleSheet, Text, View, Image } from 'react-native'
-import logo from "../assets/logo.png"
-import Spacer from '../components/Spacer'
-import CustomView from '../components/CustomView'
+import { ScrollView, StyleSheet, Text, View } from "react-native";
+import { useRouter } from "expo-router";
+import { SafeAreaView } from "react-native-safe-area-context";
+import { MaterialCommunityIcons } from "@expo/vector-icons";
+import GradientBackground from "../components/GradientBackground.jsx";
+import DisplayText from "../components/DisplayText.jsx";
+import Sparkles from "../components/Sparkles.jsx";
+import TestimonialCarousel from "../components/TestimonialCarousel.jsx";
+import Button from "../components/Button";
+import Spacer from "../components/Spacer";
+import { colors, spacing } from "../theme/tokens.js";
+import { useT } from "../lib/i18n.js";
 
 const Home = () => {
+  const { t } = useT();
+  const router = useRouter();
+
   return (
-    <CustomView style={styles.container }>
-      <Image source={logo} style={styles.logo} />
+    <GradientBackground>
+      <SafeAreaView style={styles.safe}>
+        <ScrollView
+          contentContainerStyle={styles.scroll}
+          showsVerticalScrollIndicator={false}
+        >
+          <View style={styles.hero}>
+            <Sparkles />
+            <DisplayText weight="bold" style={styles.wordmark}>
+              Saydle
+            </DisplayText>
+            <DisplayText weight="italic" style={styles.tagline}>
+              {t("landing.tagline")}
+            </DisplayText>
+          </View>
 
-      <Text>Daily affirmations crafted uniquely for you</Text>
-      
-      <Spacer height={200} />
-      <View style={styles.btnRow }>
-      <Link style={[styles.btn, styles.registerBtn]} href="/register"><Text>Get started</Text></Link>
-        <Link style={[styles.btn, styles.loginBtn]} href="/login"><Text>
-        Login</Text></Link>
-     </View>
-    </CustomView>
-  )
-}
+          <View style={styles.proof}>
+            {/* Placeholder social proof — replace with a real, substantiated line. */}
+            <View style={styles.stat}>
+              <MaterialCommunityIcons
+                name="leaf"
+                size={26}
+                color={colors.mauve}
+                style={styles.leafLeft}
+              />
+              <Text style={styles.statText}>{t("landing.proof")}</Text>
+              <MaterialCommunityIcons
+                name="leaf"
+                size={26}
+                color={colors.mauve}
+                style={styles.leafRight}
+              />
+            </View>
 
-export default Home
+            <TestimonialCarousel />
+          </View>
+
+          <View style={styles.actions}>
+            <Button title={t("landing.getStarted")} onPress={() => router.push("/onboarding")} />
+            <Spacer height={spacing.md} />
+            <Button
+              title={t("landing.haveAccount")}
+              variant="secondary"
+              onPress={() => router.push("/login")}
+            />
+          </View>
+        </ScrollView>
+      </SafeAreaView>
+    </GradientBackground>
+  );
+};
+
+export default Home;
 
 const styles = StyleSheet.create({
-
-  logo: {
-    width: 140,
-    height: 90,
-    resizeMode: "contain"
+  safe: {
+    flex: 1,
   },
-  btn: {
-    paddingVertical: 12,
-    borderRadius: 4,
-    borderWidth: 1,
-    borderStyle: "solid",
+  scroll: {
+    flexGrow: 1,
+    justifyContent: "space-between",
+    paddingHorizontal: spacing.xl,
+    paddingTop: spacing.xxxl,
+    paddingBottom: spacing.xxl,
+  },
+  hero: {
+    height: 240,
+    alignItems: "center",
+    justifyContent: "center",
+    marginTop: spacing.xl,
+  },
+  wordmark: {
+    fontSize: 52,
+    color: colors.ink,
+  },
+  tagline: {
+    color: colors.mauveDeep,
+    fontSize: 17,
+    lineHeight: 24,
     textAlign: "center",
-    fontSize: 18,
-    fontWeight: "500"
+    marginTop: spacing.sm,
+    maxWidth: 260,
   },
-  loginBtn: {
-    borderColor:"#C49EBB"
+  proof: {
+    alignItems: "center",
+    gap: spacing.lg,
   },
-  registerBtn: {
-    borderWidth:0,
-    backgroundColor: "#FF6F61",
-    color: "#FFFFFF"
+  stat: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.sm,
   },
-  btnRow: {
-    flexDirection: "column",
-    gap: 12,
-    minWidth: "80%",
-  } 
-})
+  statText: {
+    fontSize: 15,
+    fontWeight: "600",
+    color: colors.mauveDeep,
+    letterSpacing: 0.3,
+  },
+  leafLeft: {
+    transform: [{ rotate: "35deg" }],
+  },
+  leafRight: {
+    transform: [{ rotate: "-35deg" }, { scaleX: -1 }],
+  },
+  actions: {
+    marginTop: spacing.xl,
+  },
+});

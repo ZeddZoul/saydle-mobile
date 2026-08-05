@@ -1,0 +1,199 @@
+{
+  "common": {
+    "continue": "Continue",
+    "skip": "Skip",
+    "back": "Back",
+    "tryAgain": "Try again",
+    "saveFailed": "Couldn't save that. Try again.",
+    "somethingWrong": "Something went wrong. Please try again."
+  },
+  "onboarding": {
+    "howMany": "How many",
+    "remindersPerDay": "Reminders per day",
+    "startAt": "Start at",
+    "endAt": "End at",
+    "streakCaption": "Build a streak, one day at a time",
+    "notificationPreview": "Saydle · now"
+  },
+  "landing": {
+    "tagline": "Daily affirmations, crafted for you.",
+    "proof": "Loved by early users",
+    "rating": "Rated five stars",
+    "getStarted": "Get started",
+    "haveAccount": "I already have an account",
+    "testimonials": [
+      "The gentlest part of my morning.",
+      "It finally sounds like me.",
+      "Small reminders that actually land.",
+      "Calmer before I've even had coffee."
+    ]
+  },
+  "auth": {
+    "welcomeBack": "Welcome back",
+    "welcomeSubtitle": "Let's pick up right where you left off.",
+    "email": "Email",
+    "emailPlaceholder": "you@example.com",
+    "password": "Password",
+    "passwordPlaceholder": "Your password",
+    "logIn": "Log in",
+    "noAccount": "Don't have an account?",
+    "createOne": " Create one",
+    "forgotLink": "Forgot password?",
+    "forgotTitle": "Reset your password",
+    "forgotSubtitle": "We'll email you a six-digit code.",
+    "forgotSend": "Send code",
+    "resetTitle": "Enter your code",
+    "resetSubtitle": "We sent a six-digit code to {{email}}. It expires in 15 minutes.",
+    "code": "Code",
+    "codePlaceholder": "123456",
+    "newPassword": "New password",
+    "newPasswordPlaceholder": "At least 8 characters",
+    "resetSubmit": "Set new password",
+    "resetDone": "Password changed. Sign in with your new one.",
+    "backToLogin": "Back to sign in"
+  },
+  "validation": {
+    "emailRequired": "Email is required.",
+    "emailInvalid": "Enter a valid email address.",
+    "passwordRequired": "Password is required.",
+    "passwordShort": "Password must be at least {{min}} characters.",
+    "codeRequired": "Enter the six-digit code.",
+    "codeInvalid": "That code should be six digits."
+  },
+  "today": {
+    "greeting": "Hello, {{name}}",
+    "greetingAnonymous": "Hello",
+    "empty": "Nothing scheduled for today yet. Pull down to refresh.",
+    "share": "Share this affirmation",
+    "save": "Save to favorites",
+    "unsave": "Remove from favorites"
+  },
+  "favorites": {
+    "title": "Favorites",
+    "empty": "Nothing saved yet. Tap the heart on an affirmation to keep it here.",
+    "remove": "Remove \"{{text}}\" from favorites"
+  },
+  "streak": {
+    "start": "Start your streak today",
+    "dayOne": "day in a row",
+    "days": "days in a row",
+    "complete": "{{day}}, complete"
+  },
+  "profile": {
+    "tone": "Tone",
+    "toneGentle": "Gentle",
+    "toneGrounded": "Grounded",
+    "toneEnergetic": "Energetic",
+    "categories": "Categories",
+    "categoriesOffline": "Categories will load when you're back online.",
+    "categoriesLoading": "Loading categories…",
+    "categoriesHint": "Changing these rebuilds the days ahead. Today stays as it is.",
+    "reminders": "Reminders",
+    "remindersOn": "Reminders on",
+    "remindersOff": "Reminders off",
+    "remindersDenied": "Turn on notifications for Saydle in your device settings.",
+    "remindersIdle": "A gentle nudge with the day's affirmation, at times you choose.",
+    "remindersSummary": "{{count}} a day between {{start}} and {{end}}, even offline.",
+    "signOut": "Sign out",
+    "deleteAccount": "Delete account",
+    "deleteTitle": "Delete account",
+    "deleteBody": "This permanently deletes your account, your affirmations, and your favorites. It cannot be undone.",
+    "cancel": "Cancel",
+    "delete": "Delete",
+    "preferencesSaved": "Preferences saved",
+    "theme": "Theme",
+    "themeHint": "The backdrop your affirmation is read against.",
+    "personalization": "Personalization",
+    "personalizationValue": "{{percent}}% personalized",
+    "personalizationHint": "Saydle asks for one more thing now and then. The more it knows, the more your affirmations sound like they were written for you.",
+    "language": "Language",
+    "languageHint": "Changes the app and the affirmations ahead. Today stays as it is."
+  },
+  "offline": {
+    "banner": "Offline — showing your saved affirmations"
+  },
+  "errors": {
+    "network": "Could not reach Saydle. Check your connection.",
+    "sessionExpired": "Your session has expired. Please sign in again.",
+    "emailTaken": "That email is already registered. Try another."
+  },
+  "paywall": {
+    "title": "Saydle has created a safe space for you",
+    "subtitle": "Crafted around everything you shared.",
+    "perk1": "Personalized affirmations, crafted just for your journey",
+    "perk2": "Gentle, timed reminders right when you need a boost",
+    "perk3": "Instant offline access to your saved favorites",
+    "price": "3 days free, then $4.99/month. Cancel anytime.",
+    "trial": "Start my 3-day free trial",
+    "subscribe": "Subscribe now",
+    "creating": "Crafting affirmations just for you…"
+  },
+  "nudge": {
+    "eyebrow": "Make it more yours",
+    "save": "Save",
+    "notNow": "Not now",
+    "thanks": "Thank you — tomorrow's will fit you a little better.",
+    "placeholder": "As much or as little as you like"
+  },
+  "categories": {
+    "self-worth": "Self-worth",
+    "calm": "Calm",
+    "confidence": "Confidence",
+    "gratitude": "Gratitude",
+    "resilience": "Resilience",
+    "focus": "Focus",
+    "relationships": "Relationships",
+    "morning": "Morning",
+    "rest": "Rest",
+    "growth": "Growth"
+  },
+  "verify": {
+    "eyebrow": "Confirm your email",
+    "title": "Is {{email}} right?",
+    "body": "We sent a six-digit code to {{email}}. Confirming it is what lets us help you back in if you forget your password.",
+    "resent": "A new code is on its way to {{email}}.",
+    "code": "Confirmation code",
+    "codePlaceholder": "123456",
+    "submit": "Confirm",
+    "resend": "Resend",
+    "later": "Later",
+    "done": "Email confirmed. Thank you."
+  },
+  "practice": {
+    "eyebrow": "{{count}} of {{target}}",
+    "doneEyebrow": "Practice complete",
+    "instruction": "Say it to yourself, then tap.",
+    "tapLabel": "Practice, {{count}} of {{target}} said",
+    "tapHint": "Tap once each time you've said it",
+    "done": "That's it. Carry it with you.",
+    "doneNamed": "That's it, {{name}}. Carry it with you.",
+    "streak": "{{count}} days of practice in a row",
+    "again": "Once more",
+    "loading": "Finding today's affirmation…",
+    "nothing": "Nothing to practise yet. Open Today first."
+  },
+  "tabs": {
+    "today": "Today",
+    "practice": "Practice",
+    "favorites": "Favorites",
+    "profile": "Profile"
+  },
+  "stream": {
+    "today": "Today",
+    "close": "Close",
+    "open": "Open the full-screen feed"
+  },
+  "myWords": {
+    "title": "My words",
+    "prompt": "Write something you'd like to hear back, in your own words.",
+    "placeholder": "I can…",
+    "label": "Your affirmation",
+    "save": "Save it",
+    "saved": "Saved. It'll come round in the days ahead.",
+    "empty": "Nothing written yet. Whatever you add here joins your daily affirmations.",
+    "delete": "Delete \"{{text}}\"",
+    "deleteTitle": "Delete this one?",
+    "lockedTitle": "Write your own",
+    "lockedBody": "Adding affirmations in your own words is part of Saydle premium. Everything else keeps working exactly as it is."
+  }
+}
