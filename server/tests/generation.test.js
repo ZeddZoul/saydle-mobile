@@ -53,6 +53,15 @@ beforeEach(async () => {
 
   auth = registered.auth;
   user = await User.findById(registered.user.id);
+
+  // Everything below is about *how* we generate, which only happens for a
+  // paying reader — free accounts read the curated bank and cost no model time.
+  // Shaped like a webhook rather than a trial, so it keeps meaning "paying"
+  // once the trial is gone.
+  user.subscription.status = "active";
+  user.subscription.expiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
+  user.subscription.verifiedAt = new Date();
+  await user.save();
 });
 
 describe("generation", () => {
@@ -393,15 +402,85 @@ describe("the read path never waits for the model", () => {
     expect(generateAffirmations).not.toHaveBeenCalled();
   });
 
-  it("starts generating at registration, so the funnel absorbs the wait", async () => {
+  it("kicks the head start at registration, but only spends it on a payer", async () => {
     generateAffirmations.mockReset();
     generateAffirmations.mockResolvedValue(batch(["I can begin before I feel ready."]));
 
-    await registerUser(app, { email: "warm@example.com" });
+    const { user: created } = await registerUser(app, { email: "warm@example.com" });
     await flushReplenish();
 
-    // The account is created at the end of onboarding, so this has a few
-    // seconds of paywall and navigation to finish in before Today is opened.
+    // Registration still calls scheduleReplenish — the account is created at the
+    // end of onboarding, so there are a few seconds of paywall and navigation to
+    // finish a batch in. It just declines to spend anything until they pay.
+    expect(generateAffirmations).not.toHaveBeenCalled();
+
+    const fresh = await User.findById(created.id);
+    fresh.subscription.status = "active";
+    fresh.subscription.expiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
+    fresh.subscription.verifiedAt = new Date();
+    await fresh.save();
+
+    await scheduleReplenish(fresh);
+    await flushReplenish();
+
     expect(generateAffirmations).toHaveBeenCalled();
+  });
+});
+
+/**
+ * Generation is what premium sells, and what it costs us.
+ *
+ * A free reader gets the curated bank — written once, free per head. Paying a
+ * model on their behalf is a bill nobody notices until it arrives, so the guard
+ * lives inside `scheduleReplenish` where every path that could spend money goes
+ * through it, rather than at each call site where one can forget.
+ */
+describe("who we spend model time on", () => {
+  const entitle = async (user) => {
+    // Shaped like a webhook, not a trial: this must keep meaning "paying"
+    // after the trial is gone.
+    user.subscription.status = "active";
+    user.subscription.expiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
+    user.subscription.verifiedAt = new Date();
+    await user.save();
+  };
+
+  beforeEach(() => generateAffirmations.mockReset());
+
+  it("never calls the model for a free account", async () => {
+    await seed();
+    const { user: created } = await registerUser(app, { email: "free@example.com" });
+    const user = await User.findById(created.id);
+
+    await scheduleReplenish(user);
+    await flushReplenish();
+
+    expect(generateAffirmations).not.toHaveBeenCalled();
+  });
+
+  it("generates once they are paying", async () => {
+    await seed();
+    const { user: created } = await registerUser(app, { email: "paid@example.com" });
+    const user = await User.findById(created.id);
+    await entitle(user);
+
+    generateAffirmations.mockResolvedValue(
+      Array.from({ length: 12 }, (_, i) => `I can hold my own pace, take ${i}.`),
+    );
+
+    await scheduleReplenish(user);
+    await flushReplenish();
+
+    expect(generateAffirmations).toHaveBeenCalled();
+  });
+
+  it("does not start a batch when a free account registers", async () => {
+    await seed();
+    await registerUser(app, { email: "signup@example.com" });
+    await flushReplenish();
+
+    // Registration kicks scheduleReplenish for the head start; that head start
+    // is only worth paying for once someone has paid.
+    expect(generateAffirmations).not.toHaveBeenCalled();
   });
 });

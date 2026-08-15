@@ -10,6 +10,7 @@ import { profileNeedsCare, FREE_TEXT_FIELDS } from "../config/profileFields.js";
 import { LANGUAGE_NAMES, resolveLocale } from "../config/locales.js";
 import { PROMPT_VERSION } from "../prompts/affirmation.prompt.js";
 import { PAUSE_GENERATION_WHEN_PENDING } from "../config/deletion.js";
+import { isEntitled } from "./subscription.service.js";
 import { isPending } from "./deletion.service.js";
 
 /**
@@ -164,6 +165,16 @@ export function scheduleReplenish(user, options) {
   // curated bank keeps their days filled, so nothing visibly degrades, and
   // cancelling puts them straight back in the queue on the next read.
   if (PAUSE_GENERATION_WHEN_PENDING && isPending(user)) return Promise.resolve(null);
+
+  // Generation *is* the product premium sells. A free reader gets the curated
+  // bank, which is written once and costs nothing per head, so there is nothing
+  // to generate for them and no reason to pay a model to do it.
+  //
+  // The guard lives here rather than at each call site on purpose: every path
+  // that could bill us — registration, the read path, a future cron — goes
+  // through this function, and one of them forgetting is a bill nobody notices
+  // until it arrives.
+  if (!isEntitled(user)) return Promise.resolve(null);
 
   const key = String(user._id ?? user.id);
   const running = inFlight.get(key);

@@ -69,19 +69,14 @@ export async function register(req, res, next) {
       req.log?.error({ err, userId: user.id }, "verification email failed"),
     );
 
-    // Start generating before the reader has finished signing up. The account is
-    // created at the end of the funnel, so there are a few seconds of paywall
-    // and navigation before Today is opened — enough, usually, for the first
-    // batch to land and for day one to be theirs rather than the bank's. Not
-    // awaited, and it costs nothing when it loses the race: the feed is filled
-    // instantly either way.
-    scheduleReplenish(user);
-
-    // Start the first batch now, while they are still finishing onboarding.
-    // Not awaited — registration must not inherit the model's latency — but
-    // starting it here is what buys the pool a head start on the first read, so
-    // a new account usually gets a generated line on day one rather than a
-    // curated stand-in.
+    // Start generating before the reader has finished signing up, so the first
+    // batch has a head start on the first read. Not awaited — registration must
+    // never inherit the model's latency — and it costs nothing when it loses the
+    // race, because the feed fills from the bank instantly either way.
+    //
+    // A brand-new account is not entitled, so in practice this is now a no-op
+    // until they subscribe; `scheduleReplenish` makes that decision itself
+    // rather than each caller having to remember to.
     scheduleReplenish(user);
 
     req.log?.info({ userId: user.id }, "user registered");
