@@ -3,11 +3,7 @@ import request from "supertest";
 import { createApp } from "../src/app.js";
 import { registerUser } from "./helpers.js";
 import { User } from "../src/models/User.js";
-import {
-  applyWebhookEvent,
-  isEntitled,
-  startTrial,
-} from "../src/services/subscription.service.js";
+import { applyWebhookEvent, isEntitled } from "../src/services/subscription.service.js";
 
 const app = createApp();
 
@@ -31,17 +27,6 @@ describe("isEntitled", () => {
     expect(isEntitled({ subscription: { status: "none" } })).toBe(false);
   });
 
-  it("says yes during a live trial and no once it passes", () => {
-    expect(isEntitled({ subscription: { status: "trialing", trialEndsAt: ahead(DAY) } })).toBe(
-      true,
-    );
-    // Derived from the date, so a trial that lapsed overnight is simply over —
-    // there is no sweep job to forget to run.
-    expect(isEntitled({ subscription: { status: "trialing", trialEndsAt: behind(DAY) } })).toBe(
-      false,
-    );
-  });
-
   it("says yes for a live subscription and no for a lapsed one", () => {
     expect(isEntitled({ subscription: { status: "active", expiresAt: ahead(DAY) } })).toBe(
       true,
@@ -63,29 +48,6 @@ describe("isEntitled", () => {
   });
 });
 
-describe("startTrial", () => {
-  it("grants the configured trial length", () => {
-    expect(startTrial(user, { days: 3 })).toBe(true);
-
-    expect(user.subscription.status).toBe("trialing");
-    expect(user.subscription.source).toBe("trial");
-    expect(isEntitled(user)).toBe(true);
-  });
-
-  it("never marks a trial verified — nobody checked a receipt", () => {
-    startTrial(user);
-    expect(user.subscription.verifiedAt).toBeNull();
-  });
-
-  it("cannot be used twice to extend or resurrect a trial", () => {
-    startTrial(user, { days: 3 });
-    const firstEnd = user.subscription.trialEndsAt;
-
-    expect(startTrial(user, { days: 30 })).toBe(false);
-    expect(user.subscription.trialEndsAt).toEqual(firstEnd);
-  });
-});
-
 describe("GET /api/subscription", () => {
   it("reports a fresh account as unentitled", async () => {
     const res = await request(app).get("/api/subscription").set("Authorization", auth);
@@ -103,27 +65,6 @@ describe("GET /api/subscription", () => {
 
     expect(res.body.subscription).not.toHaveProperty("verifiedAt");
     expect(res.body.subscription).not.toHaveProperty("productId");
-  });
-});
-
-describe("POST /api/subscription/trial", () => {
-  it("starts the trial and entitles the account", async () => {
-    const res = await request(app).post("/api/subscription/trial").set("Authorization", auth);
-
-    expect(res.status).toBe(200);
-    expect(res.body.subscription).toMatchObject({
-      entitled: true,
-      status: "trialing",
-      verified: false,
-    });
-  });
-
-  it("does not extend a trial that was already used", async () => {
-    const first = await request(app).post("/api/subscription/trial").set("Authorization", auth);
-    const again = await request(app).post("/api/subscription/trial").set("Authorization", auth);
-
-    // Otherwise the button is an infinite subscription.
-    expect(again.body.subscription.trialEndsAt).toBe(first.body.subscription.trialEndsAt);
   });
 });
 
@@ -261,5 +202,31 @@ describe("POST /api/subscription/webhook", () => {
     // Whatever the status, it must not be a 5xx — RevenueCat retries those
     // forever.
     expect(res.status).toBeLessThan(500);
+  });
+});
+
+/**
+ * There is no trial any more — premium is the only way in.
+ *
+ * Worth an assertion rather than an absence: a route that quietly came back,
+ * or a client still calling one, would hand out entitlement for free and
+ * nothing else here would notice.
+ */
+describe("the hard paywall", () => {
+  it("has no trial endpoint to call", async () => {
+    const { auth } = await registerUser(app, { email: "notrial@example.com" });
+
+    const res = await request(app).post("/api/subscription/trial").set("authorization", auth);
+
+    expect(res.status).toBe(404);
+  });
+
+  it("leaves a new account unentitled, with nothing it can do about it but pay", async () => {
+    const { auth } = await registerUser(app, { email: "fresh@example.com" });
+
+    const res = await request(app).get("/api/subscription").set("authorization", auth);
+
+    expect(res.body.subscription).toMatchObject({ entitled: false, status: "none" });
+    expect(res.body.subscription).not.toHaveProperty("trialEndsAt");
   });
 });

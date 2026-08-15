@@ -16,9 +16,7 @@ import Button from "../../components/Button";
 import { useAppTheme } from "../../contexts/ThemeContext.jsx";
 import { useToast } from "../../contexts/ToastContext.jsx";
 import { useAuth } from "../../contexts/AuthContext.jsx";
-import TrialTimeline from "../../components/TrialTimeline.jsx";
 import { useSubscription } from "../../hooks/useSubscription.js";
-import { TRIAL_DAYS } from "../../lib/config.js";
 import { useT } from "../../lib/i18n.js";
 import { radius, spacing, type } from "../../theme/tokens.js";
 
@@ -74,56 +72,6 @@ const formatDate = (value) => {
   return d.toLocaleDateString(undefined, { year: "numeric", month: "long", day: "numeric" });
 };
 
-const shortDate = (d) => d.toLocaleDateString(undefined, { day: "numeric", month: "short" });
-
-const addDays = (date, days) => new Date(date.getTime() + days * 24 * 60 * 60 * 1000);
-
-/**
- * The four beats of a trial, dated.
- *
- * Before a trial exists the dates are projected from TRIAL_DAYS so the charge
- * date is knowable *before* committing — which is the whole point. Once one is
- * running, the server's trialEndsAt takes over, because a projection that
- * disagrees with the real end date is worse than no projection at all.
- */
-const buildTrialSteps = (t, { trialEndsAt, active }) => {
-  const now = new Date();
-  const ends = trialEndsAt ? new Date(trialEndsAt) : addDays(now, TRIAL_DAYS);
-  const remind = addDays(ends, -1);
-
-  return [
-    {
-      key: "install",
-      icon: "checkmark",
-      title: t("billing.stepInstalled"),
-      detail: t("billing.stepInstalledHint"),
-      reached: true,
-      done: true,
-    },
-    {
-      key: "today",
-      icon: "lock-open-outline",
-      title: t("billing.stepToday"),
-      detail: t("billing.stepTodayHint", { days: TRIAL_DAYS }),
-      reached: true,
-    },
-    {
-      key: "remind",
-      icon: "notifications-outline",
-      title: t("billing.stepRemind", { date: shortDate(remind) }),
-      detail: t("billing.stepRemindHint"),
-      reached: active && now >= remind,
-    },
-    {
-      key: "charge",
-      icon: "diamond-outline",
-      title: t("billing.stepCharge", { date: shortDate(ends) }),
-      detail: t("billing.stepChargeHint"),
-      reached: active && now >= ends,
-    },
-  ];
-};
-
 /**
  * The store, in words rather than in ours.
  *
@@ -161,7 +109,6 @@ const Billing = () => {
     canPurchase,
     loading,
     busy,
-    startTrial,
     purchase,
     restore,
     refresh,
@@ -170,15 +117,10 @@ const Billing = () => {
   const [working, setWorking] = useState(false);
 
   const status = subscription?.status ?? "none";
-  const trialing = status === "trialing";
-  // A finished trial is still a trial that happened — the offer doesn't return.
-  const neverTrialed = !subscription?.trialEndsAt;
-  const endsAt = formatDate(trialing ? subscription?.trialEndsAt : subscription?.expiresAt);
+  const endsAt = formatDate(subscription?.expiresAt);
 
   const statusLabel = entitled
-    ? trialing
-      ? t("billing.statusTrial")
-      : t("billing.statusActive")
+    ? t("billing.statusActive")
     : status === "expired"
       ? t("billing.statusExpired")
       : t("billing.statusFree");
@@ -195,35 +137,9 @@ const Billing = () => {
     ? entitled
       ? t("billing.noExpiry")
       : t("billing.freeHint")
-    : trialing
-      ? t("billing.trialEnds", { date: endsAt })
-      : entitled
-        ? t("billing.renews", { date: endsAt })
-        : t("billing.ended", { date: endsAt });
-
-  /**
-   * Runs a billing action and reports it in billing's own words.
-   *
-   * `failureMessage` is not optional in practice: the fallback used to be
-   * `common.saveFailed` — "Couldn't save that. Try again." — which is what a
-   * failed payment told people. Nothing was being saved, and the one thing
-   * someone needs to hear when a purchase fails is that they were not charged.
-   */
-  const guard = async (fn, successMessage, failureMessage) => {
-    const failed = failureMessage ?? t("common.saveFailed");
-    setWorking(true);
-    try {
-      const result = await fn();
-      // Declining is not a failure and must stay silent.
-      if (result?.cancelled) return;
-      if (result?.failed) return toast.error(failed);
-      if (successMessage) toast.success(successMessage);
-    } catch {
-      toast.error(failed);
-    } finally {
-      setWorking(false);
-    }
-  };
+    : entitled
+      ? t("billing.renews", { date: endsAt })
+      : t("billing.ended", { date: endsAt });
 
   /**
    * Restore has three real outcomes and they must not all read as success.
@@ -347,47 +263,14 @@ const Billing = () => {
               ) : null}
             </View>
 
-            {/* The timeline earns its place in exactly two states: deciding
-                whether to start a trial, and being on one. Once someone is a
-                paying member it is history, and after it lapses it is a
-                reminder of a decision already made. */}
-            {(trialing || neverTrialed) && (
-              <View style={styles.section}>
-                <DisplayText weight="bold" style={[styles.heading, { color: theme.ink }]}>
-                  {trialing ? t("billing.trialRunning") : t("billing.trialTitle")}
-                </DisplayText>
-                <Text style={[styles.subheading, { color: theme.sub }]}>
-                  {t("billing.trialSubtitle")}
-                </Text>
-                <TrialTimeline
-                  steps={buildTrialSteps(t, {
-                    trialEndsAt: subscription?.trialEndsAt,
-                    active: trialing,
-                  })}
-                />
-              </View>
-            )}
-
-            {/* Shown while trialing too, not only when locked out.
-                Gating this on `!entitled` alone hid it from everyone on a
-                trial — who are exactly the people deciding whether to pay, and
-                who had no way to do it until their access lapsed. Only a
-                genuinely paying member has nothing to buy here. */}
-            {(!entitled || trialing) && (
+            {/* Only a paying member has nothing to buy here. There is no trial
+                any more: a free reader scrolls the curated bank, and this is
+                the one way to the affirmations written for them. */}
+            {!entitled && (
               <View style={[styles.card, { backgroundColor: theme.surface }]}>
                 <DisplayText style={[styles.sectionTitle, { color: theme.ink }]}>
-                  {t(trialing ? "billing.upgradeTrialing" : "billing.upgrade")}
+                  {t("billing.upgrade")}
                 </DisplayText>
-
-                {neverTrialed && (
-                  <Button
-                    title={t("paywall.trial")}
-                    onPress={() =>
-                      guard(startTrial, t("billing.trialStarted"), t("billing.trialFailed"))
-                    }
-                    disabled={busy || working}
-                  />
-                )}
 
                 {canPurchase && packages.length > 0 && (
                   <View style={styles.actions}>

@@ -96,8 +96,6 @@ const Onboarding = () => {
           if (result.purchased) return;
         }
       }
-
-      await client.startTrial();
     } catch {
       /* Non-fatal: the account exists, and the trial can be started later. */
     }
@@ -167,7 +165,6 @@ const Onboarding = () => {
   if (phase === "paywall") {
     return (
       <Paywall
-        onTrial={() => createAccount("trial")}
         onSubscribe={() => createAccount("subscribe")}
         canPurchase={purchasesAvailable()}
       />

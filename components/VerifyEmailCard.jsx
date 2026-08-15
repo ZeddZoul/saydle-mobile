@@ -22,7 +22,7 @@ const CODE_LENGTH = 6;
  * It disappears on its own the moment the account is verified, including from
  * another device — `/me` is the authority, not local state.
  */
-const VerifyEmailCard = ({ style }) => {
+const VerifyEmailCard = ({ style, compact = false }) => {
   const { t } = useT();
   const { theme } = useAppTheme();
   const { verified, email, sending, verifying, sent, error, resend, verify } =
@@ -31,11 +31,41 @@ const VerifyEmailCard = ({ style }) => {
   const [code, setCode] = useState("");
   const [dismissed, setDismissed] = useState(false);
   const [done, setDone] = useState(false);
+  const [expanded, setExpanded] = useState(false);
 
   // `done` is checked before `verified` on purpose: verifying flips the account
   // to verified, which would otherwise make the card vanish mid-tap. Someone who
   // just typed a code should be told it worked.
   if (!done && (verified || dismissed)) return null;
+
+  /**
+   * On the feed, a bar rather than a card — and it has to be a bar.
+   *
+   * The full card is about 380pt tall. Today is now a paged feed whose line is
+   * vertically centred, so there is no 380pt gap anywhere on the screen: at the
+   * bottom it covered the share/heart/bookmark row, at the top it covered the
+   * affirmation. It also swallowed swipes, because a card is a real touch target
+   * however `box-none` its container is, and the feed looked frozen.
+   *
+   * So Today gets one line it can tap, and the card itself opens from it.
+   */
+  if (compact && !expanded) {
+    return (
+      <Pressable
+        onPress={() => setExpanded(true)}
+        accessibilityRole="button"
+        accessibilityLabel={t("verify.eyebrow")}
+        style={[styles.bar, style]}
+        testID="verify-bar"
+      >
+        <Ionicons name="mail-outline" size={15} color={colors.coral} />
+        <Text style={styles.barText} numberOfLines={1}>
+          {t("verify.eyebrow")}
+        </Text>
+        <Ionicons name="chevron-forward" size={15} color={colors.inkFaint} />
+      </Pressable>
+    );
+  }
 
   const onSubmit = async () => {
     if (code.length !== CODE_LENGTH) return;
@@ -148,6 +178,16 @@ const VerifyEmailCard = ({ style }) => {
 export default VerifyEmailCard;
 
 const styles = StyleSheet.create({
+  bar: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.sm,
+    paddingVertical: spacing.sm,
+    paddingHorizontal: spacing.md,
+    borderRadius: radius.pill,
+    backgroundColor: "rgba(255,255,255,0.72)",
+  },
+  barText: { flex: 1, fontSize: 13, fontWeight: "600", color: colors.ink },
   card: {
     width: "100%",
     borderRadius: radius.xl,

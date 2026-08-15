@@ -2,34 +2,10 @@ import crypto from "node:crypto";
 import { User } from "../models/User.js";
 import { AppError } from "../utils/AppError.js";
 import { webhookSecret } from "../config/subscription.js";
-import {
-  applyWebhookEvent,
-  serializeSubscription,
-  startTrial,
-} from "../services/subscription.service.js";
+import { applyWebhookEvent, serializeSubscription } from "../services/subscription.service.js";
 
 export function getSubscription(req, res) {
   res.json({ subscription: serializeSubscription(req.user) });
-}
-
-/**
- * Starts the free trial — what "skip" on the paywall does.
- *
- * Always 200 with the current state, even when the trial was already used: the
- * client's job is to render what it's given, and "you already had your trial" is
- * something the returned status says perfectly well on its own.
- */
-export async function beginTrial(req, res, next) {
-  try {
-    if (startTrial(req.user)) {
-      await req.user.save();
-      req.log?.info({ userId: req.user.id }, "trial started");
-    }
-
-    res.json({ subscription: serializeSubscription(req.user) });
-  } catch (err) {
-    next(err);
-  }
 }
 
 /**

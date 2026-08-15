@@ -34,8 +34,9 @@ const signature = (s) => `${s?.status}|${s?.expiresAt ?? ""}|${s?.verified}`;
  * bought something ends by re-reading the server rather than believing itself.
  *
  * With no RevenueCat key configured (which is the state until there is a store
- * listing) `canPurchase` is false and the paywall shows the trial alone. That
- * is a supported mode, not a degraded one.
+ * listing) `canPurchase` is false and there is nothing to buy. That is a
+ * supported mode, not a degraded one — the app still works, on the curated
+ * bank, which is exactly what a free reader gets anyway.
  */
 export function useSubscription() {
   const { user, client } = useAuth();
@@ -104,17 +105,6 @@ export function useSubscription() {
 
     return () => subscription.remove();
   }, [userId, refresh]);
-
-  const startTrial = useCallback(async () => {
-    setBusy(true);
-    try {
-      const { subscription: fresh } = await client.startTrial();
-      setSubscription(fresh);
-      return fresh;
-    } finally {
-      setBusy(false);
-    }
-  }, [client]);
 
   /**
    * Re-reads the server until the purchase shows up there, then stops.
@@ -202,7 +192,6 @@ export function useSubscription() {
     canPurchase,
     loading,
     busy,
-    startTrial,
     purchase,
     restore,
     refresh,

@@ -1,7 +1,5 @@
-import { TRIAL_DAYS, EVENT_STATUS, ENTITLEMENT_ID } from "../config/subscription.js";
+import { EVENT_STATUS, ENTITLEMENT_ID } from "../config/subscription.js";
 import { logger } from "../lib/logger.js";
-
-const DAY_MS = 24 * 60 * 60 * 1000;
 
 /**
  * Whether an account currently has premium access.
@@ -17,7 +15,6 @@ export function isEntitled(user, now = new Date()) {
   if (sub.status === "active" && sub.expiresAt && sub.expiresAt > now) return true;
   // A lifetime or non-renewing purchase has no expiry to compare against.
   if (sub.status === "active" && !sub.expiresAt) return true;
-  if (sub.status === "trialing" && sub.trialEndsAt && sub.trialEndsAt > now) return true;
 
   return false;
 }
@@ -30,31 +27,11 @@ export function serializeSubscription(user, now = new Date()) {
     entitled: isEntitled(user, now),
     status: sub.status ?? "none",
     expiresAt: sub.expiresAt ?? null,
-    trialEndsAt: sub.trialEndsAt ?? null,
     source: sub.source ?? null,
     // The client uses this to decide whether to trust its own cached copy: an
     // unverified entitlement is one nobody has checked with a store.
     verified: Boolean(sub.verifiedAt),
   };
-}
-
-/**
- * Starts the free trial someone gets for skipping the paywall.
- *
- * Idempotent and one-way: a second call cannot extend a trial or resurrect a
- * finished one, which is what stops "delete and reinstall" being a subscription.
- */
-export function startTrial(user, { now = new Date(), days = TRIAL_DAYS } = {}) {
-  if (user.subscription?.trialEndsAt) return false;
-
-  user.subscription.status = "trialing";
-  user.subscription.trialEndsAt = new Date(now.getTime() + days * DAY_MS);
-  user.subscription.source = "trial";
-  // Deliberately not verified: a trial is something we granted, not something a
-  // store confirmed.
-  user.subscription.verifiedAt = null;
-
-  return true;
 }
 
 /**

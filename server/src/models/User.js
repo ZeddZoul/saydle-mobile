@@ -49,14 +49,13 @@ const userSchema = new mongoose.Schema(
     subscription: {
       status: {
         type: String,
-        enum: ["trialing", "active", "expired", "none"],
+        enum: ["active", "expired", "none"],
         default: "none",
       },
       // Store product identifier, once there is a listing to have one.
       productId: { type: String, default: null },
       expiresAt: { type: Date, default: null },
-      trialEndsAt: { type: Date, default: null },
-      // "trial" | "app_store" | "play_store" | "promotional"
+      // "app_store" | "play_store" | "promotional"
       source: { type: String, default: null },
       // Null until a receipt has actually been checked by the store.
       verifiedAt: { type: Date, default: null },

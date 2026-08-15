@@ -2,14 +2,13 @@ import { describe, it, expect, beforeEach, vi } from "vitest";
 import request from "supertest";
 import { createApp } from "../src/app.js";
 import { seed } from "../migrations/seed.js";
-import { registerUser } from "./helpers.js";
+import { registerUser, entitle } from "./helpers.js";
 import { flushRefills, refill } from "../src/services/library.service.js";
 import { flushReplenish } from "../src/services/affirmation.service.js";
 import { User } from "../src/models/User.js";
 import { Affirmation } from "../src/models/Affirmation.js";
 import { Saved } from "../src/models/Saved.js";
 import { Favorite } from "../src/models/Favorite.js";
-import { startTrial } from "../src/services/subscription.service.js";
 
 const generateAffirmations = vi.fn();
 
@@ -54,8 +53,7 @@ let user;
 async function premiumAccount(email) {
   const registered = await registerUser(app, { email });
   const account = await User.findById(registered.user.id);
-  startTrial(account);
-  await account.save();
+  await entitle(account);
   return { auth: registered.auth, user: account, id: registered.user.id };
 }
 

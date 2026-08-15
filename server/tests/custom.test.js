@@ -2,22 +2,15 @@ import { describe, it, expect, beforeEach } from "vitest";
 import request from "supertest";
 import { createApp } from "../src/app.js";
 import { seed } from "../migrations/seed.js";
-import { registerUser } from "./helpers.js";
+import { registerUser, entitle } from "./helpers.js";
 import { User } from "../src/models/User.js";
 import { Affirmation } from "../src/models/Affirmation.js";
 import { FeedEntry } from "../src/models/FeedEntry.js";
-import { startTrial } from "../src/services/subscription.service.js";
 
 const app = createApp();
 
 let auth;
 let user;
-
-/** Premium is the gate; a trial is the cheapest honest way through it. */
-async function entitle() {
-  startTrial(user);
-  await user.save();
-}
 
 beforeEach(async () => {
   await seed();
@@ -38,7 +31,7 @@ describe("POST /api/affirmations/custom", () => {
   });
 
   it("saves the reader's own words once they're entitled", async () => {
-    await entitle();
+    await entitle(user);
 
     const res = await request(app)
       .post("/api/affirmations/custom")
@@ -51,7 +44,7 @@ describe("POST /api/affirmations/custom", () => {
   });
 
   it("does not hold their sentence to our style rules", async () => {
-    await entitle();
+    await entitle(user);
 
     // No first person, an exclamation, and past our generated length cap — all
     // of which a generated line would be rejected for. This is their voice.
@@ -64,7 +57,7 @@ describe("POST /api/affirmations/custom", () => {
   });
 
   it("declines crisis language, kindly and with a reason", async () => {
-    await entitle();
+    await entitle(user);
 
     const res = await request(app)
       .post("/api/affirmations/custom")
@@ -78,7 +71,7 @@ describe("POST /api/affirmations/custom", () => {
   });
 
   it("rejects an empty or overlong sentence", async () => {
-    await entitle();
+    await entitle(user);
 
     for (const text of ["", "  ", "x".repeat(201)]) {
       const res = await request(app)
@@ -91,7 +84,7 @@ describe("POST /api/affirmations/custom", () => {
   });
 
   it("refuses a duplicate rather than storing it twice", async () => {
-    await entitle();
+    await entitle(user);
     const text = "I can begin again on a Tuesday.";
 
     await request(app)
@@ -107,7 +100,7 @@ describe("POST /api/affirmations/custom", () => {
   });
 
   it("schedules their own words into the days ahead", async () => {
-    await entitle();
+    await entitle(user);
     await request(app).get("/api/affirmations/feed?days=14").set("Authorization", auth);
 
     const res = await request(app)
@@ -125,7 +118,7 @@ describe("POST /api/affirmations/custom", () => {
   });
 
   it("stores it in the reader's own language", async () => {
-    await entitle();
+    await entitle(user);
     user.locale = "es";
     await user.save();
 
@@ -148,7 +141,7 @@ describe("POST /api/affirmations/custom", () => {
 
 describe("GET /api/affirmations/custom", () => {
   it("lists only the reader's own writing, newest first", async () => {
-    await entitle();
+    await entitle(user);
 
     for (const text of ["First one written.", "Second one written."]) {
       await request(app)
@@ -167,7 +160,7 @@ describe("GET /api/affirmations/custom", () => {
   });
 
   it("never shows one reader another's writing", async () => {
-    await entitle();
+    await entitle(user);
     await request(app)
       .post("/api/affirmations/custom")
       .set("Authorization", auth)
@@ -184,7 +177,7 @@ describe("GET /api/affirmations/custom", () => {
 
 describe("DELETE /api/affirmations/custom/:id", () => {
   it("removes it and clears it from the days not yet read", async () => {
-    await entitle();
+    await entitle(user);
     const created = await request(app)
       .post("/api/affirmations/custom")
       .set("Authorization", auth)
@@ -204,7 +197,7 @@ describe("DELETE /api/affirmations/custom/:id", () => {
   });
 
   it("cannot delete somebody else's", async () => {
-    await entitle();
+    await entitle(user);
     const created = await request(app)
       .post("/api/affirmations/custom")
       .set("Authorization", auth)
@@ -220,7 +213,7 @@ describe("DELETE /api/affirmations/custom/:id", () => {
   });
 
   it("404s on something that was never there", async () => {
-    await entitle();
+    await entitle(user);
     await request(app)
       .delete("/api/affirmations/custom/507f1f77bcf86cd799439011")
       .set("Authorization", auth)
@@ -232,15 +225,13 @@ describe("the boundary around my words", () => {
   it("turns a crisis-adjacent line away at the door, kindly", async () => {
     const { registerUser } = await import("./helpers.js");
     const { User } = await import("../src/models/User.js");
-    const { startTrial } = await import("../src/services/subscription.service.js");
     const request = (await import("supertest")).default;
     const { createApp } = await import("../src/app.js");
     const app = createApp();
 
     const { auth, user } = await registerUser(app, { email: "door@example.com" });
     const account = await User.findById(user.id);
-    startTrial(account);
-    await account.save();
+    await entitle(account);
 
     const res = await request(app)
       .post("/api/affirmations/custom")
@@ -258,15 +249,13 @@ describe("the boundary around my words", () => {
     const { ensureFeed, getFeed } = await import("../src/services/affirmation.service.js");
     const { User } = await import("../src/models/User.js");
     const { Affirmation } = await import("../src/models/Affirmation.js");
-    const { startTrial } = await import("../src/services/subscription.service.js");
     const request = (await import("supertest")).default;
     const { createApp } = await import("../src/app.js");
     const app = createApp();
 
     const { auth, user } = await registerUser(app, { email: "legacy@example.com" });
     const account = await User.findById(user.id);
-    startTrial(account);
-    await account.save();
+    await entitle(account);
 
     // A row created before the violence patterns existed — inserted directly,
     // because the API (correctly) refuses it now. Patterns will keep widening;

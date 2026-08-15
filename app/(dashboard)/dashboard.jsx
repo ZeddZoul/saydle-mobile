@@ -4,7 +4,6 @@ import { useRouter } from "expo-router";
 import OfflineBanner from "../../components/OfflineBanner";
 import ProfileNudge from "../../components/ProfileNudge.jsx";
 import FloatingChrome from "../../components/FloatingChrome.jsx";
-import { FLOATING_HEADER_INSET } from "../../components/FloatingHeader.jsx";
 import AffirmationFeed from "../../components/AffirmationFeed.jsx";
 import StreakToast from "../../components/StreakToast.jsx";
 import VerifyEmailCard from "../../components/VerifyEmailCard.jsx";
@@ -94,7 +93,7 @@ const Dashboard = () => {
               instead — still never covering the line, and still absent
               entirely until there is something to ask. */}
           <View style={styles.overlayCards} pointerEvents="box-none">
-            <VerifyEmailCard />
+            <VerifyEmailCard compact />
 
             <ProfileNudge
               suggestion={nudge.suggestion}
@@ -128,7 +127,7 @@ const styles = StyleSheet.create({
     position: "absolute",
     left: 0,
     right: 0,
-    top: FLOATING_HEADER_INSET,
+    bottom: 108,
     paddingHorizontal: spacing.lg,
     gap: spacing.md,
   },

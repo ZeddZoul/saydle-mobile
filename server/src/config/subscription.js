@@ -26,9 +26,8 @@ export const ENTITLEMENT_ID = process.env.REVENUECAT_ENTITLEMENT_ID ?? "premium"
 export const webhookSecret = () => process.env.REVENUECAT_WEBHOOK_SECRET ?? null;
 
 /** The trial someone gets by skipping the paywall. */
-export const TRIAL_DAYS = Number(process.env.TRIAL_DAYS ?? 3);
 
-export const STATUSES = ["trialing", "active", "expired", "none"];
+export const STATUSES = ["active", "expired", "none"];
 
 /**
  * RevenueCat's event vocabulary, mapped onto ours.

@@ -52,12 +52,8 @@ const makeClient = (sub) => ({
   favorites: jest.fn(async () => ({ favorites: [] })),
 });
 
-const TRIALING = {
-  status: "trialing",
-  entitled: true,
-  verified: false,
-  trialEndsAt: new Date(Date.now() + 2 * 86400000).toISOString(),
-};
+/** A free reader: the curated bank, and the one thing they can buy. */
+const FREE = { status: "none", entitled: false, verified: false };
 
 const metrics = {
   frame: { x: 0, y: 0, width: 390, height: 844 },
@@ -121,21 +117,20 @@ describe("managing a subscription", () => {
   });
 
   /**
-   * Someone on a trial must be able to pay.
+   * A free reader must be able to pay, and it must be the only way in.
    *
-   * The card was gated on `!entitled`, and a trial grants entitlement — so the
-   * only people actively deciding whether to subscribe were the only people
-   * with no way to do it. They had to wait for their access to lapse first.
+   * There is no trial: the curated bank is the free product, and buying is what
+   * swaps it for affirmations written for them.
    */
-  it("lets someone on a trial subscribe without waiting for it to lapse", async () => {
+  it("offers a free reader something to buy", async () => {
     mockPurchases.getOffering.mockResolvedValue({
       available: true,
       packages: [{ identifier: "monthly", product: { priceString: "$4.99" } }],
     });
 
-    const { findByText } = await renderBilling(TRIALING);
+    const { findByText } = await renderBilling(FREE);
 
-    expect(await findByText(/Become a member now/i)).toBeTruthy();
+    expect(await findByText(/Go premium/i)).toBeTruthy();
     // The buyable control, not the standing price line — both carry the price.
     expect(await findByText(/Subscribe now — \$4\.99/)).toBeTruthy();
   });
@@ -154,7 +149,7 @@ describe("managing a subscription", () => {
 
     await findByText(/Manage or cancel/i);
     // Nothing left to sell them.
-    expect(queryByText(/Become a member now/i)).toBeNull();
+    expect(queryByText(/Go premium/i)).toBeNull();
     expect(queryByText(/Go premium/i)).toBeNull();
   });
 
@@ -169,7 +164,7 @@ describe("managing a subscription", () => {
       error: new Error("store said no"),
     });
 
-    const { findByText } = await renderBilling(TRIALING);
+    const { findByText } = await renderBilling(FREE);
     await fireEvent.press(await findByText(/Subscribe now — \$4\.99/));
 
     // It used to say "Couldn't save that. Try again." — the generic save
@@ -189,7 +184,7 @@ describe("managing a subscription", () => {
       cancelled: true,
     });
 
-    const { findByText, queryByText } = await renderBilling(TRIALING);
+    const { findByText, queryByText } = await renderBilling(FREE);
     await fireEvent.press(await findByText(/Subscribe now — \$4\.99/));
 
     // Declining is the commonest outcome of a paywall. An error aimed at
@@ -270,12 +265,7 @@ describe("managing a subscription", () => {
         subscription:
           call >= 3
             ? { status: "active", entitled: true, verified: true, source: "app_store" }
-            : {
-                status: "trialing",
-                entitled: true,
-                verified: false,
-                trialEndsAt: TRIALING.trialEndsAt,
-              },
+            : { status: "none", entitled: false, verified: false },
       };
     });
 

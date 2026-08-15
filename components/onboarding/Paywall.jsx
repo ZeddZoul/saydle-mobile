@@ -10,7 +10,7 @@ import { useT } from "../../lib/i18n.js";
 
 /**
  * The end-of-flow paywall. This is where the account gets created — either path
- * (`onTrial` / `onSubscribe`) triggers sign-up in the controller.
+ * (`` / `onSubscribe`) triggers sign-up in the controller.
  *
  * The trial is real: it is granted server-side and expires on a date. The
  * subscription button appears only when RevenueCat is configured — see
@@ -23,7 +23,7 @@ import { useT } from "../../lib/i18n.js";
  */
 const PERK_KEYS = ["paywall.perk1", "paywall.perk2", "paywall.perk3"];
 
-const Paywall = ({ onTrial, onSubscribe, canPurchase = false }) => {
+const Paywall = ({ onSubscribe, canPurchase = false }) => {
   const { t } = useT();
 
   return (
@@ -49,7 +49,6 @@ const Paywall = ({ onTrial, onSubscribe, canPurchase = false }) => {
 
         <View style={styles.footer}>
           <Text style={styles.price}>{t("paywall.price")}</Text>
-          <Button title={t("paywall.trial")} onPress={onTrial} />
           <Spacer height={spacing.md} />
           {/* Hidden until there is something to actually buy: an unset RevenueCat
             key means tapping this could only ever fall through to the trial,
