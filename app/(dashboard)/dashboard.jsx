@@ -4,6 +4,7 @@ import { useRouter } from "expo-router";
 import OfflineBanner from "../../components/OfflineBanner";
 import ProfileNudge from "../../components/ProfileNudge.jsx";
 import FloatingChrome from "../../components/FloatingChrome.jsx";
+import { FLOATING_HEADER_INSET } from "../../components/FloatingHeader.jsx";
 import AffirmationFeed from "../../components/AffirmationFeed.jsx";
 import StreakToast from "../../components/StreakToast.jsx";
 import VerifyEmailCard from "../../components/VerifyEmailCard.jsx";
@@ -111,14 +112,23 @@ const Dashboard = () => {
 export default Dashboard;
 
 const styles = StyleSheet.create({
-  // Above the bottom chrome row, below the line. `box-none` so a swipe that
-  // starts here still reaches the feed underneath rather than dying on an
-  // invisible container.
+  /**
+   * Below the top chrome row, in the empty space above the line.
+   *
+   * These sat at the bottom first, which put a tall card straight over the
+   * feed's own controls — share, heart and bookmark rendered *through* it — and,
+   * worse, over the lower half of the screen, where a swipe naturally starts. A
+   * card is a real touch target however `box-none` its container is, so a swipe
+   * beginning on it never reached the list and the feed looked frozen.
+   *
+   * The head of the screen is the one region a paged feed leaves genuinely
+   * empty: the line is vertically centred and its actions sit under it.
+   */
   overlayCards: {
     position: "absolute",
     left: 0,
     right: 0,
-    bottom: 120,
+    top: FLOATING_HEADER_INSET,
     paddingHorizontal: spacing.lg,
     gap: spacing.md,
   },
