@@ -116,6 +116,8 @@ const Billing = () => {
     startTrial,
     purchase,
     restore,
+    manageSubscription,
+    canManage,
     refresh,
   } = useSubscription();
   const [working, setWorking] = useState(false);
@@ -177,6 +179,28 @@ const Billing = () => {
 
   const openStore = () =>
     Linking.openURL(STORE_SUBSCRIPTIONS).catch(() => toast.error(t("billing.storeFailed")));
+
+  /**
+   * Customer Center: cancel, change plan, request a refund, in one sheet.
+   *
+   * No success toast. Nothing here is a thing the app did — the user either
+   * changed something or just looked, and we cannot tell which without the
+   * webhook. The hook refreshes from the server on dismiss; if that changed the
+   * subscription, the card above has already repainted and says so better than a
+   * toast could.
+   */
+  const onManage = async () => {
+    setWorking(true);
+    try {
+      const result = await manageSubscription();
+      if (!result?.available) return openStore();
+      if (result.error) toast.error(t("billing.manageFailed"));
+    } catch {
+      toast.error(t("billing.manageFailed"));
+    } finally {
+      setWorking(false);
+    }
+  };
 
   return (
     <GradientBackground>
@@ -301,12 +325,19 @@ const Billing = () => {
               <DisplayText style={[styles.sectionTitle, { color: theme.ink }]}>
                 {t("billing.manage")}
               </DisplayText>
-              <Text style={[styles.hint, { color: theme.sub }]}>{t("billing.manageHint")}</Text>
+              <Text style={[styles.hint, { color: theme.sub }]}>
+                {t(canManage ? "billing.manageHintInApp" : "billing.manageHint")}
+              </Text>
               <View style={styles.actions}>
+                {/* Customer Center when it exists, the store deep-link when it
+                    does not — never both. Two buttons that open near-identical
+                    screens is a choice nobody can make correctly. */}
                 <Button
-                  title={t("billing.openStore")}
+                  title={canManage ? t("billing.manageSubscription") : t("billing.openStore")}
                   variant="secondary"
-                  onPress={openStore}
+                  onPress={canManage ? onManage : openStore}
+                  disabled={busy || working}
+                  testID="billing-manage"
                 />
                 <Button
                   title={t("billing.restore")}

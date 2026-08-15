@@ -4,7 +4,9 @@ import { useAuth } from "../contexts/AuthContext.jsx";
 import { NetworkError } from "../lib/errors.js";
 import {
   configurePurchases,
+  customerCenterAvailable,
   getOffering,
+  presentCustomerCenter,
   purchasePackage,
   purchasesAvailable,
   restorePurchases,
@@ -134,16 +136,37 @@ export function useSubscription() {
     }
   }, [refresh]);
 
+  /**
+   * Opens Customer Center, then re-asks the server.
+   *
+   * The refresh is the point. Someone may have cancelled or asked for a refund
+   * in there, and we only learn that through the webhook — so the local view of
+   * the subscription is stale the moment the sheet closes. Refreshing on dismiss
+   * is what stops the screen still saying "Premium" after a cancellation.
+   */
+  const manageSubscription = useCallback(async () => {
+    setBusy(true);
+    try {
+      const result = await presentCustomerCenter();
+      if (result.available) await refresh();
+      return result;
+    } finally {
+      setBusy(false);
+    }
+  }, [refresh]);
+
   return {
     subscription,
     entitled: Boolean(subscription?.entitled),
     packages,
     canPurchase,
+    canManage: customerCenterAvailable(),
     loading,
     busy,
     startTrial,
     purchase,
     restore,
+    manageSubscription,
     refresh,
   };
 }
