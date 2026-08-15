@@ -4,7 +4,7 @@
  * how the app runs for most of its life before launch.
  */
 
-const loadFresh = ({ key, module, ui } = {}) => {
+const loadFresh = ({ key, module } = {}) => {
   jest.resetModules();
 
   jest.doMock("../../lib/config.js", () => ({
@@ -20,14 +20,6 @@ const loadFresh = ({ key, module, ui } = {}) => {
     });
   } else {
     jest.doMock("react-native-purchases", () => module);
-  }
-
-  if (ui === undefined) {
-    jest.doMock("react-native-purchases-ui", () => {
-      throw new Error("Cannot find native module 'RNPaywalls'");
-    });
-  } else {
-    jest.doMock("react-native-purchases-ui", () => ui);
   }
 
   // require, not import(): jest's ESM loader is off, and this module has to
@@ -47,14 +39,9 @@ const fakePurchases = (over = {}) => ({
   ...over,
 });
 
-const fakeUI = (over = {}) => ({
-  default: { presentCustomerCenter: jest.fn(async () => {}), ...over },
-});
-
 afterEach(() => {
   jest.resetModules();
   jest.dontMock("react-native-purchases");
-  jest.dontMock("react-native-purchases-ui");
   jest.dontMock("../../lib/config.js");
 });
 
@@ -163,63 +150,6 @@ describe("with a Test Store key", () => {
       // The guard must key off the `test_` prefix, not off being a release.
       expect(purchases.purchasesAvailable()).toBe(true);
     });
-  });
-});
-
-/**
- * Customer Center, which is where someone cancels or asks for a refund.
- *
- * Its native module is separate from the purchases one, so it has its own
- * absent state — and `presentCustomerCenter` throws internally when the native
- * side is missing rather than no-opping, which is exactly the failure the rest
- * of this file exists to prevent.
- */
-describe("Customer Center", () => {
-  it("opens when everything is present", async () => {
-    const ui = fakeUI();
-    const purchases = loadFresh({ key: "appl_key", module: fakePurchases(), ui });
-
-    expect(purchases.customerCenterAvailable()).toBe(true);
-    expect(await purchases.presentCustomerCenter()).toEqual({
-      available: true,
-      dismissed: true,
-    });
-    expect(ui.default.presentCustomerCenter).toHaveBeenCalled();
-  });
-
-  it("is unavailable when only the UI module is missing", async () => {
-    // Purchases work fine here; the sheet simply is not installed. The screen
-    // has to be able to tell, or it offers a button that throws.
-    const purchases = loadFresh({ key: "appl_key", module: fakePurchases() });
-
-    expect(purchases.purchasesAvailable()).toBe(true);
-    expect(purchases.customerCenterAvailable()).toBe(false);
-    expect(await purchases.presentCustomerCenter()).toEqual({ available: false });
-  });
-
-  it("never calls into the sheet without a key", async () => {
-    const ui = fakeUI();
-    const purchases = loadFresh({ key: undefined, module: fakePurchases(), ui });
-
-    // Unconfigured SDK: the sheet has no customer to show.
-    expect(await purchases.presentCustomerCenter()).toEqual({ available: false });
-    expect(ui.default.presentCustomerCenter).not.toHaveBeenCalled();
-  });
-
-  it("reports a failure to present without throwing at the caller", async () => {
-    const purchases = loadFresh({
-      key: "appl_key",
-      module: fakePurchases(),
-      ui: fakeUI({
-        presentCustomerCenter: jest.fn(async () => {
-          throw new Error("not configured");
-        }),
-      }),
-    });
-
-    const result = await purchases.presentCustomerCenter();
-    expect(result).toMatchObject({ available: true, dismissed: false });
-    expect(result.error).toBeInstanceOf(Error);
   });
 });
 

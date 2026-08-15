@@ -15,6 +15,7 @@ import DisplayText from "../../components/DisplayText.jsx";
 import Button from "../../components/Button";
 import { useAppTheme } from "../../contexts/ThemeContext.jsx";
 import { useToast } from "../../contexts/ToastContext.jsx";
+import { useAuth } from "../../contexts/AuthContext.jsx";
 import TrialTimeline from "../../components/TrialTimeline.jsx";
 import { useSubscription } from "../../hooks/useSubscription.js";
 import { TRIAL_DAYS } from "../../lib/config.js";
@@ -36,6 +37,19 @@ const STORE_SUBSCRIPTIONS = Platform.select({
   ios: "itms-apps://apps.apple.com/account/subscriptions",
   android: "https://play.google.com/store/account/subscriptions",
   default: "https://play.google.com/store/account/subscriptions",
+});
+
+/**
+ * Where a refund is actually requested.
+ *
+ * Apple's is a real self-serve flow; Google's is the order history, which is
+ * the nearest equivalent it offers. Both belong to the store, not to us — we
+ * only ever hand someone to the place that can act.
+ */
+const REFUND_URL = Platform.select({
+  ios: "https://reportaproblem.apple.com",
+  android: "https://play.google.com/store/account/orderhistory",
+  default: "https://play.google.com/store/account/orderhistory",
 });
 
 const formatDate = (value) => {
@@ -116,10 +130,9 @@ const Billing = () => {
     startTrial,
     purchase,
     restore,
-    manageSubscription,
-    canManage,
     refresh,
   } = useSubscription();
+  const { user } = useAuth();
   const [working, setWorking] = useState(false);
 
   const status = subscription?.status ?? "none";
@@ -180,27 +193,8 @@ const Billing = () => {
   const openStore = () =>
     Linking.openURL(STORE_SUBSCRIPTIONS).catch(() => toast.error(t("billing.storeFailed")));
 
-  /**
-   * Customer Center: cancel, change plan, request a refund, in one sheet.
-   *
-   * No success toast. Nothing here is a thing the app did — the user either
-   * changed something or just looked, and we cannot tell which without the
-   * webhook. The hook refreshes from the server on dismiss; if that changed the
-   * subscription, the card above has already repainted and says so better than a
-   * toast could.
-   */
-  const onManage = async () => {
-    setWorking(true);
-    try {
-      const result = await manageSubscription();
-      if (!result?.available) return openStore();
-      if (result.error) toast.error(t("billing.manageFailed"));
-    } catch {
-      toast.error(t("billing.manageFailed"));
-    } finally {
-      setWorking(false);
-    }
-  };
+  const openRefund = () =>
+    Linking.openURL(REFUND_URL).catch(() => toast.error(t("billing.storeFailed")));
 
   return (
     <GradientBackground>
@@ -253,6 +247,22 @@ const Billing = () => {
                   value={t("billing.notVerified")}
                   theme={theme}
                 />
+              ) : null}
+
+              {/* Who it belongs to, in the same card as what it is — the two
+                  answer one question ("what am I on, and as whom?") and split
+                  across the page they read as unrelated.
+
+                  Read from our own session, never from the billing SDK.
+                  RevenueCat would put its App User ID here, an opaque hex
+                  string, and the only way to make it show a name is to send
+                  RevenueCat the name — personal data in a processor
+                  `purge.service.js` cannot reach. We already hold both. */}
+              {user?.firstName ? (
+                <Row label={t("billing.accountName")} value={user.firstName} theme={theme} />
+              ) : null}
+              {user?.email ? (
+                <Row label={t("billing.accountEmail")} value={user.email} theme={theme} />
               ) : null}
             </View>
 
@@ -325,19 +335,19 @@ const Billing = () => {
               <DisplayText style={[styles.sectionTitle, { color: theme.ink }]}>
                 {t("billing.manage")}
               </DisplayText>
-              <Text style={[styles.hint, { color: theme.sub }]}>
-                {t(canManage ? "billing.manageHintInApp" : "billing.manageHint")}
-              </Text>
+              <Text style={[styles.hint, { color: theme.sub }]}>{t("billing.manageHint")}</Text>
               <View style={styles.actions}>
-                {/* Customer Center when it exists, the store deep-link when it
-                    does not — never both. Two buttons that open near-identical
-                    screens is a choice nobody can make correctly. */}
                 <Button
-                  title={canManage ? t("billing.manageSubscription") : t("billing.openStore")}
+                  title={t("billing.openStore")}
                   variant="secondary"
-                  onPress={canManage ? onManage : openStore}
-                  disabled={busy || working}
+                  onPress={openStore}
                   testID="billing-manage"
+                />
+                <Button
+                  title={t("billing.requestRefund")}
+                  variant="secondary"
+                  onPress={openRefund}
+                  testID="billing-refund"
                 />
                 <Button
                   title={t("billing.restore")}
