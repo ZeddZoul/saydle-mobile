@@ -409,6 +409,8 @@
     "purchasedVia": "Comprado en",
     "confirmed": "Confirmado con la tienda",
     "notVerified": "Todavía no",
+    "purchaseFailed": "No se completó: no se te ha cobrado nada. Inténtalo de nuevo en un momento.",
+    "trialFailed": "No se pudo iniciar tu prueba. Inténtalo de nuevo en un momento.",
     "upgrade": "Hazte premium",
     "upgradeTrialing": "Hazte miembro ahora",
     "trialStarted": "Tu prueba gratuita ha comenzado.",

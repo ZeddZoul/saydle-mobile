@@ -257,6 +257,8 @@
     "purchasedVia": "Purchased via",
     "confirmed": "Confirmed with store",
     "notVerified": "Not yet",
+    "purchaseFailed": "That didn't go through — you haven't been charged. Try again in a moment.",
+    "trialFailed": "Couldn't start your trial. Try again in a moment.",
     "upgrade": "Go premium",
     "upgradeTrialing": "Become a member now",
     "trialStarted": "Your free trial has started.",

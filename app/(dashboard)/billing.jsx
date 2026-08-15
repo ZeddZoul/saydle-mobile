@@ -164,15 +164,25 @@ const Billing = () => {
       ? t("billing.statusExpired")
       : t("billing.statusFree");
 
-  const guard = async (fn, successMessage) => {
+  /**
+   * Runs a billing action and reports it in billing's own words.
+   *
+   * `failureMessage` is not optional in practice: the fallback used to be
+   * `common.saveFailed` — "Couldn't save that. Try again." — which is what a
+   * failed payment told people. Nothing was being saved, and the one thing
+   * someone needs to hear when a purchase fails is that they were not charged.
+   */
+  const guard = async (fn, successMessage, failureMessage) => {
+    const failed = failureMessage ?? t("common.saveFailed");
     setWorking(true);
     try {
       const result = await fn();
+      // Declining is not a failure and must stay silent.
       if (result?.cancelled) return;
-      if (result?.failed) return toast.error(t("common.saveFailed"));
+      if (result?.failed) return toast.error(failed);
       if (successMessage) toast.success(successMessage);
     } catch {
-      toast.error(t("common.saveFailed"));
+      toast.error(failed);
     } finally {
       setWorking(false);
     }
@@ -318,7 +328,9 @@ const Billing = () => {
                 {neverTrialed && (
                   <Button
                     title={t("paywall.trial")}
-                    onPress={() => guard(startTrial, t("billing.trialStarted"))}
+                    onPress={() =>
+                      guard(startTrial, t("billing.trialStarted"), t("billing.trialFailed"))
+                    }
                     disabled={busy || working}
                   />
                 )}
@@ -334,7 +346,13 @@ const Billing = () => {
                             : t("paywall.subscribe")
                         }
                         variant="secondary"
-                        onPress={() => guard(() => purchase(pkg), t("billing.purchased"))}
+                        onPress={() =>
+                          guard(
+                            () => purchase(pkg),
+                            t("billing.purchased"),
+                            t("billing.purchaseFailed"),
+                          )
+                        }
                         disabled={busy || working}
                       />
                     ))}

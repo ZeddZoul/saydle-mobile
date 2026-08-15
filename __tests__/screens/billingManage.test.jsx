@@ -158,6 +158,46 @@ describe("managing a subscription", () => {
     expect(queryByText(/Go premium/i)).toBeNull();
   });
 
+  it("says nothing was charged when a purchase fails", async () => {
+    mockPurchases.getOffering.mockResolvedValue({
+      available: true,
+      packages: [{ identifier: "monthly", product: { priceString: "$4.99" } }],
+    });
+    mockPurchases.purchasePackage.mockResolvedValue({
+      available: true,
+      purchased: false,
+      error: new Error("store said no"),
+    });
+
+    const { findByText } = await renderBilling(TRIALING);
+    await fireEvent.press(await findByText(/Subscribe now — \$4\.99/));
+
+    // It used to say "Couldn't save that. Try again." — the generic save
+    // failure. Nothing was being saved, and the one thing someone needs after a
+    // failed payment is to know their money is where they left it.
+    expect(await findByText(/you haven't been charged/i)).toBeTruthy();
+  });
+
+  it("stays silent when someone simply declines", async () => {
+    mockPurchases.getOffering.mockResolvedValue({
+      available: true,
+      packages: [{ identifier: "monthly", product: { priceString: "$4.99" } }],
+    });
+    mockPurchases.purchasePackage.mockResolvedValue({
+      available: true,
+      purchased: false,
+      cancelled: true,
+    });
+
+    const { findByText, queryByText } = await renderBilling(TRIALING);
+    await fireEvent.press(await findByText(/Subscribe now — \$4\.99/));
+
+    // Declining is the commonest outcome of a paywall. An error aimed at
+    // someone who just said no is the app arguing with them.
+    await waitFor(() => expect(mockPurchases.purchasePackage).toHaveBeenCalled());
+    expect(queryByText(/haven't been charged/i)).toBeNull();
+  });
+
   it("tells someone what to try when there is nothing to restore", async () => {
     mockPurchases.restorePurchases.mockResolvedValue({ available: true, entitled: false });
     const { findByText } = await renderBilling();
