@@ -31,5 +31,4 @@ export const LANGUAGE_ENDONYMS = {
 
 export const isSupportedLocale = (locale) => SUPPORTED_LOCALES.includes(locale);
 
-export const resolveLocale = (locale) =>
-  isSupportedLocale(locale) ? locale : DEFAULT_LOCALE;
+export const resolveLocale = (locale) => (isSupportedLocale(locale) ? locale : DEFAULT_LOCALE);

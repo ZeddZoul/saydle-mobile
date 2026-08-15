@@ -1,4 +1,4 @@
-import { render, screen, fireEvent, waitFor } from "@testing-library/react-native";
+import { render, fireEvent, waitFor } from "@testing-library/react-native";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import ForgotPassword from "../../app/(auth)/forgot-password.jsx";
 import { AuthProvider } from "../../contexts/AuthContext.jsx";

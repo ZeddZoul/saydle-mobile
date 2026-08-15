@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   ActivityIndicator,
   Animated,
@@ -6,19 +6,21 @@ import {
   Pressable,
   RefreshControl,
   ScrollView,
-  Share,
   StyleSheet,
   Text,
   View,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import * as Haptics from "expo-haptics";
 import GradientBackground from "../../components/GradientBackground.jsx";
 import DisplayText from "../../components/DisplayText.jsx";
 import OfflineBanner from "../../components/OfflineBanner";
-import StreakStrip from "../../components/StreakStrip.jsx";
 import ProfileNudge from "../../components/ProfileNudge.jsx";
+import FloatingChrome from "../../components/FloatingChrome.jsx";
+import StreakToast from "../../components/StreakToast.jsx";
+import ShareSheet from "../../components/ShareSheet.jsx";
 import VerifyEmailCard from "../../components/VerifyEmailCard.jsx";
 import Button from "../../components/Button";
 import { useAuth } from "../../contexts/AuthContext.jsx";
@@ -27,6 +29,7 @@ import { useFavorites } from "../../hooks/useFavorites.js";
 import { useStreak } from "../../hooks/useStreak.js";
 import { useReminders } from "../../hooks/useReminders.js";
 import { useProfileNudge } from "../../hooks/useProfileNudge.js";
+import { useSubscription } from "../../hooks/useSubscription.js";
 import { useAppTheme } from "../../contexts/ThemeContext.jsx";
 import { messageFor } from "../../lib/errors.js";
 import { formatFriendlyDate } from "../../lib/dates.js";
@@ -40,11 +43,13 @@ const Dashboard = () => {
   const { user } = useAuth();
   const { entries, todayEntry, today, loading, refreshing, offline, error, refresh, markSeen } =
     useFeed();
-  const { isFavorite, toggle } = useFavorites();
+  const { favorites, isFavorite, toggle } = useFavorites();
+  const { entitled } = useSubscription();
   const { streak, refresh: refreshStreak } = useStreak();
   const { resync: resyncReminders } = useReminders();
   const nudge = useProfileNudge();
   const { theme } = useAppTheme();
+  const insets = useSafeAreaInsets();
 
   // Entrance: the affirmation fades and rises in, so it feels like it arrives
   // rather than just being there.
@@ -54,6 +59,11 @@ const Dashboard = () => {
   const breathe = useRef(new Animated.Value(0)).current;
   // The heart springs when tapped.
   const heart = useRef(new Animated.Value(1)).current;
+
+  // Shown only on the day the streak moves — see components/StreakToast.jsx
+  // for why this is a passing acknowledgement rather than a fixed counter.
+  const [showStreak, setShowStreak] = useState(false);
+  const [sharing, setSharing] = useState(false);
 
   const affirmation = todayEntry?.affirmation;
   const favorited = affirmation ? isFavorite(affirmation.id) : false;
@@ -67,6 +77,9 @@ const Dashboard = () => {
       easing: Easing.out(Easing.cubic),
       useNativeDriver: true,
     }).start();
+    // Keyed on the id, not the object: a new identity for the same affirmation
+    // would replay the entrance animation for no reason.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [affirmation?.id, enter]);
 
   // Breathing loop — runs continuously, ~4.5s each way, eased like a real breath.
@@ -110,7 +123,9 @@ const Dashboard = () => {
   // today's dot fills in without waiting for a reload.
   useEffect(() => {
     if (todayEntry && !todayEntry.seenAt) {
-      markSeen().then(refreshStreak);
+      markSeen()
+        .then(refreshStreak)
+        .then(() => setShowStreak(true));
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [todayEntry?.date]);
@@ -118,53 +133,84 @@ const Dashboard = () => {
   const onFavorite = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {});
     heart.setValue(0.7);
-    Animated.spring(heart, { toValue: 1, useNativeDriver: true, speed: 20, bounciness: 12 }).start();
+    Animated.spring(heart, {
+      toValue: 1,
+      useNativeDriver: true,
+      speed: 20,
+      bounciness: 12,
+    }).start();
     toggle(affirmation);
   };
 
   const onShare = () => {
     Haptics.selectionAsync().catch(() => {});
-    Share.share({ message: `${affirmation.text}\n\n— Saydle` }).catch(() => {});
+    setSharing(true);
   };
 
   if (loading) {
     return (
-      <GradientBackground colors={theme.gradient} style={styles.centered} testID="feed-loading">
+      <GradientBackground style={styles.centered} testID="feed-loading">
         <ActivityIndicator size="large" color={theme.accent} />
       </GradientBackground>
     );
   }
 
   return (
-    <GradientBackground colors={theme.gradient}>
+    <GradientBackground>
       <OfflineBanner visible={offline} />
 
-      {/* Pinned above the scroll area so the affirmation stays centred below it. */}
-      <View style={styles.streakArea}>
-        <StreakStrip streak={streak} />
-      </View>
+      <StreakToast streak={streak} visible={showStreak} onHide={() => setShowStreak(false)} />
 
       <ScrollView
-        contentContainerStyle={styles.container}
+        // Today usually fits, and a fitting ScrollView with the default bounce
+        // is completely inert on iOS — no rubber-band, and pull-to-refresh can
+        // never start. That reads as "scrolling is broken", not as "short page".
+        alwaysBounceVertical
+        // The chrome overlays rather than occupies, and its rows sit below the
+        // device inset — a fixed padding cleared them on Android and left the
+        // greeting underneath the meter on iOS, where the inset is far taller.
+        contentContainerStyle={[
+          styles.container,
+          { paddingTop: insets.top + 78, paddingBottom: insets.bottom + 84 },
+        ]}
         refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={refresh} tintColor={theme.accent} />
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={refresh}
+            tintColor={theme.accent}
+          />
         }
       >
-        <Text style={[styles.greeting, { color: theme.sub }]}>
-          {user?.firstName
-            ? t("today.greeting", { name: user.firstName })
-            : t("today.greetingAnonymous")}
-        </Text>
-        <Text style={[styles.date, { color: theme.sub }]}>{formatFriendlyDate(today)}</Text>
+        {/* The page has a top, a centre and a base. The greeting anchors the
+            top; the line is centred in what remains; the cards sit at the base.
+            One centred clump left the bottom half of the screen dead, which
+            read as a scroll that had stopped working. */}
+        <View style={styles.top}>
+          <Text style={[styles.greeting, { color: theme.sub }]}>
+            {user?.firstName
+              ? t("today.greeting", { name: user.firstName })
+              : t("today.greetingAnonymous")}
+          </Text>
+          <Text style={[styles.date, { color: theme.sub }]}>{formatFriendlyDate(today)}</Text>
+        </View>
 
+        <View style={styles.middle}>
         {affirmation ? (
           <Animated.View
-            style={[styles.affirmationWrap, { opacity: enter, transform: [{ translateY: enterRise }] }]}
+            style={[
+              styles.affirmationWrap,
+              { opacity: enter, transform: [{ translateY: enterRise }] },
+            ]}
           >
             <Animated.View
-              style={[styles.breath, { transform: [{ scale: breatheScale }, { translateY: floatY }] }]}
+              style={[
+                styles.breath,
+                { transform: [{ scale: breatheScale }, { translateY: floatY }] },
+              ]}
             >
-              <Animated.Text style={[styles.quote, { color: theme.accent, opacity: quoteOpacity }]}>
+              <Animated.Text
+                style={[styles.quote, { color: theme.accent, opacity: quoteOpacity }]}
+              >
                 &ldquo;
               </Animated.Text>
               {/* Tapping the line opens the immersive stream — the affirmation
@@ -213,13 +259,12 @@ const Dashboard = () => {
         ) : (
           <View style={styles.empty}>
             <Text style={[styles.emptyText, { color: theme.sub }]}>
-              {error
-                ? messageFor(error)
-                : t("today.empty")}
+              {error ? messageFor(error) : t("today.empty")}
             </Text>
             <Button title={t("common.tryAgain")} onPress={refresh} variant="secondary" />
           </View>
         )}
+        </View>
 
         {/* Both live below the affirmation, never above it — the day's line is
             why they opened the app, and it stays the first thing they read. */}
@@ -232,6 +277,26 @@ const Dashboard = () => {
           onDismiss={nudge.dismiss}
         />
       </ScrollView>
+
+      {/* The app's controls, floating over the line rather than framing it —
+          see components/FloatingChrome.jsx for what the old bars cost. */}
+      <FloatingChrome
+        kept={favorites.length}
+        entitled={entitled}
+        onProfile={() => router.push("/profile")}
+        onPremium={() => router.push("/billing")}
+        onCategories={() => router.push("/favorites")}
+        onPractice={() => router.push("/practice")}
+        onThemes={() => router.push("/themes")}
+      />
+
+
+      <ShareSheet
+        visible={sharing}
+        affirmation={affirmation}
+        date={today}
+        onClose={() => setSharing(false)}
+      />
     </GradientBackground>
   );
 };
@@ -246,15 +311,24 @@ const styles = StyleSheet.create({
   card: {
     marginTop: spacing.xxl,
   },
-  streakArea: {
-    paddingHorizontal: spacing.lg,
+  container: {
+    flexGrow: 1,
+    alignItems: "stretch",
+    paddingHorizontal: spacing.xl,
+  },
+  top: {
+    alignItems: "center",
     paddingTop: spacing.md,
   },
-  container: {
+  /**
+   * The line owns whatever space the cards leave it, and is centred in it.
+   * With no cards that is the whole page; with the verify card and a nudge it
+   * still floats rather than being pushed into the top third.
+   */
+  middle: {
     flexGrow: 1,
     alignItems: "center",
     justifyContent: "center",
-    paddingHorizontal: spacing.xl,
     paddingVertical: spacing.xl,
   },
   greeting: {

@@ -21,10 +21,7 @@ export function errorHandler(err, req, res, next) {
   if (normalized.status >= 500) {
     req.log?.error({ err }, "unhandled error");
   } else {
-    req.log?.info(
-      { code: normalized.code, status: normalized.status },
-      "request rejected",
-    );
+    req.log?.info({ code: normalized.code, status: normalized.status }, "request rejected");
   }
 
   const body = {
@@ -50,9 +47,7 @@ function normalize(err) {
   if (err instanceof mongoose.Error.ValidationError) {
     return AppError.badRequest(
       "Request validation failed.",
-      Object.fromEntries(
-        Object.entries(err.errors).map(([k, v]) => [k, v.message]),
-      ),
+      Object.fromEntries(Object.entries(err.errors).map(([k, v]) => [k, v.message])),
     );
   }
 

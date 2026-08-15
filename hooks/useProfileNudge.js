@@ -3,12 +3,7 @@ import { useAuth } from "../contexts/AuthContext.jsx";
 import { NetworkError } from "../lib/errors.js";
 import { ops } from "../lib/outbox.js";
 import { todayLocal } from "../lib/dates.js";
-import {
-  afterAnswer,
-  afterDismiss,
-  initialNudgeState,
-  nextNudge,
-} from "../lib/nudges.js";
+import { afterAnswer, afterDismiss, initialNudgeState, nextNudge } from "../lib/nudges.js";
 
 /**
  * The progressive-profile nudge: one unanswered question at a time, surfaced on

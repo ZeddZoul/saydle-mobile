@@ -28,9 +28,7 @@ describe("GradientBackground", () => {
   });
 
   it("leaves it off a colour swatch — a sample should show the colour, nothing else", async () => {
-    const { queryByTestId } = await render(
-      <GradientBackground colors={["#fff", "#eee"]} />,
-    );
+    const { queryByTestId } = await render(<GradientBackground colors={["#fff", "#eee"]} />);
     expect(queryByTestId("theme-artwork")).toBeNull();
   });
 
@@ -63,5 +61,61 @@ describe("the blur pass", () => {
     } finally {
       Platform.OS = original;
     }
+  });
+});
+
+describe("softness where there is no blur", () => {
+  const onAndroid = async (assert) => {
+    const { Platform } = require("react-native");
+    const original = Platform.OS;
+    Platform.OS = "android";
+
+    try {
+      await assert();
+    } finally {
+      Platform.OS = original;
+    }
+  };
+
+  // react-native-svg normalises `fill` before it reaches the host view: a flat
+  // colour arrives as { type: 0, payload }, a `url(#id)` reference as
+  // { type: 1, brushRef }. The brush is the assertion — it says the shape is
+  // painted with its own gradient rather than a solid.
+  const firstFill = async (view) =>
+    (await view.findAllByTestId("theme-artwork-fill"))[0].props.fill;
+
+  it("fades each shape out at its edge, so a blob reads as a glow", async () =>
+    onAndroid(async () => {
+      const view = await render(<ThemeArtwork theme={getTheme("dawn")} />);
+      const shapes = await view.findAllByTestId("theme-artwork-shape");
+
+      // The difference between a soft glow and the sticker Android used to draw.
+      expect(await firstFill(view)).toMatchObject({ brushRef: expect.any(String) });
+      // Every shape gets its own, or they would all share one shape's colour.
+      const brushes = (await view.findAllByTestId("theme-artwork-fill")).map(
+        (f) => f.props.fill.brushRef,
+      );
+      expect(new Set(brushes).size).toBe(shapes.length);
+    }));
+
+  it("leaves iOS on flat fills, because the blur pass already softens them", async () => {
+    const view = await render(<ThemeArtwork theme={getTheme("dawn")} />);
+    expect(await firstFill(view)).not.toHaveProperty("brushRef");
+  });
+
+  it("carries more alpha than the blurred route, to land at the same presence", async () => {
+    const flat = await render(<ThemeArtwork theme={getTheme("dawn")} />);
+    const iosOpacity = (await flat.findAllByTestId("theme-artwork-shape"))[0].props.style.opacity;
+
+    await onAndroid(async () => {
+      const soft = await render(<ThemeArtwork theme={getTheme("dawn")} />);
+      const androidOpacity = (await soft.findAllByTestId("theme-artwork-shape"))[0].props.style
+        .opacity;
+
+      // Fading the edge costs average alpha; without the nudge the shapes all
+      // but vanish, which is the state this started in.
+      expect(androidOpacity).toBeGreaterThan(iosOpacity);
+      expect(androidOpacity).toBeLessThanOrEqual(0.6);
+    });
   });
 });

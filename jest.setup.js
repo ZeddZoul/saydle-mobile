@@ -1,5 +1,3 @@
-/* eslint-env jest */
-
 // Tell React it's running under a test runner that manages act() batching.
 // Without this, every state update from an async effect warns and renderHook's
 // result comes back undefined.
@@ -40,6 +38,30 @@ jest.mock("expo-linear-gradient", () => {
   const { View } = require("react-native");
   return { LinearGradient: View };
 });
+
+// Recording and playback are native all the way down, so the boundary is mocked
+// and the logic worth testing — which note belongs to which affirmation, and
+// what is persisted — lives in hooks/useVoiceNote.js above it.
+jest.mock("expo-audio", () => ({
+  RecordingPresets: { HIGH_QUALITY: {} },
+  requestRecordingPermissionsAsync: jest.fn(async () => ({ granted: true })),
+  getRecordingPermissionsAsync: jest.fn(async () => ({ granted: true })),
+  setAudioModeAsync: jest.fn(async () => {}),
+  useAudioRecorder: () => ({
+    record: jest.fn(),
+    stop: jest.fn(async () => {}),
+    prepareToRecordAsync: jest.fn(async () => {}),
+    uri: "file:///tmp/recording.m4a",
+  }),
+  useAudioRecorderState: () => ({ isRecording: false, durationMillis: 0 }),
+  useAudioPlayer: () => ({
+    play: jest.fn(),
+    pause: jest.fn(),
+    seekTo: jest.fn(),
+    remove: jest.fn(),
+  }),
+  useAudioPlayerStatus: () => ({ playing: false }),
+}));
 
 // Local notifications bridge to the OS scheduler, so the boundary is mocked and
 // the schedulable logic is tested directly in lib/reminders.js.

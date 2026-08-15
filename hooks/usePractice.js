@@ -51,7 +51,9 @@ export function usePractice(affirmation, { target = DEFAULT_TARGET } = {}) {
       (entry) => entry.date === today && entry.affirmationId === affirmation.id,
     );
 
-    setSession(existing ?? startSession({ date: today, affirmationId: affirmation.id, target }));
+    setSession(
+      existing ?? startSession({ date: today, affirmationId: affirmation.id, target }),
+    );
   }, [affirmation?.id, history, today, target]);
 
   const rep = useCallback(async () => {
@@ -79,6 +81,9 @@ export function usePractice(affirmation, { target = DEFAULT_TARGET } = {}) {
 
   return {
     session,
+    /** The last 60 days, for the week strip — see components/PracticeWeek.jsx. */
+    history,
+    today,
     loading,
     complete: isComplete(session),
     practisedToday: practisedOn(history, today),

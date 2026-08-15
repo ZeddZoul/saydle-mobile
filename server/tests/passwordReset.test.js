@@ -113,13 +113,13 @@ describe("POST /api/auth/forgot-password", () => {
 
     await request(app).post("/api/auth/forgot-password").send({ email: user.email });
 
-    expect(await PasswordResetToken.countDocuments({ user: await userIdFor(user.email) })).toBe(1);
+    expect(await PasswordResetToken.countDocuments({ user: await userIdFor(user.email) })).toBe(
+      1,
+    );
   });
 
   it("creates nothing for an unknown address", async () => {
-    await request(app)
-      .post("/api/auth/forgot-password")
-      .send({ email: "nobody@example.com" });
+    await request(app).post("/api/auth/forgot-password").send({ email: "nobody@example.com" });
 
     expect(await PasswordResetToken.countDocuments()).toBe(0);
   });

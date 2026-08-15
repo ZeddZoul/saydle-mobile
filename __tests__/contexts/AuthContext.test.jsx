@@ -318,7 +318,10 @@ describe("AuthProvider — replaying offline writes", () => {
   });
 
   it("does not touch the network when there is nothing queued", async () => {
-    const outbox = makeOutbox({ pending: [], result: { pending: [], rejected: [], offline: false } });
+    const outbox = makeOutbox({
+      pending: [],
+      result: { pending: [], rejected: [], offline: false },
+    });
 
     const { result } = await renderAuth({ ...signedIn(), outbox });
     await waitFor(() => expect(result.current.isSignedIn).toBe(true));
@@ -342,7 +345,10 @@ describe("AuthProvider — replaying offline writes", () => {
   });
 
   it("queues a preference change made offline and keeps it on screen", async () => {
-    const outbox = makeOutbox({ pending: [], result: { pending: [], rejected: [], offline: false } });
+    const outbox = makeOutbox({
+      pending: [],
+      result: { pending: [], rejected: [], offline: false },
+    });
     const base = signedIn();
     const client = {
       ...base.client,
@@ -367,7 +373,10 @@ describe("AuthProvider — replaying offline writes", () => {
   });
 
   it("does not queue a preference change the server refused", async () => {
-    const outbox = makeOutbox({ pending: [], result: { pending: [], rejected: [], offline: false } });
+    const outbox = makeOutbox({
+      pending: [],
+      result: { pending: [], rejected: [], offline: false },
+    });
     const base = signedIn();
     const client = {
       ...base.client,
@@ -380,7 +389,9 @@ describe("AuthProvider — replaying offline writes", () => {
     await waitFor(() => expect(result.current.isSignedIn).toBe(true));
 
     await act(async () => {
-      await expect(result.current.updatePreferences({ tone: "nope" })).rejects.toThrow(ApiError);
+      await expect(result.current.updatePreferences({ tone: "nope" })).rejects.toThrow(
+        ApiError,
+      );
     });
 
     expect(outbox.add).not.toHaveBeenCalled();

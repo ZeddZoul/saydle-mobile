@@ -1,92 +1,89 @@
 import { Tabs } from "expo-router";
-import { Ionicons } from "@expo/vector-icons";
-import { useAppTheme } from "../../contexts/ThemeContext.jsx";
 import { useT } from "../../lib/i18n.js";
-import { colors, fonts } from "../../theme/tokens.js";
 
 /**
- * The root Stack hides its header for this whole group, so these headers come
- * from the Tabs navigator rather than a nested Stack — a nested Stack's header
- * options would be overridden and silently do nothing.
+ * Routing only. The navigator draws nothing.
  *
- * Chrome follows the active theme, so a dark theme doesn't leave a bright coral
- * header and a white tab bar stranded around it.
+ * A header bar and a tab bar cost about 170dp between them — a quarter of a
+ * phone screen, spent permanently on furniture, around a product whose whole
+ * content is one sentence. Both are gone: the backdrop now runs edge to edge and
+ * the controls float over it (components/FloatingChrome.jsx).
+ *
+ * The Tabs navigator stays because the routes and their state do — swapping it
+ * for a Stack would remount every screen on each move and lose scroll position
+ * in the library.
  */
 const DashboardLayout = () => {
   const { t } = useT();
-  const { theme } = useAppTheme();
-
-  // On a dark theme the chrome sits *with* the backdrop; on a light one the
-  // header stays the brand coral it has always been.
-  const headerBg = theme.dark ? theme.gradient[1] : theme.accent;
-  const headerTint = theme.dark ? theme.ink : colors.white;
-  const tabBg = theme.dark ? theme.gradient[1] : colors.white;
 
   return (
     <Tabs
+      // A Navigator prop, not a screen option — passing it in `screenOptions`
+      // is silently ignored and the bar stays exactly where it was. Rendering
+      // nothing rather than hiding it with `display: none`, because a hidden
+      // bar still reserves layout and every paged screen would then be laid out
+      // taller than the space it can actually use.
+      tabBar={() => null}
       screenOptions={{
-        headerStyle: { backgroundColor: headerBg },
-        headerTintColor: headerTint,
-        headerTitleAlign: "center",
-        headerShadowVisible: false,
-        headerTitleStyle: { fontFamily: fonts.displayBold, fontSize: 20 },
-        tabBarActiveTintColor: theme.accent,
-        tabBarInactiveTintColor: theme.sub,
-        tabBarStyle: {
-          backgroundColor: tabBg,
-          borderTopColor: theme.dark ? "rgba(255,255,255,0.08)" : "rgba(122,46,40,0.08)",
-          height: 88,
-          paddingTop: 8,
-        },
-        tabBarLabelStyle: { fontSize: 12, fontWeight: "600" },
+        headerShown: false,
+        sceneStyle: { backgroundColor: "transparent" },
       }}
     >
       <Tabs.Screen
         name="dashboard"
         options={{
           title: t("tabs.today"),
-          tabBarIcon: ({ color, size, focused }) => (
-            <Ionicons name={focused ? "sunny" : "sunny-outline"} size={size} color={color} />
-          ),
         }}
       />
       {/* Reached by tapping today's affirmation, not from the tab bar: it is a
           way of reading, not a section of the app. */}
-      <Tabs.Screen name="stream" options={{ href: null, headerShown: false }} />
+      <Tabs.Screen
+        name="stream"
+        options={{
+          href: null,
+          headerShown: false,
+          // `href: null` only hides it from the bar; the screen still renders
+          // inside the navigator. Without this the tab bar stays on screen and
+          // — worse — each page is laid out at full window height while the
+          // visible area is shorter, so paging drifts a little further off with
+          // every swipe.
+        }}
+      />
       {/* Reached from Profile: a place to go when you have something to write,
           not a fifth thing competing for the tab bar. */}
       <Tabs.Screen name="my-words" options={{ href: null, title: t("myWords.title") }} />
+      {/* Same treatment as the stream: paged full-screen, so the tab bar has to
+          go or every page is laid out taller than the visible area. */}
+      <Tabs.Screen
+        name="library"
+        options={{
+          href: null,
+          title: t("library.title"),
+        }}
+      />
       <Tabs.Screen
         name="practice"
         options={{
           title: t("tabs.practice"),
-          tabBarIcon: ({ color, size, focused }) => (
-            <Ionicons
-              name={focused ? "flower" : "flower-outline"}
-              size={size}
-              color={color}
-            />
-          ),
         }}
       />
       <Tabs.Screen
         name="favorites"
         options={{
           title: t("tabs.favorites"),
-          tabBarIcon: ({ color, size, focused }) => (
-            <Ionicons name={focused ? "heart" : "heart-outline"} size={size} color={color} />
-          ),
         }}
       />
       <Tabs.Screen
         name="profile"
         options={{
           title: t("tabs.profile"),
-          tabBarIcon: ({ color, size, focused }) => (
-            <Ionicons name={focused ? "person" : "person-outline"} size={size} color={color} />
-          ),
         }}
       />
+      {/* Both reached from the floating chrome's own buttons, so neither belongs
+          in the bar — and the bar draws nothing anyway. Registered explicitly so
+          the title is translated rather than inferred from the filename. */}
+      <Tabs.Screen name="themes" options={{ href: null, title: t("profile.theme") }} />
+      <Tabs.Screen name="billing" options={{ href: null, title: t("billing.title") }} />
     </Tabs>
   );
 };

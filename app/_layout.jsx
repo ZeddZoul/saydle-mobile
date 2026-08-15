@@ -12,9 +12,8 @@ import {
 } from "@expo-google-fonts/fraunces";
 import { AuthProvider, useAuth } from "../contexts/AuthContext.jsx";
 import { ToastProvider } from "../contexts/ToastContext.jsx";
-import { ThemeProvider } from "../contexts/ThemeContext.jsx";
+import { ThemeProvider, useAppTheme } from "../contexts/ThemeContext.jsx";
 import GradientBackground from "../components/GradientBackground.jsx";
-import { colors } from "../theme/tokens.js";
 
 // Hold the native splash until fonts are ready, so no screen flashes in the
 // system font before Fraunces loads.
@@ -28,6 +27,9 @@ SplashScreen.preventAutoHideAsync().catch(() => {});
  */
 const RootNavigator = () => {
   const { isLoading, isSignedIn } = useAuth();
+  // This screen renders inside ThemeProvider, so it can follow the reader's
+  // theme — the native splash before it cannot; see app.json.
+  const { theme } = useAppTheme();
   const segments = useSegments();
   const router = useRouter();
 
@@ -36,7 +38,6 @@ const RootNavigator = () => {
 
     const seg = segments[0];
     const inDashboard = seg === "(dashboard)";
-    const inOnboarding = seg === "onboarding";
 
     if (!isSignedIn) {
       // The onboarding flow IS the sign-up — the account isn't created until its
@@ -51,7 +52,7 @@ const RootNavigator = () => {
   if (isLoading) {
     return (
       <GradientBackground style={styles.splash} testID="auth-loading">
-        <ActivityIndicator size="large" color={colors.coral} />
+        <ActivityIndicator size="large" color={theme.accent} />
       </GradientBackground>
     );
   }

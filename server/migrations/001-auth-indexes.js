@@ -7,12 +7,8 @@
 export async function up(db) {
   await db.collection("users").createIndex({ email: 1 }, { unique: true });
 
-  await db
-    .collection("refreshtokens")
-    .createIndex({ tokenHash: 1 }, { unique: true });
+  await db.collection("refreshtokens").createIndex({ tokenHash: 1 }, { unique: true });
   await db.collection("refreshtokens").createIndex({ user: 1 });
   await db.collection("refreshtokens").createIndex({ family: 1 });
-  await db
-    .collection("refreshtokens")
-    .createIndex({ expiresAt: 1 }, { expireAfterSeconds: 0 });
+  await db.collection("refreshtokens").createIndex({ expiresAt: 1 }, { expireAfterSeconds: 0 });
 }

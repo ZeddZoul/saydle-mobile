@@ -72,9 +72,7 @@ export function useFeed() {
 
     setEntries((current) =>
       current.map((entry) =>
-        entry.date === today
-          ? { ...entry, seenAt: new Date().toISOString() }
-          : entry,
+        entry.date === today ? { ...entry, seenAt: new Date().toISOString() } : entry,
       ),
     );
 

@@ -97,7 +97,12 @@
     "signOut": "Cerrar sesión",
     "deleteAccount": "Eliminar cuenta",
     "deleteTitle": "Eliminar cuenta",
-    "deleteBody": "Esto elimina para siempre tu cuenta, tus afirmaciones y tus favoritos. No se puede deshacer.",
+    "deleteBody": "Tu cuenta se programará para eliminarse en {{days}} días. No se borra nada antes de esa fecha: vuelve a iniciar sesión cuando quieras para cancelar.",
+    "deleteBillingNotice": "Esto no cancela una suscripción de pago. Gestiónala en la App Store o en Play Store.",
+    "deletePasswordLabel": "Tu contraseña",
+    "deleteConfirmLabel": "Escribe {{email}} para confirmar",
+    "deleteSubmit": "Programar eliminación",
+    "deleteScheduled": "Tu cuenta se eliminará el {{date}}.",
     "cancel": "Cancelar",
     "delete": "Eliminar",
     "preferencesSaved": "Preferencias guardadas",
@@ -107,7 +112,8 @@
     "personalizationValue": "{{percent}} % personalizado",
     "personalizationHint": "Saydle pregunta una cosa más de vez en cuando. Cuanto más sabe, más suenan tus afirmaciones a algo escrito para ti.",
     "language": "Idioma",
-    "languageHint": "Cambia el idioma de la app y de tus próximas afirmaciones. Las de hoy se quedan como están."
+    "languageHint": "Cambia el idioma de la app y de tus próximas afirmaciones. Las de hoy se quedan como están.",
+    "yourStuff": "Lo tuyo"
   },
   "offline": {
     "banner": "Sin conexión: mostrando tus afirmaciones guardadas"
@@ -302,7 +308,9 @@
   "verify": {
     "eyebrow": "Confirma tu correo",
     "title": "¿Es correcto {{email}}?",
+    "titleAnonymous": "¿Es correcto tu correo?",
     "body": "Enviamos un código de seis dígitos a {{email}}. Confirmarlo es lo que nos permite ayudarte a entrar si olvidas la contraseña.",
+    "bodyAnonymous": "Te enviamos un código de seis dígitos. Confirmarlo es lo que nos permite ayudarte a volver a entrar si olvidas tu contraseña.",
     "resent": "Va en camino un código nuevo a {{email}}.",
     "code": "Código de confirmación",
     "codePlaceholder": "123456",
@@ -322,13 +330,34 @@
     "streak": "{{count}} días de práctica seguidos",
     "again": "Una vez más",
     "loading": "Buscando la afirmación de hoy…",
-    "nothing": "Todavía no hay nada que practicar. Abre Hoy primero."
+    "nothing": "Todavía no hay nada que practicar. Abre Hoy primero.",
+    "guided": "Guíame",
+    "guidedStop": "Parar",
+    "guidedHint": "Sigue el círculo. Cada vuelta cuenta una.",
+    "breatheIn": "Inhala",
+    "sayIt": "Dilo",
+    "letGo": "Suelta",
+    "next": "Otra frase",
+    "source": {
+      "today": "Hoy",
+      "saved": "Guardadas",
+      "mine": "Mías"
+    },
+    "voiceRecord": "Mi voz",
+    "voiceRedo": "Repetir",
+    "voicePlay": "Escuchar",
+    "voiceStop": "Detener grabación",
+    "voiceDiscardHint": "Mantén pulsado para borrar esta grabación",
+    "voiceDenied": "El micrófono está desactivado. Actívalo en Ajustes para grabar tu voz."
   },
   "tabs": {
     "today": "Hoy",
     "practice": "Práctica",
     "favorites": "Favoritos",
     "profile": "Perfil"
+  },
+  "chrome": {
+    "themes": "Temas"
   },
   "stream": {
     "today": "Hoy",
@@ -347,5 +376,66 @@
     "deleteTitle": "¿Eliminar esta?",
     "lockedTitle": "Escribe las tuyas",
     "lockedBody": "Añadir afirmaciones con tus propias palabras es parte de Saydle premium. Todo lo demás sigue funcionando igual."
+  },
+  "library": {
+    "title": "Biblioteca",
+    "save": "Guardar para después",
+    "saved": "Guardados",
+    "writing": "Escribiendo tu próxima colección…",
+    "empty": "Tu biblioteca se está preparando.",
+    "lockedTitle": "Tu biblioteca de afirmaciones",
+    "lockedBody": "Cientos de afirmaciones escritas para ti, para leer cuando una sola frase no basta. Parte de Saydle premium.",
+    "yourWords": "Tus palabras"
+  },
+  "share": {
+    "title": "Comparte esta frase",
+    "close": "Cerrar",
+    "shape": "Formato",
+    "square": "Cuadrado",
+    "story": "Historia",
+    "look": "Estilo",
+    "send": "Compartir"
+  },
+  "billing": {
+    "title": "Suscripción",
+    "statusFree": "Gratis",
+    "statusTrial": "Prueba gratuita",
+    "statusActive": "Suscrito",
+    "statusExpired": "Caducada",
+    "trialEnds": "Tu prueba termina el {{date}}.",
+    "renews": "Se renueva el {{date}}.",
+    "noExpiry": "Es tuyo — sin fecha de renovación.",
+    "freeHint": "Estás en el plan gratuito.",
+    "purchasedVia": "Comprado en",
+    "confirmed": "Confirmado con la tienda",
+    "notVerified": "Todavía no",
+    "upgrade": "Hazte premium",
+    "trialStarted": "Tu prueba gratuita ha comenzado.",
+    "purchased": "Ya estás suscrito. Gracias.",
+    "storeUnavailable": "Las compras aún no están disponibles en este dispositivo.",
+    "manage": "Gestionar o cancelar",
+    "manageHint": "Las suscripciones las gestiona la tienda de aplicaciones, así que los cambios y las cancelaciones se hacen allí.",
+    "openStore": "Abrir ajustes de la tienda",
+    "restore": "Restaurar compras",
+    "restored": "Compras restauradas.",
+    "storeFailed": "No se pudo abrir la tienda.",
+    "trialTitle": "Cómo funciona tu prueba gratuita",
+    "trialRunning": "Tu prueba gratuita",
+    "trialSubtitle": "Hoy no se te cobrará nada.",
+    "stepInstalled": "Instalar la app",
+    "stepInstalledHint": "Configurada según lo que nos contaste.",
+    "stepToday": "Hoy: acceso completo",
+    "stepTodayHint": "Todo desbloqueado, gratis durante {{days}} días.",
+    "stepRemind": "{{date}} — Aviso de la prueba",
+    "stepRemindHint": "Para que el final no te pille por sorpresa.",
+    "stepCharge": "{{date}} — Hazte miembro",
+    "stepChargeHint": "Tu prueba termina salvo que canceles antes.",
+    "restoreNothing": "No hay nada que restaurar en esta cuenta de la tienda.",
+    "restoreUnavailable": "Las compras aún no están configuradas en esta versión.",
+    "restoreSyncing": "Compra encontrada — aparecerá aquí en un momento.",
+    "restoreFailed": "No se pudo contactar con la tienda. Inténtalo de nuevo."
+  },
+  "themes": {
+    "preview": "Así se verá tu afirmación."
   }
 }

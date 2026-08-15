@@ -7,8 +7,7 @@ import { logger } from "../lib/logger.js";
 
 const REFRESH_TTL_MS = env.REFRESH_TOKEN_TTL_DAYS * 24 * 60 * 60 * 1000;
 
-const sha256 = (value) =>
-  crypto.createHash("sha256").update(value).digest("hex");
+const sha256 = (value) => crypto.createHash("sha256").update(value).digest("hex");
 
 export function signAccessToken(user) {
   return jwt.sign({ sub: user.id ?? user._id.toString() }, env.JWT_ACCESS_SECRET, {

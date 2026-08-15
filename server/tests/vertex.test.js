@@ -44,9 +44,8 @@ vi.mock("../src/config/env.js", async (importOriginal) => {
   };
 });
 
-const { generateAffirmations, __resetCacheState } = await import(
-  "../src/services/vertex.service.js"
-);
+const { generateAffirmations, __resetCacheState } =
+  await import("../src/services/vertex.service.js");
 
 /** The single user-facing prompt string in the outgoing request. */
 const sentPrompt = () => generateContent.mock.calls[0][0].contents[0].parts[0].text;

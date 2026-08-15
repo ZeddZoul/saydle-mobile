@@ -63,9 +63,7 @@ describe("createCache", () => {
 
     await cache.saveFavorites("u1", [{ affirmation: { id: "a1" } }]);
 
-    expect(await cache.loadFavorites("u1")).toEqual([
-      { affirmation: { id: "a1" } },
-    ]);
+    expect(await cache.loadFavorites("u1")).toEqual([{ affirmation: { id: "a1" } }]);
   });
 
   it("stores the last user unscoped, for offline bootstrap", async () => {
@@ -74,6 +72,29 @@ describe("createCache", () => {
     await cache.saveUser({ id: "u1", firstName: "Ada" });
 
     expect(await cache.loadUser()).toEqual({ id: "u1", firstName: "Ada" });
+  });
+
+  it("refuses to store a user with no identity", async () => {
+    const cache = createCache(makeStorage());
+    await cache.saveUser({ id: "u1", firstName: "Ada", email: "ada@example.com" });
+
+    // What a patch merged into a null user looks like. Letting this land wipes
+    // the name and address off a perfectly good account, and it persists — the
+    // app comes back saying "Hello" to nobody until /me can heal it.
+    await cache.saveUser({ preferences: { theme: "dawn" } });
+
+    expect(await cache.loadUser()).toEqual({
+      id: "u1",
+      firstName: "Ada",
+      email: "ada@example.com",
+    });
+  });
+
+  it("treats an identity-less record already on disk as a miss", async () => {
+    const storage = makeStorage();
+    await storage.setItem("saydle:v1:lastUser", JSON.stringify({ preferences: {} }));
+
+    expect(await createCache(storage).loadUser()).toBeNull();
   });
 
   it("clears everything belonging to a user", async () => {

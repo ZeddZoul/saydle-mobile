@@ -1,13 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import {
-  Animated,
-  Easing,
-  Pressable,
-  StyleSheet,
-  Text,
-  TextInput,
-  View,
-} from "react-native";
+import { Animated, Easing, Pressable, StyleSheet, Text, TextInput, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
 import DisplayText from "./DisplayText.jsx";
@@ -102,8 +94,7 @@ const ProfileNudge = ({ suggestion, completeness, onAnswer, onDismiss, style }) 
     );
   };
 
-  const canSave =
-    suggestion.kind === "multi" ? multi.length > 0 : text.trim().length > 0;
+  const canSave = suggestion.kind === "multi" ? multi.length > 0 : text.trim().length > 0;
 
   if (done) {
     return (
@@ -149,26 +140,19 @@ const ProfileNudge = ({ suggestion, completeness, onAnswer, onDismiss, style }) 
           placeholder={tf(`${qk}.placeholder`, question?.placeholder ?? t("nudge.placeholder"))}
           placeholderTextColor={colors.inkFaint}
           accessibilityLabel={title}
-          style={[
-            styles.input,
-            { color: theme.ink },
-            focused && styles.inputFocused,
-          ]}
+          style={[styles.input, { color: theme.ink }, focused && styles.inputFocused]}
         />
       ) : (
         <View style={styles.options}>
           {options.map((option) => {
-            const selected =
-              suggestion.kind === "multi" && multi.includes(option.value);
+            const selected = suggestion.kind === "multi" && multi.includes(option.value);
 
             return (
               <Pressable
                 key={option.value}
                 disabled={saving}
                 onPress={() =>
-                  suggestion.kind === "multi"
-                    ? toggleMulti(option.value)
-                    : submit(option.value)
+                  suggestion.kind === "multi" ? toggleMulti(option.value) : submit(option.value)
                 }
                 accessibilityRole={suggestion.kind === "multi" ? "checkbox" : "radio"}
                 accessibilityState={{ selected, checked: selected, disabled: saving }}

@@ -13,33 +13,39 @@ const OptionRow = ({ label, selected, multi = false, onPress, disabled = false }
   const { theme } = useAppTheme();
 
   return (
-  <Pressable
-    onPress={() => {
-      Haptics.selectionAsync().catch(() => {});
-      onPress();
-    }}
-    disabled={disabled}
-    accessibilityRole={multi ? "checkbox" : "radio"}
-    accessibilityState={{ selected, checked: selected, disabled }}
-    style={[
-      styles.row,
-      { borderColor: theme.border, backgroundColor: theme.surface },
-      selected && { borderColor: theme.accent, backgroundColor: theme.surfaceStrong },
-    ]}
-  >
-    <Text style={[styles.label, { color: theme.ink }, selected && [styles.labelSelected, { color: theme.accent }]]}>
-      {label}
-    </Text>
-    <View
+    <Pressable
+      onPress={() => {
+        Haptics.selectionAsync().catch(() => {});
+        onPress();
+      }}
+      disabled={disabled}
+      accessibilityRole={multi ? "checkbox" : "radio"}
+      accessibilityState={{ selected, checked: selected, disabled }}
       style={[
-        styles.indicator,
-        { borderColor: theme.border },
-        selected && { backgroundColor: theme.accent, borderColor: theme.accent },
+        styles.row,
+        { borderColor: theme.border, backgroundColor: theme.surface },
+        selected && { borderColor: theme.accent, backgroundColor: theme.surfaceStrong },
       ]}
     >
-      {selected ? <Ionicons name="checkmark" size={15} color={colors.white} /> : null}
-    </View>
-  </Pressable>
+      <Text
+        style={[
+          styles.label,
+          { color: theme.ink },
+          selected && [styles.labelSelected, { color: theme.accent }],
+        ]}
+      >
+        {label}
+      </Text>
+      <View
+        style={[
+          styles.indicator,
+          { borderColor: theme.border },
+          selected && { backgroundColor: theme.accent, borderColor: theme.accent },
+        ]}
+      >
+        {selected ? <Ionicons name="checkmark" size={15} color={colors.white} /> : null}
+      </View>
+    </Pressable>
   );
 };
 

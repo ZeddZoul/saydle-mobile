@@ -18,10 +18,7 @@ const Home = () => {
   return (
     <GradientBackground>
       <SafeAreaView style={styles.safe}>
-        <ScrollView
-          contentContainerStyle={styles.scroll}
-          showsVerticalScrollIndicator={false}
-        >
+        <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
           <View style={styles.hero}>
             <Sparkles />
             <DisplayText weight="bold" style={styles.wordmark}>
@@ -54,7 +51,10 @@ const Home = () => {
           </View>
 
           <View style={styles.actions}>
-            <Button title={t("landing.getStarted")} onPress={() => router.push("/onboarding")} />
+            <Button
+              title={t("landing.getStarted")}
+              onPress={() => router.push("/onboarding")}
+            />
             <Spacer height={spacing.md} />
             <Button
               title={t("landing.haveAccount")}

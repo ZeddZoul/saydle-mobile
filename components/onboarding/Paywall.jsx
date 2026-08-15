@@ -27,40 +27,40 @@ const Paywall = ({ onTrial, onSubscribe, canPurchase = false }) => {
   const { t } = useT();
 
   return (
-  <GradientBackground>
-    <SafeAreaView style={styles.safe}>
-      <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
-        <View style={styles.header}>
-          <DisplayText weight="bold" style={styles.title}>
-            {t("paywall.title")}
-          </DisplayText>
-          <Text style={styles.subtitle}>{t("paywall.subtitle")}</Text>
-        </View>
+    <GradientBackground>
+      <SafeAreaView style={styles.safe}>
+        <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
+          <View style={styles.header}>
+            <DisplayText weight="bold" style={styles.title}>
+              {t("paywall.title")}
+            </DisplayText>
+            <Text style={styles.subtitle}>{t("paywall.subtitle")}</Text>
+          </View>
 
-        <View style={styles.perks}>
-          {PERK_KEYS.map((key) => (
-            <View key={key} style={styles.perk}>
-              <Ionicons name="checkmark-circle" size={22} color={colors.coral} />
-              <Text style={styles.perkText}>{t(key)}</Text>
-            </View>
-          ))}
-        </View>
-      </ScrollView>
+          <View style={styles.perks}>
+            {PERK_KEYS.map((key) => (
+              <View key={key} style={styles.perk}>
+                <Ionicons name="checkmark-circle" size={22} color={colors.coral} />
+                <Text style={styles.perkText}>{t(key)}</Text>
+              </View>
+            ))}
+          </View>
+        </ScrollView>
 
-      <View style={styles.footer}>
-        <Text style={styles.price}>{t("paywall.price")}</Text>
-        <Button title={t("paywall.trial")} onPress={onTrial} />
-        <Spacer height={spacing.md} />
-        {/* Hidden until there is something to actually buy: an unset RevenueCat
+        <View style={styles.footer}>
+          <Text style={styles.price}>{t("paywall.price")}</Text>
+          <Button title={t("paywall.trial")} onPress={onTrial} />
+          <Spacer height={spacing.md} />
+          {/* Hidden until there is something to actually buy: an unset RevenueCat
             key means tapping this could only ever fall through to the trial,
             and a button that silently does something else is worse than no
             button. */}
-        {canPurchase ? (
-          <Button title={t("paywall.subscribe")} variant="secondary" onPress={onSubscribe} />
-        ) : null}
-      </View>
-    </SafeAreaView>
-  </GradientBackground>
+          {canPurchase ? (
+            <Button title={t("paywall.subscribe")} variant="secondary" onPress={onSubscribe} />
+          ) : null}
+        </View>
+      </SafeAreaView>
+    </GradientBackground>
   );
 };
 

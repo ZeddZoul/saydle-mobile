@@ -1,25 +1,29 @@
 import { useEffect, useState } from "react";
-import { Alert, Pressable, ScrollView, StyleSheet, Switch, Text, View } from "react-native";
+import { Pressable, ScrollView, StyleSheet, Switch, Text, View } from "react-native";
 import * as Haptics from "expo-haptics";
-import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import GradientBackground from "../../components/GradientBackground.jsx";
+import FloatingHeader, {
+  FLOATING_HEADER_INSET,
+} from "../../components/FloatingHeader.jsx";
 import DisplayText from "../../components/DisplayText.jsx";
+import Tile from "../../components/Tile.jsx";
 import Button from "../../components/Button";
 import Spacer from "../../components/Spacer";
 import ReminderSetup from "../../components/onboarding/ReminderSetup.jsx";
-import ThemePicker from "../../components/ThemePicker.jsx";
 import LanguagePicker from "../../components/LanguagePicker.jsx";
 import CompletenessMeter from "../../components/CompletenessMeter.jsx";
 import ProfileNudge from "../../components/ProfileNudge.jsx";
+import DeleteAccountSheet from "../../components/DeleteAccountSheet.jsx";
 import { useAppTheme } from "../../contexts/ThemeContext.jsx";
 import { useAuth } from "../../contexts/AuthContext.jsx";
 import { useToast } from "../../contexts/ToastContext.jsx";
 import { useReminders } from "../../hooks/useReminders.js";
 import { useProfileNudge } from "../../hooks/useProfileNudge.js";
 import { useLocale } from "../../hooks/useLocale.js";
+import { DELETION_GRACE_DAYS } from "../../lib/config.js";
 import { messageFor, NetworkError } from "../../lib/errors.js";
-import { useT } from "../../lib/i18n.js";
+import { t as tNow, useT } from "../../lib/i18n.js";
 import { colors, radius, shadow, spacing, type } from "../../theme/tokens.js";
 
 const TONES = [
@@ -56,11 +60,13 @@ const Profile = () => {
   const reminders = useReminders();
   const nudge = useProfileNudge();
   const language = useLocale();
-  const { theme, setTheme } = useAppTheme();
+  // Theme lives on its own screen now — Profile only reads the colours.
+  const { theme } = useAppTheme();
 
   const [categories, setCategories] = useState([]);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState(null);
+  const [deleting, setDeleting] = useState(false);
   // Local copy so the slider moves smoothly; committed on release.
   const [draft, setDraft] = useState(reminders.settings);
 
@@ -134,7 +140,11 @@ const Profile = () => {
     setSaving(true);
     try {
       await language.setLocale(next);
-      toast.success(t("profile.preferencesSaved"));
+      // `tNow` rather than the subscribed `t`: this closure captured `t` from
+      // the render *before* the switch, so using it would confirm a change to
+      // Spanish in English. The bare export reads the current language at call
+      // time, which is what a confirmation of this particular action needs.
+      toast.success(tNow("profile.preferencesSaved"));
     } catch (err) {
       toast.error(messageFor(err));
     } finally {
@@ -142,43 +152,22 @@ const Profile = () => {
     }
   };
 
-  const onChangeTheme = async (slug) => {
-    setSaving(true);
-    try {
-      await setTheme(slug);
-    } catch {
-      toast.error(t("common.saveFailed"));
-    } finally {
-      setSaving(false);
-    }
-  };
-
-  const confirmDelete = () => {
-    Alert.alert(
-      t("profile.deleteTitle"),
-      t("profile.deleteBody"),
-      [
-        { text: t("profile.cancel"), style: "cancel" },
-        {
-          text: t("profile.delete"),
-          style: "destructive",
-          onPress: async () => {
-            try {
-              await deleteAccount();
-            } catch (err) {
-              setError(err);
-            }
-          },
-        },
-      ],
-    );
-  };
+  // A system Alert cannot take two fields, and it cannot say the thing this
+  // screen most needs to say — that nothing is destroyed today.
+  const confirmDelete = () => setDeleting(true);
 
   return (
     <GradientBackground>
+      <FloatingHeader title={t("tabs.profile")} />
+
       <ScrollView contentContainerStyle={styles.container} showsVerticalScrollIndicator={false}>
         <View style={styles.identity}>
-          <View style={[styles.avatar, { backgroundColor: theme.accent, shadowColor: theme.accent }]}>
+          <View
+            style={[
+              styles.avatar,
+              { backgroundColor: theme.accent, shadowColor: theme.accent },
+            ]}
+          >
             <DisplayText weight="bold" style={styles.avatarText}>
               {initialsOf(user)}
             </DisplayText>
@@ -221,7 +210,9 @@ const Profile = () => {
         ) : null}
 
         <View style={[styles.card, { backgroundColor: theme.surface }]}>
-          <DisplayText style={[styles.sectionTitle, { color: theme.ink }]}>{t("profile.tone")}</DisplayText>
+          <DisplayText style={[styles.sectionTitle, { color: theme.ink }]}>
+            {t("profile.tone")}
+          </DisplayText>
           <View style={styles.row}>
             {TONES.map((tone) => (
               <Chip
@@ -237,7 +228,9 @@ const Profile = () => {
         </View>
 
         <View style={[styles.card, { backgroundColor: theme.surface }]}>
-          <DisplayText style={[styles.sectionTitle, { color: theme.ink }]}>{t("profile.categories")}</DisplayText>
+          <DisplayText style={[styles.sectionTitle, { color: theme.ink }]}>
+            {t("profile.categories")}
+          </DisplayText>
           {categories.length === 0 ? (
             <Text style={[styles.hint, { color: theme.sub }]}>
               {t(offline ? "profile.categoriesOffline" : "profile.categoriesLoading")}
@@ -256,9 +249,7 @@ const Profile = () => {
               ))}
             </View>
           )}
-          <Text style={[styles.hint, { color: theme.sub }]}>
-            {t("profile.categoriesHint")}
-          </Text>
+          <Text style={[styles.hint, { color: theme.sub }]}>{t("profile.categoriesHint")}</Text>
         </View>
 
         <View style={[styles.card, { backgroundColor: theme.surface }]}>
@@ -274,14 +265,10 @@ const Profile = () => {
         </View>
 
         <View style={[styles.card, { backgroundColor: theme.surface }]}>
-          <DisplayText style={[styles.sectionTitle, { color: theme.ink }]}>{t("profile.theme")}</DisplayText>
-          <ThemePicker value={theme.slug} onChange={onChangeTheme} disabled={saving} />
-          <Text style={[styles.hint, { color: theme.sub }]}>{t("profile.themeHint")}</Text>
-        </View>
-
-        <View style={[styles.card, { backgroundColor: theme.surface }]}>
           <View style={styles.reminderHeader}>
-            <DisplayText style={[styles.sectionTitle, { color: theme.ink }]}>{t("profile.reminders")}</DisplayText>
+            <DisplayText style={[styles.sectionTitle, { color: theme.ink }]}>
+              {t("profile.reminders")}
+            </DisplayText>
             <Switch
               value={reminders.settings.enabled}
               onValueChange={onToggleReminders}
@@ -311,34 +298,59 @@ const Profile = () => {
               </Text>
             </>
           ) : (
-            <Text style={[styles.hint, { color: theme.sub }]}>{t("profile.remindersIdle")}</Text>
+            <Text style={[styles.hint, { color: theme.sub }]}>
+              {t("profile.remindersIdle")}
+            </Text>
           )}
         </View>
 
-        <Pressable
-          onPress={() => router.push("/my-words")}
-          accessibilityRole="button"
-          style={[styles.card, styles.linkRow, { backgroundColor: theme.surface }]}
-        >
-          <View style={styles.linkText}>
-            <DisplayText style={[styles.sectionTitle, styles.linkTitle, { color: theme.ink }]}>
-              {t("myWords.title")}
-            </DisplayText>
-            <Text style={[styles.hint, styles.linkHint, { color: theme.sub }]}>
-              {t("myWords.prompt")}
-            </Text>
-          </View>
-          <Ionicons name="chevron-forward" size={20} color={theme.sub} />
-        </Pressable>
+        {/* The places you can go, drawn rather than listed. Only destinations
+            belong here — the sections above hold controls, and mixing the two
+            in one grid is what makes a settings screen unreadable. */}
+        <DisplayText style={[styles.sectionTitle, styles.gridTitle, { color: theme.ink }]}>
+          {t("profile.yourStuff")}
+        </DisplayText>
+        <View style={styles.grid}>
+          <Tile
+            art="myWords" label={t("myWords.title")} testID="tile-my-words"
+            onPress={() => router.push("/my-words")}
+          />
+          <Tile
+            art="favorites" label={t("tabs.favorites")} testID="tile-favorites"
+            onPress={() => router.push("/favorites")}
+          />
+        </View>
+        <View style={styles.grid}>
+          <Tile
+            art="theme" label={t("profile.theme")} testID="tile-themes"
+            onPress={() => router.push("/themes")}
+          />
+          <Tile
+            art="subscription" label={t("billing.title")} testID="tile-billing"
+            onPress={() => router.push("/billing")}
+          />
+        </View>
 
         <Spacer height={spacing.xl} />
 
         <Button title={t("profile.signOut")} onPress={signOut} variant="secondary" />
 
-        <Pressable onPress={confirmDelete} accessibilityRole="button" style={styles.deleteButton}>
+        <Pressable
+          onPress={confirmDelete}
+          accessibilityRole="button"
+          style={styles.deleteButton}
+        >
           <Text style={styles.deleteText}>{t("profile.deleteAccount")}</Text>
         </Pressable>
       </ScrollView>
+
+      <DeleteAccountSheet
+        visible={deleting}
+        email={user?.email}
+        graceDays={DELETION_GRACE_DAYS}
+        onClose={() => setDeleting(false)}
+        onConfirm={deleteAccount}
+      />
     </GradientBackground>
   );
 };
@@ -350,6 +362,10 @@ const styles = StyleSheet.create({
     padding: spacing.xl,
     // Clear the tab bar (≈88pt) with breathing room below Delete account.
     paddingBottom: 112,
+    // Clears the floating header, which overlays rather than occupies.
+    // Declared after any `padding` shorthand: that shorthand resets
+    // paddingTop, so ordering here is load-bearing.
+    paddingTop: FLOATING_HEADER_INSET,
   },
   identity: {
     alignItems: "center",
@@ -402,6 +418,8 @@ const styles = StyleSheet.create({
   linkText: {
     flex: 1,
   },
+  gridTitle: { marginTop: spacing.md, marginBottom: spacing.sm },
+  grid: { flexDirection: "row", gap: spacing.md, marginBottom: spacing.md },
   linkTitle: {
     marginBottom: 2,
   },

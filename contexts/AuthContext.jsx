@@ -27,6 +27,15 @@ export function AuthProvider({
   const [status, setStatus] = useState(LOADING);
   const [user, setUser] = useState(null);
   const [offline, setOffline] = useState(false);
+
+  // The account as of *now*, not as of the render this callback was built in.
+  //
+  // Sign-up and the funnel's first preference write happen in the same tick:
+  // `user` in the memo below is still the previous render's value — null — so
+  // merging into it silently drops the identity that had just arrived. Reading
+  // through a ref is what makes "merge into the current account" mean it.
+  const current = useRef(null);
+  current.current = user;
   // Bumped after a flush that actually replayed something, so the data hooks
   // can refetch and stop showing purely optimistic state.
   const [syncToken, setSyncToken] = useState(0);
@@ -198,8 +207,8 @@ export function AuthProvider({
         setStatus(SIGNED_OUT);
       },
 
-      async deleteAccount() {
-        await client.deleteAccount();
+      async deleteAccount(confirmation) {
+        await client.deleteAccount(confirmation);
         await store.clear();
         await cache.clear(user?.id);
         clearWidget();
@@ -220,13 +229,14 @@ export function AuthProvider({
       async updatePreferences(patch) {
         try {
           const result = await client.updatePreferences(patch);
+          const account = current.current;
           const next = {
-            ...user,
+            ...account,
             preferences: result.preferences,
             timezone: result.timezone,
             // Top-level on the user, not inside preferences — it selects the
             // safety rules and curated bank, so the server owns it.
-            locale: result.locale ?? user?.locale,
+            locale: result.locale ?? account?.locale,
           };
           setUser(next);
           await cache.saveUser(next);
@@ -238,13 +248,14 @@ export function AuthProvider({
 
           // Unreachable: keep the change, replay it later. A tone or reminder
           // window chosen on a plane is still the user's choice.
-          await outbox.add(user?.id, ops.preferences(patch));
+          const account = current.current;
+          await outbox.add(account?.id, ops.preferences(patch));
 
           const { locale, ...prefPatch } = patch;
           const next = {
-            ...user,
-            preferences: { ...user?.preferences, ...prefPatch },
-            locale: locale ?? user?.locale,
+            ...account,
+            preferences: { ...account?.preferences, ...prefPatch },
+            locale: locale ?? account?.locale,
           };
           setUser(next);
           await cache.saveUser(next);
@@ -253,6 +264,10 @@ export function AuthProvider({
         }
       },
     }),
+    // adoptSession is intentionally omitted: it is redeclared every render, so
+    // including it would rebuild this whole value on every render and defeat the
+    // memo. It only ever reads `store`/`cache`, both of which are dependencies.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     [status, user, offline, client, store, cache, outbox, syncToken],
   );
 

@@ -152,7 +152,9 @@ const OnboardingStep = ({ question, value, onChange, onNext, onBack, onSkip, isF
               {
                 opacity: enter,
                 transform: [
-                  { translateY: enter.interpolate({ inputRange: [0, 1], outputRange: [18, 0] }) },
+                  {
+                    translateY: enter.interpolate({ inputRange: [0, 1], outputRange: [18, 0] }),
+                  },
                 ],
               },
             ]}
@@ -162,7 +164,10 @@ const OnboardingStep = ({ question, value, onChange, onNext, onBack, onSkip, isF
               keyboardShouldPersistTaps="handled"
               showsVerticalScrollIndicator={false}
             >
-              <DisplayText weight="bold" style={[styles.title, centered && styles.centeredText]}>
+              <DisplayText
+                weight="bold"
+                style={[styles.title, centered && styles.centeredText]}
+              >
                 {title}
               </DisplayText>
               {subtitle ? (
@@ -220,7 +225,10 @@ const OnboardingStep = ({ question, value, onChange, onNext, onBack, onSkip, isF
                         setTextareaHeight(
                           Math.min(
                             TEXTAREA_MAX_HEIGHT,
-                            Math.max(TEXTAREA_MIN_HEIGHT, e.nativeEvent.contentSize.height + 24),
+                            Math.max(
+                              TEXTAREA_MIN_HEIGHT,
+                              e.nativeEvent.contentSize.height + 24,
+                            ),
                           ),
                         )
                       }
@@ -289,11 +297,7 @@ const OnboardingStep = ({ question, value, onChange, onNext, onBack, onSkip, isF
 
         {question.kind !== "single" ? (
           <View style={styles.footer}>
-            <Button
-              title={cta}
-              onPress={handleNext}
-              disabled={!canContinue}
-            />
+            <Button title={cta} onPress={handleNext} disabled={!canContinue} />
           </View>
         ) : null}
       </SafeAreaView>

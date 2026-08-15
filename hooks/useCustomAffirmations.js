@@ -14,7 +14,11 @@ import { useSubscription } from "./useSubscription.js";
  */
 export function useCustomAffirmations() {
   const { user, client } = useAuth();
-  const { entitled, loading: checkingEntitlement } = useSubscription();
+  const {
+    entitled,
+    loading: checkingEntitlement,
+    refresh: refreshSubscription,
+  } = useSubscription();
   const userId = user?.id;
 
   const [affirmations, setAffirmations] = useState([]);
@@ -80,5 +84,10 @@ export function useCustomAffirmations() {
     create,
     remove,
     reload: load,
+    /** Entitlement first, then the list — the list is pointless without it. */
+    refresh: useCallback(async () => {
+      await refreshSubscription();
+      await load();
+    }, [refreshSubscription, load]),
   };
 }

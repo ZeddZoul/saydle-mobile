@@ -6,7 +6,6 @@ import { User } from "../src/models/User.js";
 import {
   applyWebhookEvent,
   isEntitled,
-  serializeSubscription,
   startTrial,
 } from "../src/services/subscription.service.js";
 
@@ -33,7 +32,9 @@ describe("isEntitled", () => {
   });
 
   it("says yes during a live trial and no once it passes", () => {
-    expect(isEntitled({ subscription: { status: "trialing", trialEndsAt: ahead(DAY) } })).toBe(true);
+    expect(isEntitled({ subscription: { status: "trialing", trialEndsAt: ahead(DAY) } })).toBe(
+      true,
+    );
     // Derived from the date, so a trial that lapsed overnight is simply over —
     // there is no sweep job to forget to run.
     expect(isEntitled({ subscription: { status: "trialing", trialEndsAt: behind(DAY) } })).toBe(
@@ -42,8 +43,12 @@ describe("isEntitled", () => {
   });
 
   it("says yes for a live subscription and no for a lapsed one", () => {
-    expect(isEntitled({ subscription: { status: "active", expiresAt: ahead(DAY) } })).toBe(true);
-    expect(isEntitled({ subscription: { status: "active", expiresAt: behind(DAY) } })).toBe(false);
+    expect(isEntitled({ subscription: { status: "active", expiresAt: ahead(DAY) } })).toBe(
+      true,
+    );
+    expect(isEntitled({ subscription: { status: "active", expiresAt: behind(DAY) } })).toBe(
+      false,
+    );
   });
 
   it("says yes for a purchase with no expiry at all", () => {
@@ -52,7 +57,9 @@ describe("isEntitled", () => {
   });
 
   it("says no for an expired status regardless of dates", () => {
-    expect(isEntitled({ subscription: { status: "expired", expiresAt: ahead(DAY) } })).toBe(false);
+    expect(isEntitled({ subscription: { status: "expired", expiresAt: ahead(DAY) } })).toBe(
+      false,
+    );
   });
 });
 

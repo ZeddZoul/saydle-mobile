@@ -97,7 +97,12 @@
     "signOut": "Sign out",
     "deleteAccount": "Delete account",
     "deleteTitle": "Delete account",
-    "deleteBody": "This permanently deletes your account, your affirmations, and your favorites. It cannot be undone.",
+    "deleteBody": "Your account will be scheduled for deletion in {{days}} days. Nothing is removed before then — sign back in any time to cancel.",
+    "deleteBillingNotice": "This does not cancel a paid subscription. Manage that in the App Store or Play Store.",
+    "deletePasswordLabel": "Your password",
+    "deleteConfirmLabel": "Type {{email}} to confirm",
+    "deleteSubmit": "Schedule deletion",
+    "deleteScheduled": "Your account is scheduled for deletion on {{date}}.",
     "cancel": "Cancel",
     "delete": "Delete",
     "preferencesSaved": "Preferences saved",
@@ -107,7 +112,8 @@
     "personalizationValue": "{{percent}}% personalized",
     "personalizationHint": "Saydle asks for one more thing now and then. The more it knows, the more your affirmations sound like they were written for you.",
     "language": "Language",
-    "languageHint": "Changes the app and the affirmations ahead. Today stays as it is."
+    "languageHint": "Changes the app and the affirmations ahead. Today stays as it is.",
+    "yourStuff": "Your stuff"
   },
   "offline": {
     "banner": "Offline — showing your saved affirmations"
@@ -150,7 +156,9 @@
   "verify": {
     "eyebrow": "Confirm your email",
     "title": "Is {{email}} right?",
+    "titleAnonymous": "Is your email right?",
     "body": "We sent a six-digit code to {{email}}. Confirming it is what lets us help you back in if you forget your password.",
+    "bodyAnonymous": "We sent you a six-digit code. Confirming it is what lets us help you back in if you forget your password.",
     "resent": "A new code is on its way to {{email}}.",
     "code": "Confirmation code",
     "codePlaceholder": "123456",
@@ -170,13 +178,34 @@
     "streak": "{{count}} days of practice in a row",
     "again": "Once more",
     "loading": "Finding today's affirmation…",
-    "nothing": "Nothing to practise yet. Open Today first."
+    "nothing": "Nothing to practise yet. Open Today first.",
+    "guided": "Guide me",
+    "guidedStop": "Stop",
+    "guidedHint": "Follow the ring. Each round counts one.",
+    "breatheIn": "Breathe in",
+    "sayIt": "Say it",
+    "letGo": "Let go",
+    "next": "Another line",
+    "source": {
+      "today": "Today",
+      "saved": "Saved",
+      "mine": "Mine"
+    },
+    "voiceRecord": "My voice",
+    "voiceRedo": "Redo",
+    "voicePlay": "Play mine",
+    "voiceStop": "Stop recording",
+    "voiceDiscardHint": "Press and hold to delete this recording",
+    "voiceDenied": "Microphone access is off. Turn it on in Settings to record your voice."
   },
   "tabs": {
     "today": "Today",
     "practice": "Practice",
     "favorites": "Favorites",
     "profile": "Profile"
+  },
+  "chrome": {
+    "themes": "Themes"
   },
   "stream": {
     "today": "Today",
@@ -195,5 +224,66 @@
     "deleteTitle": "Delete this one?",
     "lockedTitle": "Write your own",
     "lockedBody": "Adding affirmations in your own words is part of Saydle premium. Everything else keeps working exactly as it is."
+  },
+  "library": {
+    "title": "Library",
+    "save": "Save for later",
+    "saved": "Saved",
+    "writing": "Writing your next set…",
+    "empty": "Your library is being prepared.",
+    "lockedTitle": "Your affirmation library",
+    "lockedBody": "Hundreds of affirmations written for you, to scroll whenever one line isn't enough. Part of Saydle premium.",
+    "yourWords": "Your words"
+  },
+  "share": {
+    "title": "Share this line",
+    "close": "Close",
+    "shape": "Shape",
+    "square": "Square",
+    "story": "Story",
+    "look": "Look",
+    "send": "Share"
+  },
+  "billing": {
+    "title": "Subscription",
+    "statusFree": "Free",
+    "statusTrial": "Free trial",
+    "statusActive": "Subscribed",
+    "statusExpired": "Expired",
+    "trialEnds": "Your trial ends {{date}}.",
+    "renews": "Renews {{date}}.",
+    "noExpiry": "Yours to keep — no renewal date.",
+    "freeHint": "You're on the free plan.",
+    "purchasedVia": "Purchased via",
+    "confirmed": "Confirmed with store",
+    "notVerified": "Not yet",
+    "upgrade": "Go premium",
+    "trialStarted": "Your free trial has started.",
+    "purchased": "You're subscribed — thank you.",
+    "storeUnavailable": "Purchases aren't available on this device yet.",
+    "manage": "Manage or cancel",
+    "manageHint": "Subscriptions are handled by the app store, so changing or cancelling happens there.",
+    "openStore": "Open store settings",
+    "restore": "Restore purchases",
+    "restored": "Purchases restored.",
+    "storeFailed": "Couldn't open the store.",
+    "trialTitle": "How your free trial works",
+    "trialRunning": "Your free trial",
+    "trialSubtitle": "You won't be charged anything today.",
+    "stepInstalled": "Install the app",
+    "stepInstalledHint": "Set up around what you told us.",
+    "stepToday": "Today: full access",
+    "stepTodayHint": "Everything unlocked, free for {{days}} days.",
+    "stepRemind": "{{date}} — Trial reminder",
+    "stepRemindHint": "So the end doesn't arrive unannounced.",
+    "stepCharge": "{{date}} — Become a member",
+    "stepChargeHint": "Your trial ends unless you cancel before then.",
+    "restoreNothing": "Nothing to restore on this store account.",
+    "restoreUnavailable": "Purchases aren't set up on this build yet.",
+    "restoreSyncing": "Found your purchase — it'll appear here in a moment.",
+    "restoreFailed": "Couldn't reach the store. Try again in a moment."
+  },
+  "themes": {
+    "preview": "This is how your affirmation will look."
   }
 }

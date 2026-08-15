@@ -98,6 +98,58 @@ const userSchema = new mongoose.Schema(
     // Optional, ever-expandable personalization collected after signup via
     // progressive nudges. Every field is optional; none gates the app.
     profile: { type: profileSubSchema, default: () => ({}) },
+
+    /**
+     * Where they are in the scrollable library.
+     *
+     * A position, not a set. The batch is an ordered list, so "what have they
+     * seen" is answered by one integer rather than by a row per line — which is
+     * what makes forty-new-a-day cost nothing to track. `batchAt` is what makes
+     * a batch stale; `generatingUntil` is the same cross-instance claim the
+     * daily replenish uses, for the same reason.
+     */
+    library: {
+      cursor: { type: Number, default: 0 },
+      batchAt: { type: Date, default: null },
+      // Snapshot of profile completeness when the batch was written, so drift
+      // can be measured against it later.
+      batchProfilePercent: { type: Number, default: 0 },
+      generatingUntil: { type: Date, default: null },
+    },
+
+    /**
+     * Set when someone asks to leave; cleared if they change their mind.
+     *
+     * Both fields move together and are the *only* record of a pending
+     * deletion — there is no boolean, because a flag and a date can disagree
+     * and then nobody knows which one the purge should believe.
+     *
+     * The account stays fully usable while these are set. See
+     * config/deletion.js for why.
+     */
+    deletion: {
+      requestedAt: { type: Date, default: null },
+      // Indexed: the purge job's only query is "whose date has passed".
+      purgeAfter: { type: Date, default: null, index: true },
+      // Stamped when the day-25 nudge goes out, so it goes out once.
+      remindedAt: { type: Date, default: null },
+    },
+
+    /**
+     * Whoever is currently generating this reader's next batch, and until when.
+     *
+     * Topping the pool up is expensive and slow, and every read tries to start
+     * it. One process can dedupe that in memory; two cannot see each other's
+     * memory, so behind a load balancer each instance would bill us for the
+     * same batch. This is the claim they all compete for — see
+     * `affirmation.service.js`.
+     *
+     * A deadline rather than a boolean, because a process that dies mid-batch
+     * must not lock a reader out of generation forever. It is never read
+     * directly: `null` and "expired" mean the same thing, so only the atomic
+     * claim interprets it.
+     */
+    replenishingUntil: { type: Date, default: null },
   },
   {
     timestamps: true,
@@ -118,6 +170,15 @@ const userSchema = new mongoose.Schema(
           };
         }
 
+        // Every authenticated response carries this, which is what lets the app
+        // raise "you asked us to delete this — keep it?" the moment someone
+        // signs back in. `remindedAt` is ours, not theirs, and stays server-side.
+        ret.deletion = {
+          pending: Boolean(ret.deletion?.purgeAfter),
+          requestedAt: ret.deletion?.requestedAt ?? null,
+          purgeAfter: ret.deletion?.purgeAfter ?? null,
+        };
+
         return ret;
       },
     },
@@ -126,9 +187,7 @@ const userSchema = new mongoose.Schema(
 
 userSchema.methods.verifyPassword = function verifyPassword(plaintext) {
   if (!this.passwordHash) {
-    throw new Error(
-      "passwordHash not loaded — select it explicitly before verifying",
-    );
+    throw new Error("passwordHash not loaded — select it explicitly before verifying");
   }
   return argonVerify(this.passwordHash, plaintext);
 };

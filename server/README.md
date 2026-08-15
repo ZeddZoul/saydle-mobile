@@ -26,12 +26,12 @@ The API listens on `http://localhost:4000`.
 
 ## Scripts
 
-| Command | What it does |
-|---|---|
-| `pnpm dev` | Watch-mode server, loads `.env` via Node's native `--env-file` |
-| `pnpm start` | Production entry (expects env vars to be set by the platform) |
-| `pnpm test` | Vitest + Supertest against an in-memory MongoDB |
-| `pnpm migrate` | Applies pending migrations, records them in `_migrations` |
+| Command        | What it does                                                   |
+| -------------- | -------------------------------------------------------------- |
+| `pnpm dev`     | Watch-mode server, loads `.env` via Node's native `--env-file` |
+| `pnpm start`   | Production entry (expects env vars to be set by the platform)  |
+| `pnpm test`    | Vitest + Supertest against an in-memory MongoDB                |
+| `pnpm migrate` | Applies pending migrations, records them in `_migrations`      |
 
 The first `pnpm test` downloads a ~66 MB mongod binary and caches it.
 
@@ -39,28 +39,28 @@ The first `pnpm test` downloads a ~66 MB mongod binary and caches it.
 
 All responses are JSON. Errors are always `{ error: { code, message, details? } }`.
 
-| Method | Path | Auth | Purpose |
-|---|---|---|---|
-| `GET` | `/healthz` | — | Liveness + DB reachability (503 when Mongo is down) |
-| `POST` | `/api/auth/register` | — | Create account, returns user + token pair |
-| `POST` | `/api/auth/login` | — | Returns user + token pair |
-| `POST` | `/api/auth/refresh` | — | Rotates a refresh token, returns a new pair |
-| `POST` | `/api/auth/logout` | — | Revokes one refresh token (always 204) |
-| `GET` | `/api/auth/me` | Bearer | Current user |
-| `DELETE` | `/api/auth/me` | Bearer | Deletes the account and every session |
-| `POST` | `/api/auth/forgot-password` | — | Emails a six-digit reset code. **Always 204** |
-| `POST` | `/api/auth/reset-password` | — | Consumes the code, sets the password, revokes all sessions |
-| `GET` | `/api/affirmations/today` | Bearer | Today's entry, in the user's timezone |
-| `GET` | `/api/affirmations/feed?days=30` | Bearer | **Offline sync** — scheduled days with text embedded |
-| `POST` | `/api/affirmations/feed/:date/seen` | Bearer | Marks a day seen (idempotent) |
-| `GET` | `/api/affirmations/favorites` | Bearer | Favorites, newest first |
-| `PUT` | `/api/affirmations/:id/favorite` | Bearer | Adds a favorite (idempotent) |
-| `DELETE` | `/api/affirmations/:id/favorite` | Bearer | Removes a favorite (idempotent) |
-| `GET` | `/api/categories` | Bearer | Active categories |
-| `GET` / `PATCH` | `/api/preferences` | Bearer | Read / update core personalization + timezone |
-| `GET` | `/api/streak` | Bearer | Current/longest streak + the current Mon–Sun week |
-| `GET` | `/api/profile` | Bearer | Progressive profile + completeness score + next nudge suggestions |
-| `PATCH` | `/api/profile` | Bearer | Update optional profile fields (`null` clears one) |
+| Method          | Path                                | Auth   | Purpose                                                           |
+| --------------- | ----------------------------------- | ------ | ----------------------------------------------------------------- |
+| `GET`           | `/healthz`                          | —      | Liveness + DB reachability (503 when Mongo is down)               |
+| `POST`          | `/api/auth/register`                | —      | Create account, returns user + token pair                         |
+| `POST`          | `/api/auth/login`                   | —      | Returns user + token pair                                         |
+| `POST`          | `/api/auth/refresh`                 | —      | Rotates a refresh token, returns a new pair                       |
+| `POST`          | `/api/auth/logout`                  | —      | Revokes one refresh token (always 204)                            |
+| `GET`           | `/api/auth/me`                      | Bearer | Current user                                                      |
+| `DELETE`        | `/api/auth/me`                      | Bearer | Deletes the account and every session                             |
+| `POST`          | `/api/auth/forgot-password`         | —      | Emails a six-digit reset code. **Always 204**                     |
+| `POST`          | `/api/auth/reset-password`          | —      | Consumes the code, sets the password, revokes all sessions        |
+| `GET`           | `/api/affirmations/today`           | Bearer | Today's entry, in the user's timezone                             |
+| `GET`           | `/api/affirmations/feed?days=30`    | Bearer | **Offline sync** — scheduled days with text embedded              |
+| `POST`          | `/api/affirmations/feed/:date/seen` | Bearer | Marks a day seen (idempotent)                                     |
+| `GET`           | `/api/affirmations/favorites`       | Bearer | Favorites, newest first                                           |
+| `PUT`           | `/api/affirmations/:id/favorite`    | Bearer | Adds a favorite (idempotent)                                      |
+| `DELETE`        | `/api/affirmations/:id/favorite`    | Bearer | Removes a favorite (idempotent)                                   |
+| `GET`           | `/api/categories`                   | Bearer | Active categories                                                 |
+| `GET` / `PATCH` | `/api/preferences`                  | Bearer | Read / update core personalization + timezone                     |
+| `GET`           | `/api/streak`                       | Bearer | Current/longest streak + the current Mon–Sun week                 |
+| `GET`           | `/api/profile`                      | Bearer | Progressive profile + completeness score + next nudge suggestions |
+| `PATCH`         | `/api/profile`                      | Bearer | Update optional profile fields (`null` clears one)                |
 
 ## Password reset
 
@@ -129,7 +129,7 @@ back at them.
 `src/prompts/affirmation.prompt.js` is split deliberately. `SYSTEM_PROMPT` is the **cacheable
 prefix**: identical for every user and every request. `buildUserPrompt()` is the per-request tail
 holding everything that varies. A context cache is a shared prefix and cannot hold per-user data, so
-never move personalization into `SYSTEM_PROMPT` — it would break caching *and* create an injection
+never move personalization into `SYSTEM_PROMPT` — it would break caching _and_ create an injection
 surface. Editing `SYSTEM_PROMPT` invalidates the cache; bump `PROMPT_VERSION` when you do.
 
 User-supplied focus text is delimiter-wrapped, labelled as data, newline-collapsed, and truncated
@@ -156,8 +156,7 @@ account stops working immediately rather than at token expiry.
 ## Conventions
 
 - Throw `AppError.badRequest(...)` / `.unauthorized(...)` etc. for anything the client should see.
-  Anything else that escapes a handler is treated as a bug: logged with a stack, returned as a bare
-  500.
+  Anything else that escapes a handler is treated as a bug: logged with a stack, returned as a bare 500.
 - Validate every request body with a zod schema in `src/validators/` via the `validate()` middleware.
   Schemas are `.strict()`, so unknown fields are a 400 rather than something to silently ignore.
 - Never add a secret-bearing field without adding it to the `redact` list in `src/lib/logger.js`.

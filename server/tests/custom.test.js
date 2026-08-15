@@ -94,7 +94,10 @@ describe("POST /api/affirmations/custom", () => {
     await entitle();
     const text = "I can begin again on a Tuesday.";
 
-    await request(app).post("/api/affirmations/custom").set("Authorization", auth).send({ text });
+    await request(app)
+      .post("/api/affirmations/custom")
+      .set("Authorization", auth)
+      .send({ text });
     const again = await request(app)
       .post("/api/affirmations/custom")
       .set("Authorization", auth)
@@ -148,7 +151,10 @@ describe("GET /api/affirmations/custom", () => {
     await entitle();
 
     for (const text of ["First one written.", "Second one written."]) {
-      await request(app).post("/api/affirmations/custom").set("Authorization", auth).send({ text });
+      await request(app)
+        .post("/api/affirmations/custom")
+        .set("Authorization", auth)
+        .send({ text });
     }
 
     const res = await request(app).get("/api/affirmations/custom").set("Authorization", auth);
@@ -219,5 +225,76 @@ describe("DELETE /api/affirmations/custom/:id", () => {
       .delete("/api/affirmations/custom/507f1f77bcf86cd799439011")
       .set("Authorization", auth)
       .expect(404);
+  });
+});
+
+describe("the boundary around my words", () => {
+  it("turns a crisis-adjacent line away at the door, kindly", async () => {
+    const { registerUser } = await import("./helpers.js");
+    const { User } = await import("../src/models/User.js");
+    const { startTrial } = await import("../src/services/subscription.service.js");
+    const request = (await import("supertest")).default;
+    const { createApp } = await import("../src/app.js");
+    const app = createApp();
+
+    const { auth, user } = await registerUser(app, { email: "door@example.com" });
+    const account = await User.findById(user.id);
+    startTrial(account);
+    await account.save();
+
+    const res = await request(app)
+      .post("/api/affirmations/custom")
+      .set("authorization", auth)
+      // Violence toward others, not self-harm: the original patterns only knew
+      // "kill myself", and this exact sentence walked through onto a widget.
+      .send({ text: "I can kill as much as I want" });
+
+    expect(res.status).toBe(400);
+    expect(res.body.error.message).toMatch(/talk to someone/i);
+  });
+
+  it("never schedules one that got in before the screen knew its shape", async () => {
+    const { registerUser } = await import("./helpers.js");
+    const { ensureFeed, getFeed } = await import("../src/services/affirmation.service.js");
+    const { User } = await import("../src/models/User.js");
+    const { Affirmation } = await import("../src/models/Affirmation.js");
+    const { startTrial } = await import("../src/services/subscription.service.js");
+    const request = (await import("supertest")).default;
+    const { createApp } = await import("../src/app.js");
+    const app = createApp();
+
+    const { auth, user } = await registerUser(app, { email: "legacy@example.com" });
+    const account = await User.findById(user.id);
+    startTrial(account);
+    await account.save();
+
+    // A row created before the violence patterns existed — inserted directly,
+    // because the API (correctly) refuses it now. Patterns will keep widening;
+    // rows stored under yesterday's rules must still never reach the widget.
+    await Affirmation.create({
+      text: "I can kill as much as I want",
+      textKey: "i can kill as much as i want",
+      categorySlug: "general",
+      source: "custom",
+      user: account._id,
+      locale: "en",
+    });
+    await request(app)
+      .post("/api/affirmations/custom")
+      .set("authorization", auth)
+      .send({ text: "I show up for my morning run" })
+      .expect(201);
+
+    const fresh = await User.findById(user.id);
+    await ensureFeed(fresh, { days: 14 });
+    const texts = (await getFeed(fresh, { days: 14 })).map((e) => e.affirmation?.text);
+
+    expect(texts).not.toContain("I can kill as much as I want");
+    // The feature survives the safety net: benign words still join the days.
+    expect(texts).toContain("I show up for my morning run");
+
+    // And the legacy line is still theirs, untouched, in the private list.
+    const mine = await request(app).get("/api/affirmations/custom").set("authorization", auth);
+    expect(mine.body.affirmations.map((a) => a.text)).toContain("I can kill as much as I want");
   });
 });

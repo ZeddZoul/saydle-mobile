@@ -35,6 +35,15 @@ const affirmationSchema = new mongoose.Schema(
     // Which version of SYSTEM_PROMPT produced this, so a prompt change can be
     // traced to the content it created.
     promptVersion: { type: Number, default: null },
+
+    /**
+     * Part of the reader's current scrollable batch.
+     *
+     * Set false rather than deleted when a line is retired: one they hearted or
+     * bookmarked has to survive leaving the scroll, or refilling would quietly
+     * empty their collection. The daily feed never sets this.
+     */
+    library: { type: Boolean, default: false, index: true },
   },
   { timestamps: true },
 );
@@ -59,4 +68,5 @@ affirmationSchema.set("toJSON", {
   },
 });
 
-export const Affirmation = mongoose.models.Affirmation ?? mongoose.model("Affirmation", affirmationSchema);
+export const Affirmation =
+  mongoose.models.Affirmation ?? mongoose.model("Affirmation", affirmationSchema);

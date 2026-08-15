@@ -24,14 +24,10 @@ async function main() {
   await ledger.createIndex({ name: 1 }, { unique: true });
 
   const applied = new Set(
-    (await ledger.find({}, { projection: { name: 1 } }).toArray()).map(
-      (d) => d.name,
-    ),
+    (await ledger.find({}, { projection: { name: 1 } }).toArray()).map((d) => d.name),
   );
 
-  const files = (await readdir(here))
-    .filter((f) => /^\d{3}-.+\.js$/.test(f))
-    .sort();
+  const files = (await readdir(here)).filter((f) => /^\d{3}-.+\.js$/.test(f)).sort();
 
   let ran = 0;
   for (const file of files) {

@@ -57,11 +57,7 @@ describe("the reminders step", () => {
     const onChange = jest.fn();
     const view = await renderStep({ question, value: undefined, onChange });
 
-    await fireEvent(
-      await view.findByLabelText("Reminders per day"),
-      "valueChange",
-      7,
-    );
+    await fireEvent(await view.findByLabelText("Reminders per day"), "valueChange", 7);
 
     expect(onChange).toHaveBeenCalledWith(expect.objectContaining({ count: 7 }));
   });
@@ -82,7 +78,13 @@ describe("the reminder control in settings (compact)", () => {
 
   it("drops the notification preview", async () => {
     const view = await render(
-      wrap(<ReminderSetup compact value={{ count: 3, start: "09:00", end: "22:00" }} onChange={() => {}} />),
+      wrap(
+        <ReminderSetup
+          compact
+          value={{ count: 3, start: "09:00", end: "22:00" }}
+          onChange={() => {}}
+        />,
+      ),
     );
 
     expect(await view.findByText("How many")).toBeTruthy();

@@ -23,9 +23,7 @@ describe("GET /api/affirmations/today", () => {
   it("schedules and returns an affirmation for a brand new user", async () => {
     const { auth } = await registerUser(app);
 
-    const res = await request(app)
-      .get("/api/affirmations/today")
-      .set("authorization", auth);
+    const res = await request(app).get("/api/affirmations/today").set("authorization", auth);
 
     expect(res.status).toBe(200);
     expect(res.body.entry.affirmation.text).toEqual(expect.any(String));
@@ -35,12 +33,8 @@ describe("GET /api/affirmations/today", () => {
   it("returns the same affirmation on every call that day", async () => {
     const { auth } = await registerUser(app);
 
-    const first = await request(app)
-      .get("/api/affirmations/today")
-      .set("authorization", auth);
-    const second = await request(app)
-      .get("/api/affirmations/today")
-      .set("authorization", auth);
+    const first = await request(app).get("/api/affirmations/today").set("authorization", auth);
+    const second = await request(app).get("/api/affirmations/today").set("authorization", auth);
 
     expect(second.body.entry.affirmation.id).toBe(first.body.entry.affirmation.id);
   });
@@ -48,9 +42,7 @@ describe("GET /api/affirmations/today", () => {
   it("never leaks the owning user id", async () => {
     const { auth } = await registerUser(app);
 
-    const res = await request(app)
-      .get("/api/affirmations/today")
-      .set("authorization", auth);
+    const res = await request(app).get("/api/affirmations/today").set("authorization", auth);
 
     expect(res.body.entry.affirmation).not.toHaveProperty("user");
     expect(res.body.entry.affirmation).not.toHaveProperty("textKey");
@@ -185,9 +177,7 @@ describe("POST /api/affirmations/feed/:date/seen", () => {
 
 describe("favorites", () => {
   const todaysAffirmation = async (auth) => {
-    const res = await request(app)
-      .get("/api/affirmations/today")
-      .set("authorization", auth);
+    const res = await request(app).get("/api/affirmations/today").set("authorization", auth);
     return res.body.entry.affirmation.id;
   };
 
@@ -196,7 +186,8 @@ describe("favorites", () => {
     const id = await todaysAffirmation(auth);
 
     expect(
-      (await request(app).put(`/api/affirmations/${id}/favorite`).set("authorization", auth)).status,
+      (await request(app).put(`/api/affirmations/${id}/favorite`).set("authorization", auth))
+        .status,
     ).toBe(204);
 
     const listed = await request(app)
@@ -206,7 +197,8 @@ describe("favorites", () => {
     expect(listed.body.favorites[0].affirmation.id).toBe(id);
 
     expect(
-      (await request(app).delete(`/api/affirmations/${id}/favorite`).set("authorization", auth)).status,
+      (await request(app).delete(`/api/affirmations/${id}/favorite`).set("authorization", auth))
+        .status,
     ).toBe(204);
 
     const empty = await request(app)
@@ -283,9 +275,7 @@ describe("GET /api/categories", () => {
   it("lists the active categories in order", async () => {
     const { auth } = await registerUser(app);
 
-    const res = await request(app)
-      .get("/api/categories")
-      .set("authorization", auth);
+    const res = await request(app).get("/api/categories").set("authorization", auth);
 
     expect(res.status).toBe(200);
     expect(res.body.categories.length).toBeGreaterThan(0);
@@ -298,9 +288,7 @@ describe("preferences", () => {
   it("returns defaults for a new user", async () => {
     const { auth } = await registerUser(app);
 
-    const res = await request(app)
-      .get("/api/preferences")
-      .set("authorization", auth);
+    const res = await request(app).get("/api/preferences").set("authorization", auth);
 
     expect(res.status).toBe(200);
     expect(res.body.preferences.tone).toBe("grounded");
@@ -340,10 +328,12 @@ describe("preferences", () => {
     ).toBe(400);
 
     expect(
-      (await request(app)
-        .patch("/api/preferences")
-        .set("authorization", auth)
-        .send({ isAdmin: true })).status,
+      (
+        await request(app)
+          .patch("/api/preferences")
+          .set("authorization", auth)
+          .send({ isAdmin: true })
+      ).status,
     ).toBe(400);
   });
 

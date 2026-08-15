@@ -18,36 +18,16 @@ affirmationRouter.use(requireAuth);
 
 affirmationRouter.get("/today", ctrl.today);
 affirmationRouter.get("/feed", validate(feedQuerySchema, "query"), ctrl.feed);
-affirmationRouter.get(
-  "/history",
-  validate(historyQuerySchema, "query"),
-  ctrl.history,
-);
-affirmationRouter.post(
-  "/feed/:date/seen",
-  validate(dateParamSchema, "params"),
-  ctrl.markSeen,
-);
+affirmationRouter.get("/history", validate(historyQuerySchema, "query"), ctrl.history);
+affirmationRouter.post("/feed/:date/seen", validate(dateParamSchema, "params"), ctrl.markSeen);
 
 // Declared before "/:id/favorite" so "custom" is never read as an id.
 affirmationRouter.get("/custom", custom.listCustom);
-affirmationRouter.post(
-  "/custom",
-  validate(customAffirmationSchema),
-  custom.createCustom,
-);
-affirmationRouter.delete(
-  "/custom/:id",
-  validate(idParamSchema, "params"),
-  custom.deleteCustom,
-);
+affirmationRouter.post("/custom", validate(customAffirmationSchema), custom.createCustom);
+affirmationRouter.delete("/custom/:id", validate(idParamSchema, "params"), custom.deleteCustom);
 
 affirmationRouter.get("/favorites", ctrl.listFavorites);
-affirmationRouter.put(
-  "/:id/favorite",
-  validate(idParamSchema, "params"),
-  ctrl.addFavorite,
-);
+affirmationRouter.put("/:id/favorite", validate(idParamSchema, "params"), ctrl.addFavorite);
 affirmationRouter.delete(
   "/:id/favorite",
   validate(idParamSchema, "params"),

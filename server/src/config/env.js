@@ -11,19 +11,13 @@ const bool = (defaultValue) =>
 // loudly, rather than surface as a confusing 500 three days from now.
 const schema = z
   .object({
-    NODE_ENV: z
-      .enum(["development", "test", "production"])
-      .default("development"),
+    NODE_ENV: z.enum(["development", "test", "production"]).default("development"),
     PORT: z.coerce.number().int().positive().default(4000),
 
     MONGODB_URI: z.string().min(1, "MONGODB_URI is required"),
 
-    JWT_ACCESS_SECRET: z
-      .string()
-      .min(32, "JWT_ACCESS_SECRET must be at least 32 characters"),
-    JWT_REFRESH_SECRET: z
-      .string()
-      .min(32, "JWT_REFRESH_SECRET must be at least 32 characters"),
+    JWT_ACCESS_SECRET: z.string().min(32, "JWT_ACCESS_SECRET must be at least 32 characters"),
+    JWT_REFRESH_SECRET: z.string().min(32, "JWT_REFRESH_SECRET must be at least 32 characters"),
 
     ACCESS_TOKEN_TTL: z.string().default("15m"),
     REFRESH_TOKEN_TTL_DAYS: z.coerce.number().int().positive().default(30),
@@ -50,7 +44,18 @@ const schema = z
     // 2.5 models regardless, at no storage cost.
     AI_EXPLICIT_CACHE: bool(false),
     AI_CACHE_TTL_SECONDS: z.coerce.number().int().positive().default(3600),
-    AI_TIMEOUT_MS: z.coerce.number().int().positive().default(30_000),
+    // Generous because generation is background work that nothing waits on —
+    // the read path was split away from it precisely so this can be slow. A
+    // 240-line batch measured 44-68s; 30s silently aborted every one of them.
+    AI_TIMEOUT_MS: z.coerce.number().int().positive().default(120_000),
+    // Measured, not guessed. A 240-line batch needs ~7k visible tokens, and the
+    // cap has to cover thinking too — it is spent from the same budget. 4096
+    // silently truncated to an EMPTY candidate, which reads as "blocked".
+    AI_MAX_OUTPUT_TOKENS: z.coerce.number().int().positive().default(16_384),
+    // Thinking is billed as output and dominated the bill: ~4200 tokens on a
+    // 240-line batch uncapped, 773 capped — same batch, 24s faster, no loss in
+    // moderation pass rate. 0 disables the cap and lets the model think freely.
+    AI_THINKING_BUDGET: z.coerce.number().int().min(0).default(1024),
 
     // --- Feed --------------------------------------------------------------
     // Keep at least this many future days scheduled per active user, so the
@@ -83,9 +88,7 @@ if (!parsed.success) {
 export const env = parsed.data;
 
 if (env.JWT_ACCESS_SECRET === env.JWT_REFRESH_SECRET) {
-  console.error(
-    "JWT_ACCESS_SECRET and JWT_REFRESH_SECRET must be different values.",
-  );
+  console.error("JWT_ACCESS_SECRET and JWT_REFRESH_SECRET must be different values.");
   process.exit(1);
 }
 

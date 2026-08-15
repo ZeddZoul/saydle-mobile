@@ -11,6 +11,7 @@ import {
   categoryRouter,
   preferencesRouter,
 } from "./routes/affirmation.routes.js";
+import { libraryRouter } from "./routes/library.routes.js";
 import { profileRouter } from "./routes/profile.routes.js";
 import { streakRouter } from "./routes/streak.routes.js";
 import { subscriptionRouter } from "./routes/subscription.routes.js";
@@ -41,14 +42,13 @@ export function createApp() {
 
   app.get("/healthz", (_req, res) => {
     const dbUp = mongoose.connection.readyState === 1;
-    res
-      .status(dbUp ? 200 : 503)
-      .json({ status: dbUp ? "ok" : "degraded", db: dbUp });
+    res.status(dbUp ? 200 : 503).json({ status: dbUp ? "ok" : "degraded", db: dbUp });
   });
 
   app.use("/api/auth", authRouter);
   app.use("/api/affirmations", affirmationRouter);
   app.use("/api/categories", categoryRouter);
+  app.use("/api/library", libraryRouter);
   app.use("/api/preferences", preferencesRouter);
   app.use("/api/profile", profileRouter);
   app.use("/api/streak", streakRouter);

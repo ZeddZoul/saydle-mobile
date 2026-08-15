@@ -76,7 +76,8 @@ export function applyWebhookEvent(user, event, { now = new Date() } = {}) {
     return false;
   }
 
-  const entitlements = event.entitlement_ids ?? (event.entitlement_id ? [event.entitlement_id] : []);
+  const entitlements =
+    event.entitlement_ids ?? (event.entitlement_id ? [event.entitlement_id] : []);
   if (entitlements.length > 0 && !entitlements.includes(ENTITLEMENT_ID)) {
     logger.info({ entitlements }, "ignoring event for another entitlement");
     return false;

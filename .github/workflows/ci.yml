@@ -1,0 +1,77 @@
+name: CI
+
+on:
+  push:
+    branches: [master, main]
+  pull_request:
+
+# A new push to the same branch makes the in-flight run pointless.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  check:
+    name: Lint, format, and both test suites
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          # Read from packageManager in package.json so CI and local never drift.
+          run_install: false
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+
+      # --frozen-lockfile: a lockfile that doesn't match package.json is a
+      # mistake to catch here, not something to paper over by resolving fresh.
+      - name: Install
+        run: pnpm install --frozen-lockfile
+
+      # --max-warnings 0: the codebase is clean today, and the only way it stays
+      # that way is if a warning fails the build like an error does.
+      - name: Lint
+        run: pnpm lint --max-warnings 0
+
+      - name: Format
+        run: pnpm format:check
+
+      - name: Mobile tests
+        run: pnpm test -- --ci
+
+      # Spins up its own in-memory MongoDB, so there is no service container to
+      # configure and nothing to clean up.
+      - name: API tests
+        run: pnpm api:test
+
+  bundle:
+    name: Metro bundles clean
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          run_install: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+
+      - name: Install
+        run: pnpm install --frozen-lockfile
+
+      # Catches what unit tests cannot: a bad import, a missing asset, a native
+      # module that breaks the JS bundle. Runs separately so a bundling failure
+      # is legible on its own rather than buried in the test job.
+      - name: Export
+        run: npx expo export --platform ios
+        env:
+          EXPO_NO_TELEMETRY: "1"

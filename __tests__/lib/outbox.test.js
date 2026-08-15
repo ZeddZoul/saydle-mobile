@@ -61,7 +61,8 @@ describe("enqueue", () => {
 
   it("drops the oldest rather than growing without bound", () => {
     let queue = [];
-    for (let i = 0; i < MAX_QUEUED + 5; i += 1) queue = enqueue(queue, ops.favorite(`a${i}`, true));
+    for (let i = 0; i < MAX_QUEUED + 5; i += 1)
+      queue = enqueue(queue, ops.favorite(`a${i}`, true));
 
     expect(queue).toHaveLength(MAX_QUEUED);
     expect(queue[0].key).toBe("favorite:a5");
@@ -80,10 +81,7 @@ describe("drain", () => {
   });
 
   it("stops at the first unreachable server and keeps the rest in order", async () => {
-    const perform = jest
-      .fn()
-      .mockResolvedValueOnce(undefined)
-      .mockImplementationOnce(offline);
+    const perform = jest.fn().mockResolvedValueOnce(undefined).mockImplementationOnce(offline);
 
     const queue = [ops.favorite("a1", true), ops.seen("2026-08-05"), ops.profile({ x: 1 })];
     const result = await drain(queue, perform);
@@ -196,9 +194,7 @@ describe("createOutbox", () => {
 
   it("replays each write once when several screens flush at the same time", async () => {
     const cache = makeCache();
-    const markSeen = jest.fn(
-      () => new Promise((resolve) => setTimeout(resolve, 5)),
-    );
+    const markSeen = jest.fn(() => new Promise((resolve) => setTimeout(resolve, 5)));
     const outbox = createOutbox({ cache, client: { markSeen } });
 
     await outbox.add("u1", ops.seen("2026-08-05"));

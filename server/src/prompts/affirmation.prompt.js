@@ -99,8 +99,7 @@ const AGE_PHRASE = {
   "55+": "in their mid-fifties or older",
 };
 
-const humanList = (arr) =>
-  (arr ?? []).map((s) => String(s).replace(/-/g, " ")).join(", ");
+const humanList = (arr) => (arr ?? []).map((s) => String(s).replace(/-/g, " ")).join(", ");
 
 /**
  * Turns the structured profile into a few plain-language context lines for the
@@ -214,9 +213,7 @@ export function buildUserPrompt({
   if (tone) lines.push(`Preferred tone: ${tone}.`);
 
   if (displayName) {
-    lines.push(
-      `The reader's first name is "${sanitize(displayName)}". Use it at most once.`,
-    );
+    lines.push(`The reader's first name is "${sanitize(displayName)}". Use it at most once.`);
   }
 
   const profileLines = describeProfile(profile);

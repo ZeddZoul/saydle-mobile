@@ -129,7 +129,10 @@ describe("useFavorites", () => {
     expect(result.current.offline).toBe(true);
     // And it is queued, so the server finds out on the next flush.
     expect(cache.saveOutbox).toHaveBeenCalledWith("u1", [
-      expect.objectContaining({ kind: "favorite", payload: { affirmationId: "a1", favorite: true } }),
+      expect.objectContaining({
+        kind: "favorite",
+        payload: { affirmationId: "a1", favorite: true },
+      }),
     ]);
   });
 
@@ -143,9 +146,7 @@ describe("useFavorites", () => {
     await waitFor(() => expect(result.current.loading).toBe(false));
 
     await act(async () => {
-      await expect(
-        result.current.toggle(affirmation("a1")),
-      ).rejects.toBeInstanceOf(ApiError);
+      await expect(result.current.toggle(affirmation("a1"))).rejects.toBeInstanceOf(ApiError);
     });
 
     // A real rejection must not leave the UI claiming a favorite that isn't saved.

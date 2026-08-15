@@ -1,8 +1,4 @@
-import {
-  validateEmail,
-  validateLogin,
-  hasErrors,
-} from "../../lib/validation.js";
+import { validateEmail, validateLogin, hasErrors } from "../../lib/validation.js";
 
 describe("validateEmail", () => {
   it("accepts a normal address", () => {

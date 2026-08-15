@@ -49,9 +49,7 @@ async function main() {
 
   const apiKey = process.env.DEEPL_API_KEY;
   if (!apiKey) {
-    console.error(
-      "DEEPL_API_KEY is not set. Get a free key at https://www.deepl.com/pro-api",
-    );
+    console.error("DEEPL_API_KEY is not set. Get a free key at https://www.deepl.com/pro-api");
     process.exit(1);
   }
 
@@ -100,7 +98,9 @@ async function main() {
 
     const translated = Array.isArray(source) ? output : output[0];
 
-    if (!placeholdersIntact(source, Array.isArray(translated) ? translated.join(" ") : translated)) {
+    if (
+      !placeholdersIntact(source, Array.isArray(translated) ? translated.join(" ") : translated)
+    ) {
       skipped.push(keyPath);
       continue;
     }

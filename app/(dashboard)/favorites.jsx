@@ -1,14 +1,10 @@
-import {
-  ActivityIndicator,
-  FlatList,
-  Pressable,
-  StyleSheet,
-  Text,
-  View,
-} from "react-native";
+import { ActivityIndicator, FlatList, Pressable, StyleSheet, Text, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
 import GradientBackground from "../../components/GradientBackground.jsx";
+import FloatingHeader, {
+  FLOATING_HEADER_INSET,
+} from "../../components/FloatingHeader.jsx";
 import DisplayText from "../../components/DisplayText.jsx";
 import OfflineBanner from "../../components/OfflineBanner";
 import { useFavorites } from "../../hooks/useFavorites.js";
@@ -24,6 +20,8 @@ const Favorites = () => {
   if (loading) {
     return (
       <GradientBackground style={styles.centered} testID="favorites-loading">
+      <FloatingHeader title={t("tabs.favorites")} />
+
         <ActivityIndicator size="large" color={theme.accent} />
       </GradientBackground>
     );
@@ -36,6 +34,8 @@ const Favorites = () => {
 
   return (
     <GradientBackground>
+      <FloatingHeader title={t("tabs.favorites")} />
+
       <OfflineBanner visible={offline} />
 
       <FlatList
@@ -82,6 +82,10 @@ const styles = StyleSheet.create({
   list: {
     padding: spacing.lg,
     gap: spacing.md,
+    // Clears the floating header, which overlays rather than occupies.
+    // Declared after any `padding` shorthand: that shorthand resets
+    // paddingTop, so ordering here is load-bearing.
+    paddingTop: FLOATING_HEADER_INSET,
   },
   emptyList: {
     flexGrow: 1,

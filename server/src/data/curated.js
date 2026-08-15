@@ -10,11 +10,26 @@
 export const CATEGORIES = [
   { slug: "self-worth", name: "Self-worth", order: 1, description: "Being enough as you are." },
   { slug: "calm", name: "Calm", order: 2, description: "Slowing down and settling." },
-  { slug: "confidence", name: "Confidence", order: 3, description: "Trusting yourself to act." },
-  { slug: "gratitude", name: "Gratitude", order: 4, description: "Noticing what is already here." },
+  {
+    slug: "confidence",
+    name: "Confidence",
+    order: 3,
+    description: "Trusting yourself to act.",
+  },
+  {
+    slug: "gratitude",
+    name: "Gratitude",
+    order: 4,
+    description: "Noticing what is already here.",
+  },
   { slug: "resilience", name: "Resilience", order: 5, description: "Getting back up." },
   { slug: "focus", name: "Focus", order: 6, description: "One thing at a time." },
-  { slug: "relationships", name: "Relationships", order: 7, description: "Honesty and closeness." },
+  {
+    slug: "relationships",
+    name: "Relationships",
+    order: 7,
+    description: "Honesty and closeness.",
+  },
   { slug: "morning", name: "Morning", order: 8, description: "Starting the day well." },
   { slug: "rest", name: "Rest", order: 9, description: "Permission to stop." },
   { slug: "growth", name: "Growth", order: 10, description: "Becoming, slowly." },
@@ -158,11 +173,9 @@ const ES = [
 
 const BANKS = { en: EN, es: ES };
 
-export const CURATED_AFFIRMATIONS = Object.entries(BANKS).flatMap(
-  ([locale, lines]) =>
-    lines.map(([categorySlug, text]) => ({ categorySlug, text, locale })),
+export const CURATED_AFFIRMATIONS = Object.entries(BANKS).flatMap(([locale, lines]) =>
+  lines.map(([categorySlug, text]) => ({ categorySlug, text, locale })),
 );
 
 /** The bank for one language, for tests and for the seed. */
-export const curatedFor = (locale) =>
-  CURATED_AFFIRMATIONS.filter((a) => a.locale === locale);
+export const curatedFor = (locale) => CURATED_AFFIRMATIONS.filter((a) => a.locale === locale);

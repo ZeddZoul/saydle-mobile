@@ -47,12 +47,24 @@ describe("with the widget module present", () => {
     widget.syncWidget({ entries, theme: getTheme("dawn"), today: TODAY });
 
     expect(module.setWidgetData).toHaveBeenCalledTimes(1);
-    const [json, , name] = module.setWidgetData.mock.calls[0];
+    const [json] = module.setWidgetData.mock.calls[0];
     const payload = JSON.parse(json);
 
-    expect(name).toBe("SaydleWidget");
     expect(payload.days[0].text).toBe("I am allowed to start small.");
     expect(payload.theme.accent).toBe(getTheme("dawn").accent);
+  });
+
+  it("addresses the App Group and key the iOS module reads", () => {
+    const module = fake();
+    const widget = loadFresh({ module });
+
+    widget.syncWidget({ entries, theme: getTheme("dawn"), today: TODAY });
+
+    // The `.expowidgets` suffix is fixed by the plugin; any other value writes
+    // into a container the widget never reads, and nothing reports an error.
+    const [, group, key] = module.setWidgetData.mock.calls[0];
+    expect(group).toBe("group.com.saydle.app.expowidgets");
+    expect(key).toBe("SaydleWidget");
   });
 
   it("does not rewrite an unchanged snapshot", () => {

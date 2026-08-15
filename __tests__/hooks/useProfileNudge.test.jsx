@@ -7,7 +7,13 @@ import { todayLocal, addDays } from "../../lib/dates.js";
 const USER = { id: "u1", firstName: "Ada" };
 
 const SUGGESTIONS = [
-  { key: "values", kind: "multi", label: "What matters to you", options: ["growth"], sensitive: false },
+  {
+    key: "values",
+    kind: "multi",
+    label: "What matters to you",
+    options: ["growth"],
+    sensitive: false,
+  },
   { key: "religion", kind: "single", label: "Faith", options: ["yes"], sensitive: true },
 ];
 
@@ -38,8 +44,6 @@ function makeCache({ profile = null, nudge = READY } = {}) {
     saveFeed: jest.fn(async () => {}),
     loadFavorites: jest.fn(async () => null),
     saveFavorites: jest.fn(async () => {}),
-    loadStreak: jest.fn(async () => null),
-    saveStreak: jest.fn(async () => {}),
     loadProfile: jest.fn(async () => profile),
     saveProfile: jest.fn(async () => {}),
     loadNudgeState: jest.fn(async () => nudge),

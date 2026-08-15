@@ -16,43 +16,43 @@ const ThemePicker = ({ value, onChange, disabled = false }) => {
   const { theme: active } = useAppTheme();
 
   return (
-  <View style={styles.grid}>
-    {THEMES.map((theme) => {
-      const selected = theme.slug === value;
+    <View style={styles.grid}>
+      {THEMES.map((theme) => {
+        const selected = theme.slug === value;
 
-      return (
-        <Pressable
-          key={theme.slug}
-          onPress={() => {
-            Haptics.selectionAsync().catch(() => {});
-            onChange(theme.slug);
-          }}
-          disabled={disabled}
-          accessibilityRole="radio"
-          accessibilityState={{ selected, disabled }}
-          accessibilityLabel={theme.name}
-          style={styles.cell}
-        >
-          <LinearGradient
-            colors={theme.gradient}
-            style={[styles.swatch, selected && { borderColor: theme.accent }]}
+        return (
+          <Pressable
+            key={theme.slug}
+            onPress={() => {
+              Haptics.selectionAsync().catch(() => {});
+              onChange(theme.slug);
+            }}
+            disabled={disabled}
+            accessibilityRole="radio"
+            accessibilityState={{ selected, disabled }}
+            accessibilityLabel={theme.name}
+            style={styles.cell}
           >
-            <DisplayText weight="bold" style={[styles.preview, { color: theme.ink }]}>
-              Saydle
-            </DisplayText>
+            <LinearGradient
+              colors={theme.gradient}
+              style={[styles.swatch, selected && { borderColor: theme.accent }]}
+            >
+              <DisplayText weight="bold" style={[styles.preview, { color: theme.ink }]}>
+                Saydle
+              </DisplayText>
 
-            {selected ? (
-              <View style={[styles.check, { backgroundColor: theme.accent }]}>
-                <Ionicons name="checkmark" size={13} color={colors.white} />
-              </View>
-            ) : null}
-          </LinearGradient>
+              {selected ? (
+                <View style={[styles.check, { backgroundColor: theme.accent }]}>
+                  <Ionicons name="checkmark" size={13} color={colors.white} />
+                </View>
+              ) : null}
+            </LinearGradient>
 
-          <DisplayText style={[styles.name, { color: active.sub }]}>{theme.name}</DisplayText>
-        </Pressable>
-      );
-    })}
-  </View>
+            <DisplayText style={[styles.name, { color: active.sub }]}>{theme.name}</DisplayText>
+          </Pressable>
+        );
+      })}
+    </View>
   );
 };
 

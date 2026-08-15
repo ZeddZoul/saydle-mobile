@@ -22,9 +22,7 @@ export const historyQuerySchema = z
   .strip();
 
 export const dateParamSchema = z.object({
-  date: z
-    .string()
-    .regex(/^\d{4}-\d{2}-\d{2}$/, "Date must be YYYY-MM-DD."),
+  date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Date must be YYYY-MM-DD."),
 });
 
 export const customAffirmationSchema = z
@@ -45,9 +43,7 @@ export const idParamSchema = z.object({
 });
 
 // "HH:MM" on a 24-hour clock, in the device's local time.
-const clockTime = z
-  .string()
-  .regex(/^([01]\d|2[0-3]):[0-5]\d$/, "Times must look like 08:30.");
+const clockTime = z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/, "Times must look like 08:30.");
 
 export const preferencesSchema = z
   .object({

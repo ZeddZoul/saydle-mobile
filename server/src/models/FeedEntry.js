@@ -32,4 +32,5 @@ const feedEntrySchema = new mongoose.Schema(
 // hoping two concurrent requests don't both schedule the same date.
 feedEntrySchema.index({ user: 1, date: 1 }, { unique: true });
 
-export const FeedEntry = mongoose.models.FeedEntry ?? mongoose.model("FeedEntry", feedEntrySchema);
+export const FeedEntry =
+  mongoose.models.FeedEntry ?? mongoose.model("FeedEntry", feedEntrySchema);

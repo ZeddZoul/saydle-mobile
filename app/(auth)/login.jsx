@@ -82,9 +82,7 @@ const Login = () => {
               <DisplayText weight="bold" style={styles.title}>
                 {t("auth.welcomeBack")}
               </DisplayText>
-              <Text style={styles.subtitle}>
-                {t("auth.welcomeSubtitle")}
-              </Text>
+              <Text style={styles.subtitle}>{t("auth.welcomeSubtitle")}</Text>
             </View>
 
             <View style={styles.form}>

@@ -38,11 +38,7 @@ const emailVerificationTokenSchema = new mongoose.Schema(
 emailVerificationTokenSchema.index({ expiresAt: 1 }, { expireAfterSeconds: 0 });
 
 emailVerificationTokenSchema.methods.isUsable = function isUsable() {
-  return (
-    this.usedAt === null &&
-    this.attempts < 5 &&
-    this.expiresAt.getTime() > Date.now()
-  );
+  return this.usedAt === null && this.attempts < 5 && this.expiresAt.getTime() > Date.now();
 };
 
 export const EmailVerificationToken =

@@ -2,7 +2,7 @@ import { useRef } from "react";
 import { ActivityIndicator, Animated, Pressable, StyleSheet, Text } from "react-native";
 import * as Haptics from "expo-haptics";
 import { LinearGradient } from "expo-linear-gradient";
-import { colors, gradients, radius, shadow, spacing } from "../theme/tokens.js";
+import { colors, radius, shadow, spacing } from "../theme/tokens.js";
 import { useAppTheme } from "../contexts/ThemeContext.jsx";
 
 /**
@@ -19,14 +19,21 @@ const Button = ({
   loading = false,
   disabled = false,
   style,
-  ...props
+  // Passed through so callers can attach a testID or an explicit
+  // accessibilityLabel without wrapping the button in another view.
+  ...rest
 }) => {
   const { theme } = useAppTheme();
   const isDisabled = disabled || loading;
   const scale = useRef(new Animated.Value(1)).current;
 
   const spring = (to) =>
-    Animated.spring(scale, { toValue: to, useNativeDriver: true, speed: 40, bounciness: 6 }).start();
+    Animated.spring(scale, {
+      toValue: to,
+      useNativeDriver: true,
+      speed: 40,
+      bounciness: 6,
+    }).start();
 
   const handlePress = (event) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
@@ -53,7 +60,13 @@ const Button = ({
   );
 
   return (
-    <Animated.View style={[{ transform: [{ scale }] }, !isDisabled && isPrimary && [shadow.button, { shadowColor: theme.accent }], style]}>
+    <Animated.View
+      style={[
+        { transform: [{ scale }] },
+        !isDisabled && isPrimary && [shadow.button, { shadowColor: theme.accent }],
+        style,
+      ]}
+    >
       <Pressable
         onPress={handlePress}
         onPressIn={() => !isDisabled && spring(0.97)}
@@ -62,10 +75,13 @@ const Button = ({
         accessibilityRole="button"
         accessibilityState={{ disabled: isDisabled, busy: loading }}
         style={styles.press}
+        {...rest}
       >
         {isPrimary ? (
           <LinearGradient
-            colors={isDisabled ? [theme.border, theme.border] : [theme.accentSoft, theme.accent]}
+            colors={
+              isDisabled ? [theme.border, theme.border] : [theme.accentSoft, theme.accent]
+            }
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 1 }}
             style={[styles.base, isDisabled && styles.disabled]}

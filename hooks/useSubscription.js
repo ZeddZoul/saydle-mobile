@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
+import { AppState } from "react-native";
 import { useAuth } from "../contexts/AuthContext.jsx";
 import { NetworkError } from "../lib/errors.js";
 import {
@@ -69,6 +70,24 @@ export function useSubscription() {
     return () => {
       cancelled = true;
     };
+  }, [userId, refresh]);
+
+  /**
+   * Re-reads entitlement whenever the app comes back to the foreground.
+   *
+   * This is the path that actually matters: a purchase goes through a system
+   * sheet, so the app is backgrounded at the moment the store confirms it and
+   * RevenueCat's webhook reaches us. Fetching only on mount leaves someone who
+   * just paid looking at the paywall until they force-quit.
+   */
+  useEffect(() => {
+    if (!userId) return;
+
+    const subscription = AppState.addEventListener("change", (next) => {
+      if (next === "active") refresh().catch(() => {});
+    });
+
+    return () => subscription.remove();
   }, [userId, refresh]);
 
   const startTrial = useCallback(async () => {

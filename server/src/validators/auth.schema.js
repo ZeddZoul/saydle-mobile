@@ -7,15 +7,9 @@ const password = z
   .min(8, "Password must be at least 8 characters.")
   .max(200, "Password must be at most 200 characters.");
 
-const email = z
-  .string()
-  .trim()
-  .toLowerCase()
-  .email("Enter a valid email address.")
-  .max(254);
+const email = z.string().trim().toLowerCase().email("Enter a valid email address.").max(254);
 
-const name = (label) =>
-  z.string().trim().min(1, `${label} is required.`).max(60);
+const name = (label) => z.string().trim().min(1, `${label} is required.`).max(60);
 
 export const registerSchema = z
   .object({
@@ -52,6 +46,23 @@ export const resetPasswordSchema = z
     // Exactly six digits — a length mismatch is rejected before any lookup.
     code: z.string().regex(/^\d{6}$/, "Enter the six-digit code from your email."),
     password,
+  })
+  .strict();
+
+/**
+ * Deleting an account asks for two different things on purpose.
+ *
+ * The password proves it is *them* — a borrowed unlocked phone should not be
+ * able to end someone's account. Typing the address proves they *meant it*: it
+ * is the GitHub trick, and it works because it cannot be done by reflex.
+ *
+ * Neither is checked here. Both depend on the account making the request, so
+ * the comparison lives in the controller; this only guarantees they arrived.
+ */
+export const deleteAccountSchema = z
+  .object({
+    password: z.string().min(1, "Enter your password to confirm."),
+    confirmEmail: z.string().trim().min(1, "Type your email address to confirm."),
   })
   .strict();
 

@@ -56,7 +56,10 @@ const StreakStrip = ({ streak }) => {
               style={[
                 styles.dot,
                 { borderColor: theme.sub },
-                day.seen && [styles.dotSeen, { backgroundColor: theme.accent, borderColor: theme.accent }],
+                day.seen && [
+                  styles.dotSeen,
+                  { backgroundColor: theme.accent, borderColor: theme.accent },
+                ],
                 day.isToday && !day.seen && { borderColor: theme.accent, borderWidth: 2 },
                 day.isFuture && styles.dimmed,
               ]}
@@ -66,9 +69,7 @@ const StreakStrip = ({ streak }) => {
                   : weekdayShort(day.date)
               }
             >
-              {day.seen ? (
-                <Ionicons name="checkmark" size={13} color={colors.white} />
-              ) : null}
+              {day.seen ? <Ionicons name="checkmark" size={13} color={colors.white} /> : null}
             </View>
           </View>
         ))}

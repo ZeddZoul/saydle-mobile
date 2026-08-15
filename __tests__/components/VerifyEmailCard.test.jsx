@@ -47,10 +47,21 @@ const renderCard = ({ user = USER, client = baseClient(user) } = {}) =>
 
 describe("VerifyEmailCard", () => {
   it("asks an unverified account to confirm, naming the address", async () => {
-    const { findByTestId, findByText } = await renderCard();
+    const { findByTestId, findAllByText } = await renderCard();
 
     await findByTestId("verify-email-card");
-    expect(await findByText(/ada@example\.com/)).toBeTruthy();
+    // Both the title and the body name it, hence findAll.
+    expect((await findAllByText(/ada@example\.com/)).length).toBeGreaterThan(0);
+  });
+
+  it("interpolates the address into the title, not just the body", async () => {
+    // Caught on device: the title read "Is {{email}} right?" because the
+    // interpolation argument was missing. The earlier assertion above passed
+    // regardless, because it matched the body — so this one names the title.
+    const { findByText, queryByText } = await renderCard();
+
+    expect(await findByText("Is ada@example.com right?")).toBeTruthy();
+    expect(queryByText(/\{\{/)).toBeNull();
   });
 
   it("shows nothing once the account is verified", async () => {
@@ -129,6 +140,16 @@ describe("VerifyEmailCard", () => {
 
     await findByRole("alert");
     expect(queryByText(/new code is on its way/i)).toBeNull();
+  });
+
+  it("stops naming the address when it does not have one", async () => {
+    const anonymous = { id: "u1", emailVerifiedAt: null };
+    const { findByText, queryByText } = await renderCard({ user: anonymous });
+
+    // "Is  right?" reads as a typo rather than as missing data, and this is the
+    // first card a new account is shown.
+    expect(await findByText("Is your email right?")).toBeTruthy();
+    expect(queryByText(/^Is\s+right\?$/)).toBeNull();
   });
 
   it("can be put away — verification is not a wall", async () => {

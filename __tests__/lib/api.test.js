@@ -168,9 +168,7 @@ describe("token refresh", () => {
     const store = makeStore();
     const fetchImpl = jest
       .fn()
-      .mockResolvedValueOnce(
-        jsonResponse(401, { error: { code: "unauthorized" } }),
-      )
+      .mockResolvedValueOnce(jsonResponse(401, { error: { code: "unauthorized" } }))
       .mockResolvedValueOnce(
         jsonResponse(200, { accessToken: "access-2", refreshToken: "refresh-2" }),
       )
@@ -185,9 +183,7 @@ describe("token refresh", () => {
       expect.objectContaining({ accessToken: "access-2" }),
     );
     // The retry carries the new token, not the stale one.
-    expect(fetchImpl.mock.calls[2][1].headers.authorization).toBe(
-      "Bearer access-2",
-    );
+    expect(fetchImpl.mock.calls[2][1].headers.authorization).toBe("Bearer access-2");
   });
 
   it("refreshes only once for several concurrent 401s", async () => {

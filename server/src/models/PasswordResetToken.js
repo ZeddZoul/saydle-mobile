@@ -31,11 +31,7 @@ const passwordResetTokenSchema = new mongoose.Schema(
 passwordResetTokenSchema.index({ expiresAt: 1 }, { expireAfterSeconds: 0 });
 
 passwordResetTokenSchema.methods.isUsable = function isUsable() {
-  return (
-    this.usedAt === null &&
-    this.attempts < 5 &&
-    this.expiresAt.getTime() > Date.now()
-  );
+  return this.usedAt === null && this.attempts < 5 && this.expiresAt.getTime() > Date.now();
 };
 
 export const PasswordResetToken =

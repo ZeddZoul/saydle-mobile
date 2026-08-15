@@ -71,11 +71,19 @@ const VerifyEmailCard = ({ style }) => {
         <Text style={[styles.eyebrow, { color: theme.accent }]}>{t("verify.eyebrow")}</Text>
       </View>
 
+      {/* Interpolating an address we do not have reads as a typo — "Is  right?"
+          — rather than as missing data, and it is the first card a new account
+          sees. Wherever the address is genuinely unknown the copy simply stops
+          naming it. */}
       <DisplayText style={[styles.title, { color: theme.ink }]}>
-        {t("verify.title")}
+        {email ? t("verify.title", { email }) : t("verify.titleAnonymous")}
       </DisplayText>
       <Text style={[styles.body, { color: theme.sub }]}>
-        {sent ? t("verify.resent", { email }) : t("verify.body", { email })}
+        {sent && email
+          ? t("verify.resent", { email })
+          : email
+            ? t("verify.body", { email })
+            : t("verify.bodyAnonymous")}
       </Text>
 
       <TextInput

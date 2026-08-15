@@ -1,10 +1,4 @@
-import {
-  render,
-  screen,
-  fireEvent,
-  waitFor,
-  act,
-} from "@testing-library/react-native";
+import { render, screen, fireEvent, waitFor, act } from "@testing-library/react-native";
 import Login from "../../app/(auth)/login.jsx";
 import { AuthProvider } from "../../contexts/AuthContext.jsx";
 import { ApiError, NetworkError } from "../../lib/errors.js";
@@ -41,10 +35,7 @@ const renderLogin = (client) =>
     </AuthProvider>,
   );
 
-const fillAndSubmit = async (
-  email = "ada@example.com",
-  password = "correct horse",
-) => {
+const fillAndSubmit = async (email = "ada@example.com", password = "correct horse") => {
   await fireEvent.changeText(screen.getByLabelText("Email"), email);
   await fireEvent.changeText(screen.getByLabelText("Password"), password);
   await fireEvent.press(screen.getByText("Log in"));
@@ -87,9 +78,7 @@ describe("Login screen", () => {
     await renderLogin({ me: jest.fn(), login });
     await fillAndSubmit("nope", "correct horse");
 
-    expect(
-      await screen.findByText("Enter a valid email address."),
-    ).toBeTruthy();
+    expect(await screen.findByText("Enter a valid email address.")).toBeTruthy();
   });
 
   it("shows a friendly message when the server is unreachable", async () => {
@@ -111,9 +100,7 @@ describe("Login screen", () => {
     await renderLogin({ me: jest.fn(), login });
     await fillAndSubmit();
 
-    expect(
-      await screen.findByText("Email or password is incorrect."),
-    ).toBeTruthy();
+    expect(await screen.findByText("Email or password is incorrect.")).toBeTruthy();
   });
 
   it("does not submit twice while a request is in flight", async () => {
@@ -130,10 +117,7 @@ describe("Login screen", () => {
     await renderLogin({ me: jest.fn(), login });
 
     await fireEvent.changeText(screen.getByLabelText("Email"), "ada@example.com");
-    await fireEvent.changeText(
-      screen.getByLabelText("Password"),
-      "correct horse",
-    );
+    await fireEvent.changeText(screen.getByLabelText("Password"), "correct horse");
 
     // First press starts the request but does not resolve it.
     fireEvent.press(screen.getByText("Log in"));
@@ -174,8 +158,6 @@ describe("Login screen", () => {
 
     fireEvent.changeText(screen.getByLabelText("Email"), "ada@example.com");
 
-    await waitFor(() =>
-      expect(screen.queryByText("Enter a valid email address.")).toBeNull(),
-    );
+    await waitFor(() => expect(screen.queryByText("Enter a valid email address.")).toBeNull());
   });
 });

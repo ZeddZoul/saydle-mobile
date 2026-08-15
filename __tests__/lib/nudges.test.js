@@ -18,7 +18,13 @@ const suggestions = [
 const half = { filled: 5, total: 20, percent: 25 };
 
 const ask = (over = {}) =>
-  nextNudge({ suggestions, completeness: half, state: initialNudgeState(TODAY), today: TODAY, ...over });
+  nextNudge({
+    suggestions,
+    completeness: half,
+    state: initialNudgeState(TODAY),
+    today: TODAY,
+    ...over,
+  });
 
 describe("initialNudgeState", () => {
   it("starts inside a grace period, so day one is never a nudge", () => {
@@ -41,9 +47,7 @@ describe("nextNudge", () => {
   it("stops asking once the profile is personalized enough", () => {
     // Deliberately below 100 — the last fields are the sensitive ones.
     expect(ENOUGH_PERCENT).toBeLessThan(100);
-    expect(
-      ask({ today: "2026-08-07", completeness: { percent: ENOUGH_PERCENT } }),
-    ).toBeNull();
+    expect(ask({ today: "2026-08-07", completeness: { percent: ENOUGH_PERCENT } })).toBeNull();
   });
 
   it("stays quiet before the snooze expires and speaks up on the day it does", () => {
@@ -93,7 +97,9 @@ describe("afterAnswer", () => {
 
     expect(state.snoozedUntil).toBe("2026-08-08");
     expect(COOLDOWN_DAYS).toBe(3);
-    expect(nextNudge({ suggestions, completeness: half, state, today: "2026-08-07" })).toBeNull();
+    expect(
+      nextNudge({ suggestions, completeness: half, state, today: "2026-08-07" }),
+    ).toBeNull();
   });
 
   it("clears the refusal streak — willingness came back", () => {

@@ -18,13 +18,7 @@ const FormField = ({ label, error, icon, secureTextEntry, style, ...inputProps }
     <View style={styles.group}>
       <Text style={styles.label}>{label}</Text>
 
-      <View
-        style={[
-          styles.field,
-          focused && styles.fieldFocused,
-          error && styles.fieldError,
-        ]}
-      >
+      <View style={[styles.field, focused && styles.fieldFocused, error && styles.fieldError]}>
         {icon ? (
           <Ionicons
             name={icon}

@@ -68,6 +68,8 @@ struct SaydleWidgetView: View {
 
     private var ink: Color { Color(saydleHex: entry.theme?.ink ?? "#38223A") }
     private var accent: Color { Color(saydleHex: entry.theme?.accent ?? "#FF6F61") }
+    private var soft: Color { Color(saydleHex: entry.theme?.gradientStart ?? "#FDEEEC") }
+    private var isDark: Bool { entry.theme?.dark ?? false }
 
     private var background: LinearGradient {
         LinearGradient(
@@ -75,35 +77,97 @@ struct SaydleWidgetView: View {
                 Color(saydleHex: entry.theme?.gradientStart ?? "#FDEEEC"),
                 Color(saydleHex: entry.theme?.gradientEnd ?? "#F7CAC5"),
             ],
-            startPoint: .top,
-            endPoint: .bottom
+            startPoint: .topLeading,
+            endPoint: .bottomTrailing
         )
     }
 
-    // The small family has room for the affirmation and nothing else; the
-    // wordmark only earns its space at medium and above.
-    private var showsWordmark: Bool { family != .systemSmall }
+    // Small has room for the words and nothing else; the wordmark only earns its
+    // space once there is a second line's worth of width to put it on.
+    private var isSmall: Bool { family == .systemSmall }
 
-    var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            if showsWordmark {
-                Text("SAYDLE")
-                    .font(.system(size: 10, weight: .bold))
-                    .kerning(1.6)
-                    .foregroundColor(accent)
-            }
+    private var affirmationSize: CGFloat {
+        switch family {
+        case .systemSmall: return 15
+        case .systemLarge: return 25
+        default: return 19
+        }
+    }
+
+    /// The wordmark, in Fraunces — the same face and letterspacing as the app's.
+    private var wordmark: some View {
+        HStack(spacing: 5) {
+            Circle()
+                .fill(accent)
+                .frame(width: 5, height: 5)
+
+            Text("SAYDLE")
+                .font(SaydleFont.displayBold(10))
+                .kerning(2.2)
+                .foregroundColor(accent)
+        }
+    }
+
+    /**
+     * The affirmation, with the opening quote above it.
+     *
+     * Above rather than behind: at this weight Fraunces' quote is far too solid
+     * to sit under text — its serif tail cut straight through the first line's
+     * capitals. It gets its own row now, pulled tight by a negative bottom
+     * padding, because the glyph sits high in the em box and would otherwise
+     * leave a hole beneath it. Same treatment as the share card.
+     */
+    private var affirmation: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            Text("\u{201C}")
+                .font(SaydleFont.displayBold(affirmationSize * 2.2))
+                .foregroundColor(accent.opacity(isDark ? 0.28 : 0.34))
+                .fixedSize()
+                // Pulled from the TOP, never the bottom. Fraunces sets its
+                // quote low in the line box — the slack is above the glyph, not
+                // beneath it — so any negative *bottom* padding drives the mark
+                // straight into the first line's capitals. Twice tried, twice
+                // overlapped. Closing the gap from above cannot touch the text.
+                .padding(.top, -affirmationSize * 0.55)
+                .accessibilityHidden(true)
 
             Text(entry.text)
-                .font(.system(size: family == .systemSmall ? 15 : 19, weight: .medium, design: .serif))
+                .font(SaydleFont.display(affirmationSize))
                 .foregroundColor(ink)
-                .lineSpacing(3)
-                .minimumScaleFactor(0.75)
+                .lineSpacing(affirmationSize * 0.28)
+                .minimumScaleFactor(0.7)
                 .multilineTextAlignment(.leading)
                 .fixedSize(horizontal: false, vertical: true)
-
-            Spacer(minLength: 0)
         }
-        .padding(family == .systemSmall ? 12 : 16)
+    }
+
+    var body: some View {
+        ZStack(alignment: .topLeading) {
+            SaydleGlow(accent: accent, soft: soft, dark: isDark)
+
+            VStack(alignment: .leading, spacing: 0) {
+                if !isSmall {
+                    wordmark
+                    Spacer(minLength: 12)
+                }
+
+                affirmation
+
+                Spacer(minLength: 0)
+
+                if family == .systemLarge {
+                    Rectangle()
+                        .fill(ink.opacity(0.12))
+                        .frame(height: 1)
+                        .padding(.bottom, 9)
+
+                    Text(entry.date, format: .dateTime.weekday(.wide).month().day())
+                        .font(SaydleFont.display(12))
+                        .foregroundColor(ink.opacity(0.5))
+                }
+            }
+            .padding(isSmall ? 15 : 18)
+        }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
         .widgetBackgroundCompat(background)
     }
@@ -131,6 +195,6 @@ struct SaydleWidget: Widget {
         }
         .configurationDisplayName("Today's affirmation")
         .description("The line you're carrying today, on your home screen.")
-        .supportedFamilies([.systemSmall, .systemMedium])
+        .supportedFamilies([.systemSmall, .systemMedium, .systemLarge])
     }
 }

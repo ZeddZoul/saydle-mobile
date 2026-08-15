@@ -51,22 +51,33 @@ export const radius = {
   pill: 999,
 };
 
-// iOS reads shadow*, Android reads elevation — both are set so depth survives
-// the platform switch.
+/**
+ * iOS reads `shadow*`, Android reads `elevation`.
+ *
+ * **`elevation` is deliberately absent from the two translucent-surface shadows
+ * below.** Android draws an elevation shadow from the view's outline and paints
+ * it *under* the view — which is invisible under an opaque card and very visible
+ * under one filled with `rgba(255,255,255,0.35)`. It shows through as a hard
+ * grey rectangle inside the card, with square corners that ignore the border
+ * radius, and it reads as a rendering bug rather than as depth. Confirmed on a
+ * device by removing the token: the rectangle went with it.
+ *
+ * A translucent surface does not need the help anyway — the fill already
+ * separates it from the backdrop. `button` keeps its elevation because buttons
+ * are opaque.
+ */
 export const shadow = {
   soft: {
     shadowColor: "#7A2E28",
     shadowOpacity: 0.08,
     shadowRadius: 10,
     shadowOffset: { width: 0, height: 4 },
-    elevation: 2,
   },
   card: {
     shadowColor: "#7A2E28",
     shadowOpacity: 0.12,
     shadowRadius: 18,
     shadowOffset: { width: 0, height: 10 },
-    elevation: 5,
   },
   button: {
     shadowColor: "#FF6F61",

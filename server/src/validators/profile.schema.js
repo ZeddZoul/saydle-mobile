@@ -8,7 +8,11 @@ function fieldSchema(f) {
   // Free text has no option list — just a length cap. It is trimmed here and
   // crisis-screened later, before it can reach the model.
   if (f.kind === "text") {
-    return z.string().trim().max(f.maxLength ?? 300).nullable();
+    return z
+      .string()
+      .trim()
+      .max(f.maxLength ?? 300)
+      .nullable();
   }
 
   const allowed = new Set(f.options);
@@ -29,9 +33,7 @@ function fieldSchema(f) {
   return z.string().refine(inOptions, "Invalid option.").nullable();
 }
 
-const shape = Object.fromEntries(
-  PROFILE_FIELDS.map((f) => [f.key, fieldSchema(f).optional()]),
-);
+const shape = Object.fromEntries(PROFILE_FIELDS.map((f) => [f.key, fieldSchema(f).optional()]));
 
 export const profilePatchSchema = z
   .object(shape)

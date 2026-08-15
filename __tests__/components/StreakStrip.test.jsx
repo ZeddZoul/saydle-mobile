@@ -2,14 +2,20 @@ import { render } from "@testing-library/react-native";
 import StreakStrip from "../../components/StreakStrip.jsx";
 
 const week = (seenDates = []) =>
-  ["2026-08-03", "2026-08-04", "2026-08-05", "2026-08-06", "2026-08-07", "2026-08-08", "2026-08-09"].map(
-    (date) => ({
-      date,
-      seen: seenDates.includes(date),
-      isToday: date === "2026-08-04",
-      isFuture: date > "2026-08-04",
-    }),
-  );
+  [
+    "2026-08-03",
+    "2026-08-04",
+    "2026-08-05",
+    "2026-08-06",
+    "2026-08-07",
+    "2026-08-08",
+    "2026-08-09",
+  ].map((date) => ({
+    date,
+    seen: seenDates.includes(date),
+    isToday: date === "2026-08-04",
+    isFuture: date > "2026-08-04",
+  }));
 
 describe("StreakStrip", () => {
   it("renders nothing until the streak has loaded", async () => {

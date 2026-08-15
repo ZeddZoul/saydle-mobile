@@ -28,7 +28,9 @@ const FadeInView = ({ delay = 0, from = 16, duration = 480, style, children, ...
         {
           opacity: progress,
           transform: [
-            { translateY: progress.interpolate({ inputRange: [0, 1], outputRange: [from, 0] }) },
+            {
+              translateY: progress.interpolate({ inputRange: [0, 1], outputRange: [from, 0] }),
+            },
           ],
         },
       ]}

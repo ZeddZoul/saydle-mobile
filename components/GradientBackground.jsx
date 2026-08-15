@@ -16,14 +16,7 @@ import ThemeArtwork from "./ThemeArtwork.jsx";
  * and a brand surface should look like Saydle rather than like the user's
  * chosen theme. Pass `artwork={false}` anywhere the shapes would be noise.
  */
-const GradientBackground = ({
-  colors,
-  brand = false,
-  artwork,
-  style,
-  children,
-  ...props
-}) => {
+const GradientBackground = ({ colors, brand = false, artwork, style, children, ...props }) => {
   const { theme } = useAppTheme();
   const gradient = colors ?? (brand ? ["#FDEEEC", "#F7CAC5"] : theme.gradient);
   const showArtwork = artwork ?? (!colors && !brand);

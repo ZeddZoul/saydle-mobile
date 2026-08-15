@@ -80,8 +80,8 @@ describe("syncReminders", () => {
     });
 
     // 3 across 09:00–21:00 → 09:00, 15:00, 21:00.
-    const hours = Notifications.scheduleNotificationAsync.mock.calls.map(
-      ([arg]) => arg.trigger.date.getHours(),
+    const hours = Notifications.scheduleNotificationAsync.mock.calls.map(([arg]) =>
+      arg.trigger.date.getHours(),
     );
     expect(hours).toEqual([9, 15, 21]);
   });

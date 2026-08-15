@@ -91,9 +91,7 @@ describe("placeholder protection", () => {
   });
 
   it("leaves an unknown tag index untouched rather than deleting it", () => {
-    expect(restorePlaceholders('Hola, <ph id="7"/>', ["{{name}}"])).toBe(
-      'Hola, <ph id="7"/>',
-    );
+    expect(restorePlaceholders('Hola, <ph id="7"/>', ["{{name}}"])).toBe('Hola, <ph id="7"/>');
   });
 });
 
@@ -104,9 +102,9 @@ describe("placeholdersIntact", () => {
 
   it("accepts placeholders that moved", () => {
     // Word order differs between languages; only the set has to match.
-    expect(
-      placeholdersIntact("{{start}} to {{end}}", "hasta {{end}} desde {{start}}"),
-    ).toBe(true);
+    expect(placeholdersIntact("{{start}} to {{end}}", "hasta {{end}} desde {{start}}")).toBe(
+      true,
+    );
   });
 
   it("rejects a translated placeholder name", () => {

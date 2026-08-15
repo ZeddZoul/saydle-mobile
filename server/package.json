@@ -13,7 +13,9 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "migrate": "node --env-file=.env migrations/run.js",
-    "seed": "node --env-file=.env migrations/seed.js"
+    "seed": "node --env-file=.env migrations/seed.js",
+    "purge": "node --env-file=.env scripts/purge.mjs",
+    "import-bank": "node --env-file=.env scripts/import-bank.mjs"
   },
   "dependencies": {
     "@google/genai": "^2.15.0",

@@ -34,10 +34,15 @@ describe("buildArtwork", () => {
   });
 
   it("stays faint enough to read through", () => {
+    // The affirmation is the point; the backdrop must never compete. The
+    // ceilings differ because the same value reads far brighter on a dark
+    // backdrop — and because the blur pass softens light themes considerably
+    // more than it does dark ones.
     for (const theme of THEMES) {
+      const ceiling = theme.dark ? 0.2 : 0.32;
+
       for (const shape of buildArtwork(theme, SCREEN)) {
-        // The affirmation is the point; the backdrop must never compete.
-        expect(shape.opacity).toBeLessThanOrEqual(0.25);
+        expect(shape.opacity).toBeLessThanOrEqual(ceiling);
         expect(shape.opacity).toBeGreaterThan(0);
       }
     }

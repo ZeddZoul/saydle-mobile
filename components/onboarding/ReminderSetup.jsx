@@ -48,7 +48,12 @@ const ReminderSetup = ({ value, onChange, onCommit, compact = false, disabled = 
     if (next === settings.count) return;
     Haptics.selectionAsync().catch(() => {});
     pop.setValue(0.85);
-    Animated.spring(pop, { toValue: 1, useNativeDriver: true, speed: 30, bounciness: 10 }).start();
+    Animated.spring(pop, {
+      toValue: 1,
+      useNativeDriver: true,
+      speed: 30,
+      bounciness: 10,
+    }).start();
     onChange({ ...settings, count: next });
   };
 
@@ -112,7 +117,9 @@ const ReminderSetup = ({ value, onChange, onCommit, compact = false, disabled = 
               </DisplayText>
             </View>
             <View style={styles.previewBody}>
-              <Text style={[styles.previewApp, { color: theme.sub }]}>{t("onboarding.notificationPreview")}</Text>
+              <Text style={[styles.previewApp, { color: theme.sub }]}>
+                {t("onboarding.notificationPreview")}
+              </Text>
               <Text style={[styles.previewText, { color: theme.ink }]}>{SAMPLE}</Text>
             </View>
           </View>
@@ -122,7 +129,9 @@ const ReminderSetup = ({ value, onChange, onCommit, compact = false, disabled = 
       <FadeInView delay={compact ? 0 : 140}>
         <View style={[styles.card, { backgroundColor: theme.surface }]}>
           <View style={styles.cardHeader}>
-            <Text style={[styles.cardLabel, { color: theme.sub }]}>{t("onboarding.howMany")}</Text>
+            <Text style={[styles.cardLabel, { color: theme.sub }]}>
+              {t("onboarding.howMany")}
+            </Text>
             <Animated.View style={{ transform: [{ scale: pop }] }}>
               <DisplayText weight="bold" style={[styles.count, { color: theme.accent }]}>
                 {settings.count}×
@@ -138,9 +147,7 @@ const ReminderSetup = ({ value, onChange, onCommit, compact = false, disabled = 
             onValueChange={setCount}
             // Commit on release, so a settings screen saves once rather than on
             // every tick of the drag.
-            onSlidingComplete={(count) =>
-              onCommit?.({ ...settings, count: Math.round(count) })
-            }
+            onSlidingComplete={(count) => onCommit?.({ ...settings, count: Math.round(count) })}
             disabled={disabled}
             minimumTrackTintColor={theme.accent}
             maximumTrackTintColor={theme.border}

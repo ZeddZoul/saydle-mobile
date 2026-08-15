@@ -152,7 +152,10 @@ describe("POST /api/auth/verify-email/send", () => {
   it("supersedes the previous code so only one is live", async () => {
     const first = await freshCode(user);
 
-    await request(app).post("/api/auth/verify-email/send").set("Authorization", auth).expect(204);
+    await request(app)
+      .post("/api/auth/verify-email/send")
+      .set("Authorization", auth)
+      .expect(204);
 
     // Otherwise every "resend" leaves another guessable code in the inbox.
     const live = await EmailVerificationToken.countDocuments({
@@ -173,7 +176,10 @@ describe("POST /api/auth/verify-email/send", () => {
     await request(app).post("/api/auth/verify-email").set("Authorization", auth).send({ code });
 
     const before = await EmailVerificationToken.countDocuments({ user: user._id });
-    await request(app).post("/api/auth/verify-email/send").set("Authorization", auth).expect(204);
+    await request(app)
+      .post("/api/auth/verify-email/send")
+      .set("Authorization", auth)
+      .expect(204);
 
     expect(await EmailVerificationToken.countDocuments({ user: user._id })).toBe(before);
   });

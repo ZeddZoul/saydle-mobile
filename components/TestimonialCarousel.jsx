@@ -18,11 +18,11 @@ const Stars = () => {
   const { t } = useT();
 
   return (
-  <View style={styles.stars} accessibilityLabel={t("landing.rating")}>
-    {Array.from({ length: 5 }).map((_, i) => (
-      <Ionicons key={i} name="star" size={15} color={colors.coral} />
-    ))}
-  </View>
+    <View style={styles.stars} accessibilityLabel={t("landing.rating")}>
+      {Array.from({ length: 5 }).map((_, i) => (
+        <Ionicons key={i} name="star" size={15} color={colors.coral} />
+      ))}
+    </View>
   );
 };
 
@@ -49,7 +49,7 @@ const TestimonialCarousel = () => {
       });
     }, ROTATE_MS);
     return () => clearInterval(id);
-  }, [fade]);
+  }, [fade, QUOTES.length]);
 
   return (
     <View style={styles.card}>
@@ -99,4 +99,3 @@ const styles = StyleSheet.create({
     textAlign: "center",
   },
 });
-

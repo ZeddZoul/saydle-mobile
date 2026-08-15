@@ -46,8 +46,7 @@ export function useFavorites() {
   }, [load, syncToken]);
 
   const isFavorite = useCallback(
-    (affirmationId) =>
-      favorites.some((f) => f.affirmation?.id === affirmationId),
+    (affirmationId) => favorites.some((f) => f.affirmation?.id === affirmationId),
     [favorites],
   );
 

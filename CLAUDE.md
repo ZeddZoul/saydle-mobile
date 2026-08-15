@@ -68,7 +68,7 @@ server/                 Express API — see server/README.md for its own layout
   network failure keeps the optimistic state and queues the write in `lib/outbox.js`.
 - **The outbox replays offline writes** on sign-in and on every foreground. Ops must be
   idempotent and collapsible by key — favorites supersede, profile/preference patches
-  merge. Replay stops at the first `NetworkError`; a write the server *refuses* is dropped
+  merge. Replay stops at the first `NetworkError`; a write the server _refuses_ is dropped
   rather than left to wedge the queue. `AuthContext` bumps `syncToken` after a flush that
   reached the server, and the data hooks refetch on it.
 - **i18n is `i18next` + `react-i18next`.** Inside a component use `useT()` from `lib/i18n.js`
@@ -76,7 +76,7 @@ server/                 Express API — see server/README.md for its own layout
   `t`/`tf` exports are for non-component code only. A language is a **gate**, not a preference: it
   ships only with moderation rules, a curated bank, and a locale file — see `saydle-i18n` and
   `server/src/config/locales.js`. English and Spanish are live. `pnpm translate <code>` fills
-  *missing* locale keys via DeepL — it never overwrites reviewed text, drops any string whose
+  _missing_ locale keys via DeepL — it never overwrites reviewed text, drops any string whose
   `{{placeholders}}` came back changed, and refuses to touch the curated bank or the moderation
   rules. Treat its output as a first draft.
 - **Profile nudges** ask for one more onboarding answer at a time. The cadence
@@ -94,6 +94,54 @@ server/                 Express API — see server/README.md for its own layout
 - **The widget gets a fortnight of affirmations at once**, with every colour resolved, because it
   has no network and no session — see `lib/widgetData.js`. It renders correctly for two weeks
   even if the app is never opened.
+- **Reads never wait for the model.** `ensureFeed` fills missing days from the reader's own
+  generated pool and then the curated bank — database work only, ~90ms — and hands anything the
+  model must produce to `scheduleReplenish`, which is deliberately not awaited. `replenish` then
+  tops the pool up and re-points *future, unseen* days that are holding curated lines at the fresh
+  ones. Today is never swapped mid-read, and a day already seen is history and is never rewritten.
+  Registration kicks a replenish too, so the funnel absorbs the first batch. This is not a
+  micro-optimisation: generating inline made a new account's first request take **20.2s** against
+  a 15s client timeout, so the work completed and the reader was told "Could not reach Saydle".
+  `flushReplenish()` awaits in-flight work — tests need it, since asserting straight after a
+  request otherwise asserts against work that has not started and passes for the wrong reason.
+- **Reads never wait for the model.** `ensureFeed` fills missing days from the reader's own
+  generated pool and then the curated bank — database work only, ~90ms — and hands anything the
+  model must produce to `scheduleReplenish`, which is deliberately not awaited. `replenish` then
+  tops the pool up and re-points *future, unseen* days that are holding curated lines at the fresh
+  ones. Today is never swapped mid-read, and a day already seen is history and is never rewritten.
+  Registration kicks a replenish too, so the funnel absorbs the first batch. This is not a
+  micro-optimisation: generating inline made a new account's first request take **20.2s** against
+  a 15s client timeout, so the work completed and the reader was told "Could not reach Saydle".
+  `flushReplenish()` awaits in-flight work — tests need it, since asserting straight after a
+  request otherwise asserts against work that has not started and passes for the wrong reason.
+- **Only one instance may generate for a reader at a time.** The in-process `inFlight` map dedupes
+  the two requests every cold launch fires; the authority is `user.replenishingUntil`, claimed with
+  one atomic `findOneAndUpdate` so a second server behind a load balancer cannot bill us for the
+  same batch. It is a *deadline*, not a flag — a process killed mid-batch would otherwise lock that
+  reader out of generation permanently. The claim is only attempted once a cheap count says there
+  is work, so an ordinary read performs no write at all.
+- **The chrome floats; the navigator draws nothing.** `(dashboard)/_layout.jsx` passes
+  `tabBar={() => null}` — a *Navigator* prop, not a screen option, and putting it in
+  `screenOptions` is silently ignored. Today carries `FloatingChrome` (profile / kept-meter /
+  premium above, favourites / practice / themes below); every other screen carries
+  `FloatingHeader`, which is the only way back now that the tab bar is gone. Both overlay rather
+  than occupy, so scrolling content must reserve `FLOATING_HEADER_INSET` — and that `paddingTop`
+  has to be declared *after* any `padding` shorthand in the same style object, or the shorthand
+  resets it.
+- **A paged list must take its page height from state, never a ref.** `getItemLayout` says where
+  each page starts and the page style says how tall it is; a ref updated in `onLayout` lands
+  without a re-render, so rendered pages keep the old height while `getItemLayout` reports the new
+  one. Paging accumulates offsets, so the content walks further down the screen with every swipe
+  until it leaves entirely. `__tests__/screens/library.test.jsx` pins both readings together.
+- **The library is premium and separate from the daily line.** One ordered batch per reader
+  (`Affirmation.library: true`), a cursor on the user as the whole of seen-state, refilled when the
+  unread tail runs low. `takeAffirmations` excludes library rows: retiring a batch deletes what
+  nobody kept, which would otherwise rewrite a day already lived. The paywall is one `gate()` in
+  `library.controller.js` reading `REQUIRES_PREMIUM` — see `config/library.js`.
+- **`.lean()` skips `toJSON`.** The library reads lean for speed, so responses are shaped by hand
+  (`publicLine`): without it the payload carries `_id` instead of `id` — breaking list keys and
+  sending `undefined` when a line is favourited — and ships `user`, `textKey` and `__v` to the
+  client.
 - **The stream runs backwards only** (`hooks/useStream.js`): today, then days already read. The
   server schedules weeks ahead so the app works offline, but letting anyone swipe into that buffer
   would turn a daily line into a list to get through.
@@ -112,19 +160,68 @@ server/                 Express API — see server/README.md for its own layout
 
 ## Brand
 
-| Token | Value | Use |
-|---|---|---|
-| Coral | `#FF6F61` | Primary buttons, links, header |
-| Mauve | `#C49EBB` | Input borders, secondary button outline |
-| Pink tint | `#f7cac5d2` | Page background (`CustomView`) |
-| White | `#FFFFFF` | Text on coral |
+| Token     | Value       | Use                                     |
+| --------- | ----------- | --------------------------------------- |
+| Coral     | `#FF6F61`   | Primary buttons, links, header          |
+| Mauve     | `#C49EBB`   | Input borders, secondary button outline |
+| Pink tint | `#f7cac5d2` | Page background (`CustomView`)          |
+| White     | `#FFFFFF`   | Text on coral                           |
 
 ## Gotchas
+
+- **`pod install` needs a UTF-8 locale.** Without it CocoaPods dies with
+  `Encoding::CompatibilityError`. Prefix prebuild/pod commands with
+  `LANG=en_US.UTF-8 LC_ALL=en_US.UTF-8`, or export both in your shell profile.
+- The widget's **App Group is fixed by the plugin** as `group.<bundleId>.expowidgets` and is not
+  read from config. `lib/widget.js`, `widgets/ios/SaydleShared.swift`, and `app.json` must all use
+  it — a mismatch fails silently, with a widget that simply never updates.
+- **Editing `widgets/` and rebuilding does nothing.** The widget sources are copied into
+  `ios/saydlemobileWidgetExtension/` (and `android/`) by the config plugin **at prebuild time**, so
+  `npx expo run:ios` alone recompiles the *previous* copy. Always
+  `npx expo prebuild` before `run:ios` after touching anything in `widgets/`. There is no error —
+  the build succeeds and the widget simply keeps its old appearance, which reads exactly like a
+  layout fix that did not work. Check with
+  `diff widgets/ios/SaydleWidget.swift ios/saydlemobileWidgetExtension/SaydleWidget.swift`.
+- `widgets/ios/Module.swift` **is the Expo module** (it replaces the plugin's own
+  `ExpoWidgetsModule.swift`, which on iOS is an empty placeholder). Shared widget code goes in
+  `SaydleShared.swift`; only files other than `Module.swift` are compiled into the extension.
 
 - `@bittingz/expo-widgets` declares **no dependencies** but `require`s `fs-extra` in its config
   plugin, so `expo export`/`prebuild` fails with `Cannot find module 'fs-extra'`. We install
   `fs-extra` ourselves as a devDependency to cover it — don't remove it wondering what it's for.
 
+- **A custom font cannot be declared into an Android app widget — it has to be drawn.** Two routes
+  look right and both silently render Roboto: `android:fontFamily="@font/fraunces_semibold"` in the
+  layout (the font *is* in the APK — `unzip -l` confirms it — but the launcher inflates RemoteViews
+  in its own process and drops the resource), and a `TypefaceSpan` carrying a real `Typeface`
+  (`TypefaceSpan.writeToParcel` serialises only the *family name*, so the typeface never survives
+  the parcel). Both were measured on a device. `SaydleWidgetProvider` therefore draws the whole
+  card — gradient, glow, wordmark, quote, affirmation — into one bitmap with Canvas, which is the
+  only surface where our `Typeface` is unambiguously ours, and keeps plain TextViews as a hidden
+  fallback for when the bitmap cannot be built. Do not "simplify" it back to XML.
+- **Never point Saydle at `gcloud auth application-default login`.** ADC is one global file
+  (`~/.config/gcloud/application_default_credentials.json`) shared by every project on the
+  machine, and `gcloud config configurations` do *not* isolate it — only the CLI's account and
+  project. Logging in for another project therefore takes Vertex here down with a 403, which the
+  service swallows and degrades to the curated bank, so the app keeps working and quietly stops
+  being an AI product. `GOOGLE_APPLICATION_CREDENTIALS` is read per process and wins over ADC,
+  which is why the key is the local setup too, not just the production one.
+- **Gemini 2.5 Flash bills thinking as output.** Measured on a real batch: ~846 prompt tokens,
+  ~114 visible output tokens, and **~975 thinking tokens** — thinking is roughly nine tenths of
+  what we pay for. It also comes out of `maxOutputTokens`, so a tight budget yields
+  `finishReason: MAX_TOKENS` with an *empty* candidate, which `vertex.service.js` reports as
+  "returned no text (likely blocked)" and silently degrades to the bank. 4096 is deliberate
+  headroom, not a guess. A `thinkingConfig.thinkingBudget` would cut cost sharply if volume
+  ever justifies it.
+- **The app icons are generated, not drawn by hand.** `assets/icon.png` (full-bleed),
+  `adaptive-icon.png` (transparent foreground) and `monochrome-icon.png` come from
+  `scripts/icons.html` rendered through headless Chrome, which is how the wordmark gets real
+  Fraunces rather than a lookalike — the old `assets/logo.png` was set in some other face
+  entirely, which is why the splash never matched the landing screen. The sizing constraint that
+  matters: Android shows only the central 72dp of the 108dp adaptive canvas and guarantees only a
+  66dp circle, so a ~3:1 wordmark has to fit that circle **by its diagonal**. Anything above
+  ~176px on a 1024px canvas loses the S and the e on a round launcher. Re-render and eyeball it
+  against the guide circle rather than trusting the arithmetic.
 - React Native ignores `color`, `textAlign`, and `cursor` on a `View`. Several style objects in
   `styles/` set them on containers where they do nothing — don't copy that pattern.
 - The root layout sets `headerShown: false` for the `(dashboard)` group, which overrides the
@@ -146,14 +243,23 @@ match jest-expo 57; do not bump it to v30.
 
 ## Current state
 
-Full vertical slice, end to end, with tests on both halves (**637 total**: 253 API + 384 mobile).
+Full vertical slice, end to end, with tests on both halves (**641 total**: 253 API + 388 mobile).
+Verified on a native iOS dev build, not just in Expo Go — including the home-screen widget
+rendering real data in the active theme, at both small and medium sizes.
+
+Android has now been built and run too (`Pixel_9_Pro` emulator, API 36): sign-in, Today, the
+generated affirmation, and the home-screen widget showing the same line as the app, read from
+`<packageName>.widgetdata`. The widget is drawn rather than laid out, which is what gets Fraunces
+and the gradient onto it — see Gotchas. Artwork softness is bought per platform: iOS blurs the
+field in one `BlurView`, Android fades each shape out at its own edge (`softFill` in
+`ThemeArtwork`), because a full-screen blur behind every screen is far more expensive there.
 
 - **API**: auth (register / login / refresh-with-rotation / logout / delete / password reset /
   email verification), the daily feed with offline sync and backwards history, favorites,
   categories, preferences, the progressive profile, streaks, subscriptions (RevenueCat webhook),
   and user-written affirmations. Affirmations are generated by Vertex ahead of time and degrade to
   the curated bank. `pnpm api:test`.
-- **Mobile**: the long onboarding funnel (which *is* signup — the account is created at the end, on
+- **Mobile**: the long onboarding funnel (which _is_ signup — the account is created at the end, on
   the paywall), real auth with a route guard, Today, the swipeable full-screen stream, Practice,
   Favorites, Profile with preferences / themes + generative artwork / reminders / language /
   account deletion, "My words" (premium), local reminders, home-screen widgets, English + Spanish,
@@ -164,12 +270,23 @@ The app needs a running API (`pnpm api`) and `EXPO_PUBLIC_API_URL` pointing at i
 
 ## What's left
 
-The roadmap is complete. What remains is not code:
+The 13-item roadmap is complete and verified on device. What remains:
 
-- **Fill the env vars** in `.env.example` — RevenueCat keys, `APPLE_TEAM_ID`, `DEEPL_API_KEY`,
-  `RESEND_API_KEY`, and the Vertex project (`AI_ENABLED=false` until then).
-- **A native build** for widgets and IAP: `npx expo prebuild && npx expo run:ios`. Neither works
-  in Expo Go, by design of the platform.
-- **A native Spanish read** of `locales/es.json`, the curated `es` bank, and the moderation rules.
-- **Real testimonials** — the landing quotes are still marked PLACEHOLDER, and the paywall price
-  line is hardcoded rather than read from the store's own localized price.
+- **Fill the remaining env vars** in `.env.example` — RevenueCat keys and `APPLE_TEAM_ID`.
+  JWT secrets, Resend, DeepL and Vertex are all filled and exercised.
+- **Both bundle identifiers are still `com.anonymous.*`.** Changing `ios.bundleIdentifier` also
+  moves the widget's App Group (`group.<bundleId>.expowidgets`), so that path needs re-verifying
+  afterwards. The display name and icon are done — `expo.name` is `Saydle`, and the icons are
+  generated wordmarks in Fraunces (see below).
+- **A real purchase has never been made** — only the trial path is exercised. Needs a store listing
+  and a sandbox tester.
+- **Vertex is deploy-ready but undeployed.** Generation runs as
+  `saydle-api@saydle-web.iam.gserviceaccount.com` (`roles/aiplatform.user`, nothing else), via
+  `GOOGLE_APPLICATION_CREDENTIALS` in `server/.env`. On a Google host, attach that service account
+  to the service and drop the variable — no key file at all.
+
+Deliberately left as-is (the owner's call, not oversights):
+
+- **Spanish stays unreviewed by a native speaker.**
+- **Testimonials stay PLACEHOLDER**, and the paywall price line stays hardcoded rather than read
+  from the store's localized price.

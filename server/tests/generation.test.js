@@ -3,6 +3,12 @@ import request from "supertest";
 import { createApp } from "../src/app.js";
 import { seed } from "../migrations/seed.js";
 import { registerUser } from "./helpers.js";
+import {
+  flushReplenish,
+  replenish,
+  scheduleReplenish,
+} from "../src/services/affirmation.service.js";
+import { FeedEntry } from "../src/models/FeedEntry.js";
 import { User } from "../src/models/User.js";
 import { Affirmation } from "../src/models/Affirmation.js";
 
@@ -35,8 +41,16 @@ const batch = (texts) => texts.map((text) => ({ text, category: "calm" }));
 
 beforeEach(async () => {
   await seed();
+
+  // Registration warms the pool in the background now, so the account arrives
+  // with a replenishment already running. Settle it and reset, or every test
+  // below starts with a call it did not make on its books.
   generateAffirmations.mockReset();
+  generateAffirmations.mockResolvedValue([]);
   const registered = await registerUser(app, { email: "gen@example.com" });
+  await flushReplenish();
+  generateAffirmations.mockReset();
+
   auth = registered.auth;
   user = await User.findById(registered.user.id);
 });
@@ -52,6 +66,7 @@ describe("generation", () => {
     );
 
     await request(app).get("/api/affirmations/today").set("Authorization", auth).expect(200);
+    await flushReplenish();
 
     const stored = await Affirmation.find({ user: user._id, source: "generated" });
     expect(stored.length).toBeGreaterThan(0);
@@ -68,6 +83,7 @@ describe("generation", () => {
     );
 
     await request(app).get("/api/affirmations/today").set("Authorization", auth).expect(200);
+    await flushReplenish();
 
     const texts = (await Affirmation.find({ user: user._id, source: "generated" })).map(
       (a) => a.text,
@@ -80,9 +96,8 @@ describe("generation", () => {
     const { AiUnavailableError } = await import("../src/services/vertex.service.js");
     generateAffirmations.mockRejectedValue(new AiUnavailableError("outage"));
 
-    const res = await request(app)
-      .get("/api/affirmations/today")
-      .set("Authorization", auth);
+    const res = await request(app).get("/api/affirmations/today").set("Authorization", auth);
+    await flushReplenish();
 
     // An outage must never mean opening the app to nothing.
     expect(res.status).toBe(200);
@@ -98,6 +113,7 @@ describe("generation", () => {
     await user.save();
 
     await request(app).get("/api/affirmations/today").set("Authorization", auth);
+    await flushReplenish();
 
     const [args] = generateAffirmations.mock.calls[0];
 
@@ -116,6 +132,7 @@ describe("generation", () => {
     await user.save();
 
     await request(app).get("/api/affirmations/today").set("Authorization", auth);
+    await flushReplenish();
 
     expect(generateAffirmations.mock.calls[0][0].gentle).toBe(true);
   });
@@ -129,6 +146,7 @@ describe("generation", () => {
     await user.save();
 
     await request(app).get("/api/affirmations/today").set("Authorization", auth);
+    await flushReplenish();
 
     const [args] = generateAffirmations.mock.calls[0];
     // English patterns say nothing about Spanish text; screening without the
@@ -141,6 +159,7 @@ describe("generation", () => {
     generateAffirmations.mockResolvedValue(batch(["I can begin before I feel ready."]));
 
     await request(app).get("/api/affirmations/feed?days=10").set("Authorization", auth);
+    await flushReplenish();
 
     const { count } = generateAffirmations.mock.calls[0][0];
     expect(count).toBeGreaterThan(10);
@@ -153,9 +172,236 @@ describe("generation", () => {
       .patch("/api/preferences")
       .set("Authorization", auth)
       .send({ focus: "coping with self-harm urges" });
+    await flushReplenish();
 
     // Routed to the curated bank entirely — we do not generate against it and
     // never echo the topic back.
     expect(generateAffirmations).not.toHaveBeenCalled();
+  });
+});
+
+/**
+ * The cold-start contract.
+ *
+ * Measured before this split: a new account's first request generated a whole
+ * buffer inline and took 20.2s, against a client that gives up at 15s. The work
+ * landed and the reader was told the server was unreachable. These tests are
+ * about the shape that makes that impossible, not about the prompt.
+ */
+describe("the read path never waits for the model", () => {
+  it("answers a brand-new account while generation is still running", async () => {
+    // The deferred is built before the mock, not inside it: replenish does
+    // several database round trips before it reaches the model, so a resolver
+    // assigned on call would still be undefined here and the suite would hang
+    // waiting on a promise nothing could settle.
+    let release;
+    const pending = new Promise((resolve) => (release = resolve));
+    generateAffirmations.mockImplementation(() => pending);
+
+    const res = await request(app)
+      .get("/api/affirmations/today")
+      .set("Authorization", auth)
+      .expect(200);
+
+    // The model has not answered and cannot answer — and the reader still has
+    // a line. This is the assertion the 20-second first screen would fail.
+    expect(res.body.entry.affirmation.text).toBeTruthy();
+    expect(res.body.entry.affirmation.source).toBe("curated");
+
+    release(batch(["I can begin before I feel ready."]));
+    await flushReplenish();
+  });
+
+  it("still answers when the model never answers at all", async () => {
+    const { AiUnavailableError } = await import("../src/services/vertex.service.js");
+    generateAffirmations.mockRejectedValue(new AiUnavailableError("outage"));
+
+    await request(app)
+      .get("/api/affirmations/feed?days=7")
+      .set("Authorization", auth)
+      .expect(200);
+
+    await flushReplenish();
+
+    // A failed background batch is a quality loss, never an outage: the days
+    // are scheduled regardless.
+    const scheduled = await FeedEntry.countDocuments({ user: user._id });
+    expect(scheduled).toBeGreaterThanOrEqual(7);
+  });
+
+  it("hands the days ahead to the model's lines once they land", async () => {
+    generateAffirmations.mockResolvedValue([]);
+    await request(app).get("/api/affirmations/feed?days=6").set("Authorization", auth);
+    await flushReplenish();
+
+    const before = await FeedEntry.find({ user: user._id }).populate("affirmation");
+    expect(before.every((e) => e.affirmation.source === "curated")).toBe(true);
+
+    generateAffirmations.mockResolvedValue(
+      batch([
+        "I can begin before I feel ready.",
+        "I am allowed to rest without earning it.",
+        "My worth holds steady on a slow day.",
+        "I get to choose my next small step.",
+        "I let myself take up room today.",
+      ]),
+    );
+    await replenish(user);
+
+    const after = await FeedEntry.find({ user: user._id })
+      .sort({ date: 1 })
+      .populate("affirmation");
+
+    // Today keeps the line it was opened with — swapping it under someone
+    // mid-read is worse than a day of the bank.
+    expect(after[0].affirmation.source).toBe("curated");
+    expect(after.slice(1).some((e) => e.affirmation.source === "generated")).toBe(true);
+  });
+
+  it("never rewrites a day the reader has already seen", async () => {
+    generateAffirmations.mockResolvedValue([]);
+    await request(app).get("/api/affirmations/feed?days=6").set("Authorization", auth);
+    await flushReplenish();
+
+    const entries = await FeedEntry.find({ user: user._id }).sort({ date: 1 });
+    const seen = entries[2];
+    seen.seenAt = new Date();
+    await seen.save();
+
+    generateAffirmations.mockResolvedValue(
+      batch([
+        "I can begin before I feel ready.",
+        "I am allowed to rest without earning it.",
+        "My worth holds steady on a slow day.",
+      ]),
+    );
+    await replenish(user);
+
+    const after = await FeedEntry.findById(seen._id).populate("affirmation");
+    expect(after.affirmation.source).toBe("curated");
+  });
+
+  it("does not start a second batch while one is running", async () => {
+    let calls = 0;
+    generateAffirmations.mockImplementation(() => {
+      calls += 1;
+      return new Promise((resolve) =>
+        setTimeout(() => resolve(batch(["I can begin before I feel ready."])), 20),
+      );
+    });
+
+    // Today and the feed sync land within a second of each other on every cold
+    // launch; without the guard that is two full batches for one account.
+    scheduleReplenish(user);
+    scheduleReplenish(user);
+    scheduleReplenish(user);
+    await flushReplenish();
+
+    expect(calls).toBe(1);
+  });
+
+  /**
+   * These call `replenish` directly rather than `scheduleReplenish`, on purpose.
+   * The in-process map would answer first and prove nothing — what is under test
+   * is the claim in the database, which is the only thing a *second instance*
+   * behind a load balancer can see.
+   */
+  describe("the claim that survives more than one instance", () => {
+    it("lets exactly one of two concurrent instances generate", async () => {
+      let calls = 0;
+      generateAffirmations.mockImplementation(() => {
+        calls += 1;
+        return new Promise((resolve) =>
+          setTimeout(() => resolve(batch(["I can begin before I feel ready."])), 30),
+        );
+      });
+
+      // Two servers, same reader, same moment. Both see an empty pool.
+      const [a, b] = await Promise.all([replenish(user), replenish(user)]);
+
+      expect(calls).toBe(1);
+      // The loser reports no work rather than failing: it simply lost the race.
+      expect([a.generated, b.generated].sort()).toEqual([0, 1]);
+    });
+
+    it("releases the claim, so the next batch is not locked out", async () => {
+      generateAffirmations.mockResolvedValue(batch(["I can rest and still be enough."]));
+      await replenish(user);
+
+      expect((await User.findById(user._id)).replenishingUntil).toBeNull();
+    });
+
+    it("reclaims a deadline left behind by a process that died mid-batch", async () => {
+      // A crash between claim and release. A boolean flag would strand this
+      // reader with no generation, forever, and nothing would report it.
+      await User.updateOne(
+        { _id: user._id },
+        { $set: { replenishingUntil: new Date(Date.now() - 1000) } },
+      );
+
+      generateAffirmations.mockResolvedValue(batch(["I can begin again."]));
+      const result = await replenish(user);
+
+      expect(result.generated).toBeGreaterThan(0);
+    });
+
+    it("holds off while another instance's claim is still live", async () => {
+      await User.updateOne(
+        { _id: user._id },
+        { $set: { replenishingUntil: new Date(Date.now() + 60_000) } },
+      );
+
+      generateAffirmations.mockResolvedValue(batch(["I can begin again."]));
+      const result = await replenish(user);
+
+      expect(generateAffirmations).not.toHaveBeenCalled();
+      expect(result.generated).toBe(0);
+    });
+
+    it("costs no write at all when the pool is already full", async () => {
+      generateAffirmations.mockResolvedValue(
+        batch(Array.from({ length: 40 }, (_, i) => `I can take step ${i}.`)),
+      );
+      await replenish(user);
+
+      // The claim is only worth asking for once the count says there is work:
+      // every ordinary read arrives here, and none of them should write.
+      const spy = vi.spyOn(User, "findOneAndUpdate");
+      await replenish(user);
+
+      expect(spy).not.toHaveBeenCalled();
+      spy.mockRestore();
+    });
+  });
+
+  it("stops spending on an account that asked to be deleted", async () => {
+    generateAffirmations.mockReset();
+    generateAffirmations.mockResolvedValue(batch(["I can begin again."]));
+
+    await request(app)
+      .delete("/api/auth/me")
+      .set("authorization", auth)
+      .send({ password: "correct horse battery", confirmEmail: "gen@example.com" })
+      .expect(202);
+
+    const pending = await User.findById(user._id);
+    await scheduleReplenish(pending);
+    await flushReplenish();
+
+    // The curated bank keeps their days filled, so nothing visibly degrades —
+    // and cancelling puts them back in the queue on the next read.
+    expect(generateAffirmations).not.toHaveBeenCalled();
+  });
+
+  it("starts generating at registration, so the funnel absorbs the wait", async () => {
+    generateAffirmations.mockReset();
+    generateAffirmations.mockResolvedValue(batch(["I can begin before I feel ready."]));
+
+    await registerUser(app, { email: "warm@example.com" });
+    await flushReplenish();
+
+    // The account is created at the end of onboarding, so this has a few
+    // seconds of paywall and navigation to finish in before Today is opened.
+    expect(generateAffirmations).toHaveBeenCalled();
   });
 });

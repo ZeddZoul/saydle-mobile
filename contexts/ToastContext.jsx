@@ -90,7 +90,9 @@ export function ToastProvider({ children }) {
                 top: insets.top + spacing.sm,
                 opacity: anim,
                 transform: [
-                  { translateY: anim.interpolate({ inputRange: [0, 1], outputRange: [-20, 0] }) },
+                  {
+                    translateY: anim.interpolate({ inputRange: [0, 1], outputRange: [-20, 0] }),
+                  },
                 ],
               },
             ]}

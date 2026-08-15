@@ -55,9 +55,7 @@ async function getCachedContentName() {
   if (!env.AI_EXPLICIT_CACHE) return undefined;
 
   const stillValid =
-    cached &&
-    cached.promptVersion === PROMPT_VERSION &&
-    cached.expiresAt > Date.now() + 60_000;
+    cached && cached.promptVersion === PROMPT_VERSION && cached.expiresAt > Date.now() + 60_000;
 
   if (stillValid) return cached.name;
 
@@ -144,14 +142,17 @@ export async function generateAffirmations({
       config: {
         // When a cache is in play the system prompt lives inside it; sending
         // both would duplicate the tokens and defeat the point.
-        ...(cacheName
-          ? { cachedContent: cacheName }
-          : { systemInstruction: SYSTEM_PROMPT }),
+        ...(cacheName ? { cachedContent: cacheName } : { systemInstruction: SYSTEM_PROMPT }),
         responseMimeType: "application/json",
         responseSchema: RESPONSE_SCHEMA,
         safetySettings: SAFETY_SETTINGS,
         temperature: 1.1,
-        maxOutputTokens: 4096,
+        maxOutputTokens: env.AI_MAX_OUTPUT_TOKENS,
+        // Capping thinking is the single biggest lever on cost here — see the
+        // measurements in config/env.js.
+        ...(env.AI_THINKING_BUDGET > 0
+          ? { thinkingConfig: { thinkingBudget: env.AI_THINKING_BUDGET } }
+          : {}),
         abortSignal: controller.signal,
       },
     });

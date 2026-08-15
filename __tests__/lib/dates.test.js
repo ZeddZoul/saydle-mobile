@@ -28,9 +28,7 @@ describe("deviceTimezone", () => {
 
     expect(typeof zone).toBe("string");
     expect(zone.length).toBeGreaterThan(0);
-    expect(() =>
-      new Intl.DateTimeFormat("en-CA", { timeZone: zone }),
-    ).not.toThrow();
+    expect(() => new Intl.DateTimeFormat("en-CA", { timeZone: zone })).not.toThrow();
   });
 });
 

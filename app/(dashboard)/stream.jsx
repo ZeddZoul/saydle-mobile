@@ -1,10 +1,8 @@
-import { useCallback, useRef } from "react";
+import { useCallback, useRef, useState } from "react";
 import {
   ActivityIndicator,
-  Animated,
   FlatList,
   Pressable,
-  Share,
   StyleSheet,
   Text,
   useWindowDimensions,
@@ -16,6 +14,7 @@ import { useRouter } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
 import GradientBackground from "../../components/GradientBackground.jsx";
 import DisplayText from "../../components/DisplayText.jsx";
+import ShareSheet from "../../components/ShareSheet.jsx";
 import { useAppTheme } from "../../contexts/ThemeContext.jsx";
 import { useFavorites } from "../../hooks/useFavorites.js";
 import { useStream } from "../../hooks/useStream.js";
@@ -33,7 +32,7 @@ import { spacing, type } from "../../theme/tokens.js";
  * It runs today-first and then backwards through days already read; see
  * hooks/useStream.js for why it never runs forward.
  */
-const StreamPage = ({ entry, isToday, height, onFavorite, favorited, theme, t }) => (
+const StreamPage = ({ entry, isToday, height, onFavorite, onShare, favorited, theme, t }) => (
   <View style={[styles.page, { height }]} testID="stream-page">
     <Text style={[styles.date, { color: theme.sub }]}>
       {isToday ? t("stream.today") : formatFriendlyDate(entry.date)}
@@ -45,10 +44,7 @@ const StreamPage = ({ entry, isToday, height, onFavorite, favorited, theme, t })
 
     <View style={styles.actions}>
       <Pressable
-        onPress={() => {
-          Haptics.selectionAsync().catch(() => {});
-          Share.share({ message: `${entry.affirmation.text}\n\n— Saydle` }).catch(() => {});
-        }}
+        onPress={() => onShare(entry)}
         accessibilityRole="button"
         accessibilityLabel={t("today.share")}
         hitSlop={10}
@@ -65,11 +61,7 @@ const StreamPage = ({ entry, isToday, height, onFavorite, favorited, theme, t })
         hitSlop={10}
         style={styles.action}
       >
-        <Ionicons
-          name={favorited ? "heart" : "heart-outline"}
-          size={30}
-          color={theme.accent}
-        />
+        <Ionicons name={favorited ? "heart" : "heart-outline"} size={30} color={theme.accent} />
       </Pressable>
     </View>
   </View>
@@ -82,6 +74,7 @@ const Stream = () => {
   const { height } = useWindowDimensions();
   const { entries, today, loading, fetching, loadMore } = useStream();
   const { isFavorite, toggle } = useFavorites();
+  const [shareEntry, setShareEntry] = useState(null);
 
   // Each page is exactly one screen, so paging maths never drifts.
   const pageHeight = useRef(height).current;
@@ -94,6 +87,11 @@ const Stream = () => {
     [toggle],
   );
 
+  const onShare = useCallback((entry) => {
+    Haptics.selectionAsync().catch(() => {});
+    setShareEntry(entry);
+  }, []);
+
   const renderItem = useCallback(
     ({ item }) => (
       <StreamPage
@@ -104,9 +102,10 @@ const Stream = () => {
         t={t}
         favorited={isFavorite(item.affirmation.id)}
         onFavorite={onFavorite}
+        onShare={onShare}
       />
     ),
-    [today, pageHeight, theme, t, isFavorite, onFavorite],
+    [today, pageHeight, theme, t, isFavorite, onFavorite, onShare],
   );
 
   if (loading && entries.length === 0) {
@@ -155,6 +154,13 @@ const Stream = () => {
           <Ionicons name="chevron-down" size={26} color={theme.sub} />
         </Pressable>
       </SafeAreaView>
+
+      <ShareSheet
+        visible={Boolean(shareEntry)}
+        affirmation={shareEntry?.affirmation}
+        date={shareEntry?.date}
+        onClose={() => setShareEntry(null)}
+      />
     </GradientBackground>
   );
 };

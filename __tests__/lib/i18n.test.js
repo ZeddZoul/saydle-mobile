@@ -88,9 +88,7 @@ describe("translation", () => {
 
   it("interpolates without escaping the apostrophes in our copy", () => {
     // i18next escapes for HTML by default, which would render "Don&#39;t".
-    expect(t("favorites.remove", { text: "I don't have to earn it" })).toContain(
-      "don't",
-    );
+    expect(t("favorites.remove", { text: "I don't have to earn it" })).toContain("don't");
   });
 
   it("returns the testimonial list rather than its key", () => {
@@ -105,8 +103,6 @@ describe("translation", () => {
 
   it("prefers a translation over the config fallback when it has one", () => {
     setLocale("es");
-    expect(tf("questions.ageBand.title", "How old are you?")).toBe(
-      "¿Cuántos años tienes?",
-    );
+    expect(tf("questions.ageBand.title", "How old are you?")).toBe("¿Cuántos años tienes?");
   });
 });

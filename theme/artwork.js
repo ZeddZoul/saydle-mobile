@@ -23,38 +23,47 @@ import blobshape from "blobshape";
 // Positions and sizes are fractions of the screen, so the composition holds on a
 // small phone and a tablet alike.
 const COMPOSITIONS = {
+  // Warm and enveloping: two large washes that meet behind the words, a soft
+  // rose accent low-left, and two small highlights so the field has some life
+  // in it rather than reading as one flat smudge.
   dawn: [
-    { x: -0.25, y: -0.12, size: 0.95, edges: 6, growth: 6, color: "accentSoft", opacity: 0.22 },
-    { x: 0.55, y: 0.62, size: 1.05, edges: 5, growth: 7, color: "accent", opacity: 0.14 },
-    { x: 0.62, y: -0.05, size: 0.4, edges: 7, growth: 5, color: "border", opacity: 0.18 },
+    { x: -0.34, y: -0.16, size: 1.15, edges: 6, growth: 6, color: "accentSoft", opacity: 0.3 },
+    { x: 0.42, y: 0.5, size: 1.2, edges: 5, growth: 7, color: "accent", opacity: 0.2 },
+    { x: -0.18, y: 0.66, size: 0.8, edges: 7, growth: 8, color: "border", opacity: 0.26 },
+    { x: 0.66, y: -0.06, size: 0.42, edges: 8, growth: 5, color: "border", opacity: 0.24 },
+    { x: 0.1, y: 0.28, size: 0.55, edges: 6, growth: 9, color: "accentSoft", opacity: 0.16 },
   ],
   blush: [
-    { x: -0.3, y: 0.05, size: 1.1, edges: 5, growth: 7, color: "accentSoft", opacity: 0.2 },
-    { x: 0.45, y: 0.55, size: 0.9, edges: 6, growth: 6, color: "border", opacity: 0.22 },
-    { x: 0.3, y: -0.22, size: 0.7, edges: 7, growth: 8, color: "accent", opacity: 0.1 },
+    { x: -0.36, y: 0.02, size: 1.25, edges: 5, growth: 7, color: "accentSoft", opacity: 0.28 },
+    { x: 0.4, y: 0.5, size: 1.05, edges: 6, growth: 6, color: "border", opacity: 0.3 },
+    { x: 0.24, y: -0.26, size: 0.85, edges: 7, growth: 8, color: "accent", opacity: 0.16 },
+    { x: -0.12, y: 0.72, size: 0.6, edges: 6, growth: 7, color: "accentSoft", opacity: 0.22 },
   ],
   // Fewer edges and more growth read as leaf-like rather than bubble-like.
   sage: [
-    { x: -0.2, y: 0.58, size: 1.0, edges: 4, growth: 8, color: "accent", opacity: 0.16 },
-    { x: 0.5, y: -0.15, size: 0.95, edges: 4, growth: 9, color: "accentSoft", opacity: 0.2 },
-    { x: 0.68, y: 0.75, size: 0.5, edges: 5, growth: 7, color: "border", opacity: 0.24 },
+    { x: -0.26, y: 0.54, size: 1.1, edges: 4, growth: 8, color: "accent", opacity: 0.22 },
+    { x: 0.44, y: -0.18, size: 1.05, edges: 4, growth: 9, color: "accentSoft", opacity: 0.28 },
+    { x: 0.6, y: 0.7, size: 0.6, edges: 5, growth: 7, color: "border", opacity: 0.3 },
+    { x: -0.08, y: 0.02, size: 0.5, edges: 6, growth: 8, color: "accentSoft", opacity: 0.18 },
   ],
   // Wide and low: a horizon rather than a cluster.
   sky: [
-    { x: -0.35, y: 0.66, size: 1.4, edges: 8, growth: 9, color: "accentSoft", opacity: 0.18 },
-    { x: 0.3, y: -0.28, size: 1.15, edges: 8, growth: 8, color: "border", opacity: 0.22 },
-    { x: 0.72, y: 0.34, size: 0.35, edges: 6, growth: 6, color: "accent", opacity: 0.12 },
+    { x: -0.4, y: 0.6, size: 1.5, edges: 8, growth: 9, color: "accentSoft", opacity: 0.26 },
+    { x: 0.24, y: -0.3, size: 1.25, edges: 8, growth: 8, color: "border", opacity: 0.3 },
+    { x: 0.68, y: 0.3, size: 0.42, edges: 6, growth: 6, color: "accent", opacity: 0.18 },
+    { x: -0.1, y: 0.18, size: 0.5, edges: 7, growth: 9, color: "accentSoft", opacity: 0.14 },
   ],
   // Dark themes take a lower opacity: the same value reads far brighter against
   // a dark backdrop, and a glow that outshines the type defeats the point.
   dusk: [
-    { x: -0.28, y: -0.08, size: 1.1, edges: 5, growth: 8, color: "accent", opacity: 0.12 },
-    { x: 0.48, y: 0.6, size: 1.0, edges: 6, growth: 7, color: "accentSoft", opacity: 0.09 },
+    { x: -0.32, y: -0.1, size: 1.2, edges: 5, growth: 8, color: "accent", opacity: 0.16 },
+    { x: 0.42, y: 0.52, size: 1.1, edges: 6, growth: 7, color: "accentSoft", opacity: 0.13 },
+    { x: 0.6, y: 0.02, size: 0.45, edges: 7, growth: 6, color: "border", opacity: 0.16 },
   ],
   midnight: [
-    { x: -0.2, y: 0.62, size: 1.15, edges: 6, growth: 8, color: "accent", opacity: 0.1 },
-    { x: 0.42, y: -0.2, size: 1.0, edges: 7, growth: 7, color: "accentSoft", opacity: 0.08 },
-    { x: 0.75, y: 0.3, size: 0.3, edges: 8, growth: 6, color: "border", opacity: 0.14 },
+    { x: -0.26, y: 0.56, size: 1.25, edges: 6, growth: 8, color: "accent", opacity: 0.14 },
+    { x: 0.38, y: -0.22, size: 1.1, edges: 7, growth: 7, color: "accentSoft", opacity: 0.12 },
+    { x: 0.72, y: 0.28, size: 0.36, edges: 8, growth: 6, color: "border", opacity: 0.18 },
   ],
 };
 
@@ -62,8 +71,8 @@ const FALLBACK = COMPOSITIONS.dawn;
 
 // Slow enough to be felt rather than watched. A backdrop that visibly moves is
 // something to look at; this should only ever be something to look past.
-const DRIFT_MS = [15000, 19000, 23000];
-const DRIFT_PX = [14, 10, 18];
+const DRIFT_MS = [15000, 19000, 23000, 17000, 21000];
+const DRIFT_PX = [14, 10, 18, 12, 16];
 
 /**
  * Turns a theme into positioned, coloured shapes for a given screen size.

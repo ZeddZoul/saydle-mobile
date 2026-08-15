@@ -19,13 +19,21 @@ const feed = [
 
 describe("buildWidgetPayload", () => {
   it("hands over today and the days ahead, in order", () => {
-    const payload = buildWidgetPayload({ entries: feed, theme: getTheme("dawn"), today: TODAY });
+    const payload = buildWidgetPayload({
+      entries: feed,
+      theme: getTheme("dawn"),
+      today: TODAY,
+    });
 
     expect(payload.days.map((d) => d.date)).toEqual([TODAY, "2026-08-06", "2026-08-07"]);
   });
 
   it("drops days already past — a widget is a window on today, not an archive", () => {
-    const payload = buildWidgetPayload({ entries: feed, theme: getTheme("dawn"), today: TODAY });
+    const payload = buildWidgetPayload({
+      entries: feed,
+      theme: getTheme("dawn"),
+      today: TODAY,
+    });
 
     expect(payload.days.map((d) => d.text)).not.toContain("Yesterday's line.");
   });
@@ -103,8 +111,9 @@ describe("buildWidgetPayload", () => {
   });
 
   it("carries a version, so an old widget can tell rather than mis-render", () => {
-    expect(buildWidgetPayload({ entries: feed, theme: getTheme("dawn"), today: TODAY }).version)
-      .toBe(1);
+    expect(
+      buildWidgetPayload({ entries: feed, theme: getTheme("dawn"), today: TODAY }).version,
+    ).toBe(1);
   });
 });
 
@@ -123,7 +132,11 @@ describe("widgetPayloadChanged", () => {
   });
 
   it("says yes when the theme changes", () => {
-    const dark = buildWidgetPayload({ entries: feed, theme: getTheme("midnight"), today: TODAY });
+    const dark = buildWidgetPayload({
+      entries: feed,
+      theme: getTheme("midnight"),
+      today: TODAY,
+    });
     expect(widgetPayloadChanged(payload(), dark)).toBe(true);
   });
 

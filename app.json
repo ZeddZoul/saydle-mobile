@@ -1,36 +1,38 @@
 {
   "expo": {
-    "name": "saydle-mobile",
+    "name": "Saydle",
     "scheme": "saydleapp",
     "slug": "saydle-mobile",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/logo.png",
+    "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
     "newArchEnabled": true,
     "splash": {
-      "image": "./assets/logo.png",
+      "image": "./assets/adaptive-icon.png",
       "resizeMode": "contain",
       "backgroundColor": "#F7CAC5"
     },
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.anonymous.saydle-mobile",
+      "bundleIdentifier": "com.saydle.app",
       "entitlements": {
         "com.apple.security.application-groups": [
-          "group.com.anonymous.saydle-mobile.widget"
+          "group.com.saydle.app.expowidgets"
         ]
       }
     },
     "android": {
       "adaptiveIcon": {
-        "foregroundImage": "./assets/logo.png",
-        "backgroundColor": "#F7CAC5"
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#F7CAC5",
+        "monochromeImage": "./assets/monochrome-icon.png"
       },
-      "edgeToEdgeEnabled": true
+      "edgeToEdgeEnabled": true,
+      "package": "com.saydle.app"
     },
     "web": {
-      "favicon": "./assets/logo.png"
+      "favicon": "./assets/icon.png"
     },
     "plugins": [
       "expo-router",
@@ -40,8 +42,8 @@
         "expo-splash-screen",
         {
           "backgroundColor": "#F7CAC5",
-          "image": "./assets/logo.png",
-          "imageWidth": 180,
+          "image": "./assets/adaptive-icon.png",
+          "imageWidth": 220,
           "resizeMode": "contain"
         }
       ],
@@ -54,20 +56,50 @@
       "@react-native-community/datetimepicker",
       "expo-localization",
       [
+        "./plugins/withWidgetFonts",
+        {
+          "target": "SaydleWidgetExtension",
+          "fonts": [
+            "Fraunces_700Bold.ttf",
+            "Fraunces_600SemiBold.ttf"
+          ]
+        }
+      ],
+      [
+        "@bittingz/expo-native-fonts",
+        {
+          "srcFolder": "./widgets/fonts",
+          "fonts": [
+            {
+              "filePath": "Fraunces_700Bold.ttf",
+              "targets": [
+                "SaydleWidgetExtension"
+              ],
+              "platform": "ios"
+            },
+            {
+              "filePath": "Fraunces_600SemiBold.ttf",
+              "targets": [
+                "SaydleWidgetExtension"
+              ],
+              "platform": "ios"
+            }
+          ]
+        }
+      ],
+      [
         "@bittingz/expo-widgets",
         {
           "ios": {
             "src": "./widgets/ios",
             "devTeamId": "$APPLE_TEAM_ID",
             "mode": "development",
-            "moduleDependencies": [
-              "Module.swift"
-            ],
+            "moduleDependencies": [],
             "useLiveActivities": false,
             "frequentUpdates": false,
             "entitlements": {
               "com.apple.security.application-groups": [
-                "group.com.anonymous.saydle-mobile.widget"
+                "group.com.saydle.app.expowidgets"
               ]
             }
           },
@@ -78,8 +110,15 @@
                 "name": "SaydleWidgetProvider",
                 "resourceName": "@xml/saydle_widget_info"
               }
-            ]
+            ],
+            "distPlaceholder": "PACKAGE_PLACEHOLDER"
           }
+        }
+      ],
+      [
+        "expo-audio",
+        {
+          "microphonePermission": "Saydle uses the microphone only when you record an affirmation in your own voice. Recordings stay on this device."
         }
       ]
     ]

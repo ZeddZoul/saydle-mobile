@@ -27,22 +27,27 @@ const MAX_WORDS = 20;
 const ES_LETTERS = "a-zñáéíóúü";
 
 /** Whole words: bounded on both sides. */
-const es = (body) =>
-  new RegExp(`(?<![${ES_LETTERS}])(?:${body})(?![${ES_LETTERS}])`, "i");
+const es = (body) => new RegExp(`(?<![${ES_LETTERS}])(?:${body})(?![${ES_LETTERS}])`, "i");
 
 /**
  * Stems: bounded only at the start, so "suicid" also catches "suicidándome".
  * `\w*` would not — it stops at the first accented letter and the trailing
  * boundary then fails, quietly letting the word through.
  */
-const esStem = (body) =>
-  new RegExp(`(?<![${ES_LETTERS}])(?:${body})`, "i");
+const esStem = (body) => new RegExp(`(?<![${ES_LETTERS}])(?:${body})`, "i");
 
 const RULES = {
   en: {
     // Topics an affirmation must never touch, however it was prompted.
     forbidden: [
       /\bsuicid|\bkill (myself|yourself)|\bself[- ]harm|\bcutting\b/i,
+      // Violence toward others. The screen originally covered only
+      // self-directed harm, and "I can kill as much as I want" walked straight
+      // through it onto a home-screen widget. Idioms ("dressed to kill",
+      // "killing it at work") will occasionally trip this; the cost of a false
+      // positive here is a line staying private or a focus going unechoed,
+      // which is the right side to err on.
+      /\bkill(ing)?\b|\bmurder|\bshoot(ing)?\b|\bstab|\bweapon|\bgun\b|\bviolen|\bhurt (someone|somebody|him|her|them|people|others)\b/i,
       /\banorexi|\bbulimi|\bpurg(e|ing)\b|\bcalorie|\bdiet\b|\bweight\b|\bthin(ner)?\b/i,
       // The prompt forbids referencing the reader's body or appearance at all.
       /\bskinny\b|\bfat\b|\battractive\b|\bmy body\b|\bmy looks\b/i,
@@ -69,6 +74,8 @@ const RULES = {
   es: {
     forbidden: [
       esStem(String.raw`suicid|matarme|quitarme la vida|autolesi|cortarme`),
+      // Violence toward others — mirrors the English rule above.
+      esStem(String.raw`matar|asesinat|asesin|apu[ñn]al|disparar|violenci|arma\b|lastimar a|hacer da[ñn]o a`),
       esStem(String.raw`anorexi|bulimi|purga|calor[íi]a|dieta|delgad|adelgaz`),
       es(String.raw`peso`),
       // Mirrors the English rule: the body and appearance are off limits entirely.
@@ -105,12 +112,38 @@ const RULES = {
      */
     firstPerson: new RegExp(
       `^(?:hoy,?\\s+)?(?:${[
-        "yo", "me", "mis?", "m[íi]",
+        "yo",
+        "me",
+        "mis?",
+        "m[íi]",
         "no\\s+(?:tengo|necesito|debo|estoy|soy)",
-        "puedo", "permito", "merezco", "elijo", "tengo", "estoy", "soy", "s[ée]",
-        "quiero", "dejo", "hago", "voy", "acepto", "conf[íi]o", "respiro",
-        "descanso", "avanzo", "empiezo", "logro", "cuido", "vivo", "siento",
-        "aprendo", "agradezco", "valgo", "not[oa]", "elijo",
+        "puedo",
+        "permito",
+        "merezco",
+        "elijo",
+        "tengo",
+        "estoy",
+        "soy",
+        "s[ée]",
+        "quiero",
+        "dejo",
+        "hago",
+        "voy",
+        "acepto",
+        "conf[íi]o",
+        "respiro",
+        "descanso",
+        "avanzo",
+        "empiezo",
+        "logro",
+        "cuido",
+        "vivo",
+        "siento",
+        "aprendo",
+        "agradezco",
+        "valgo",
+        "not[oa]",
+        "elijo",
       ].join("|")})(?![${ES_LETTERS}])`,
       "i",
     ),

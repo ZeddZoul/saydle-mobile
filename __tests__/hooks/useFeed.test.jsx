@@ -74,10 +74,7 @@ describe("useFeed", () => {
       feed: jest.fn(async () => ({
         today: "1999-01-01", // deliberately wrong: the client must not trust it
         timezone: "UTC",
-        entries: [
-          entry("1999-01-01", "Stale server day."),
-          entry(TODAY, "I am steady today."),
-        ],
+        entries: [entry("1999-01-01", "Stale server day."), entry(TODAY, "I am steady today.")],
       })),
       markSeen: jest.fn(async () => ({ ok: true })),
     };
@@ -85,9 +82,7 @@ describe("useFeed", () => {
     const { result } = await renderFeed({ cache, client });
 
     await waitFor(() => expect(result.current.loading).toBe(false));
-    expect(result.current.todayEntry.affirmation.text).toBe(
-      "I am steady today.",
-    );
+    expect(result.current.todayEntry.affirmation.text).toBe("I am steady today.");
   });
 
   it("serves cached entries and flags offline when the network fails", async () => {
@@ -107,9 +102,7 @@ describe("useFeed", () => {
 
     await waitFor(() => expect(result.current.loading).toBe(false));
     expect(result.current.offline).toBe(true);
-    expect(result.current.todayEntry.affirmation.text).toBe(
-      "I rest without earning it.",
-    );
+    expect(result.current.todayEntry.affirmation.text).toBe("I rest without earning it.");
     // Offline with content is not an error state.
     expect(result.current.error).toBeNull();
   });

@@ -33,6 +33,8 @@ function makeCache({ practice = null } = {}) {
     saveOutbox: jest.fn(async () => {}),
     loadPractice: jest.fn(async () => practice),
     savePractice: jest.fn(async () => {}),
+    loadVoiceNotes: jest.fn(async () => ({})),
+    saveVoiceNotes: jest.fn(async () => {}),
     clear: jest.fn(async () => {}),
   };
 }
@@ -106,7 +108,11 @@ describe("Practice", () => {
 
     await waitFor(() =>
       expect(cache.savePractice).toHaveBeenCalledWith("u1", [
-        expect.objectContaining({ date: TODAY, affirmationId: "a1", completedAt: expect.any(String) }),
+        expect.objectContaining({
+          date: TODAY,
+          affirmationId: "a1",
+          completedAt: expect.any(String),
+        }),
       ]),
     );
   });

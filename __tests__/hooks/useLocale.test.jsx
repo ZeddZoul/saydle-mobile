@@ -95,7 +95,10 @@ describe("useLocale", () => {
   });
 
   it("offers exactly the supported languages", async () => {
-    const client = { me: jest.fn(async () => ({ user: user() })), updatePreferences: jest.fn() };
+    const client = {
+      me: jest.fn(async () => ({ user: user() })),
+      updatePreferences: jest.fn(),
+    };
     const { result } = await renderLocale({ cache: makeCache(user()), client });
 
     await waitFor(() => expect(result.current.locales).toEqual(["en", "es"]));

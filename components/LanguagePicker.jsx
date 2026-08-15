@@ -41,12 +41,8 @@ const LanguagePicker = ({ value, onChange, disabled = false }) => {
               active && { borderColor: theme.accent, backgroundColor: theme.accent },
             ]}
           >
-            {active ? (
-              <Ionicons name="checkmark" size={15} color={colors.white} />
-            ) : null}
-            <Text
-              style={[styles.label, { color: theme.sub }, active && styles.labelActive]}
-            >
+            {active ? <Ionicons name="checkmark" size={15} color={colors.white} /> : null}
+            <Text style={[styles.label, { color: theme.sub }, active && styles.labelActive]}>
               {LOCALE_NAMES[locale]}
             </Text>
           </Pressable>

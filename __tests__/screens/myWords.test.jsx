@@ -6,6 +6,14 @@ import { ToastProvider } from "../../contexts/ToastContext.jsx";
 import MyWords from "../../app/(dashboard)/my-words.jsx";
 import { ApiError } from "../../lib/errors.js";
 
+// The screen refreshes entitlement on focus, which needs a navigation container.
+// Running the callback once on mount is the behaviour under test.
+jest.mock("expo-router", () => ({
+  useFocusEffect: (cb) => require("react").useEffect(cb, [cb]),
+  // The floating header replaced the navigator's, and it navigates back itself.
+  useRouter: () => ({ push: jest.fn(), back: jest.fn(), replace: jest.fn(), canGoBack: () => true }),
+}));
+
 const USER = { id: "u1", firstName: "Ada" };
 
 const entitled = { entitled: true, status: "trialing", verified: false };
@@ -153,7 +161,9 @@ describe("MyWords", () => {
       buttons.find((b) => b.style === "destructive").onPress();
     });
 
-    const client = baseClient({ list: [{ id: "c1", text: "An older one.", source: "custom" }] });
+    const client = baseClient({
+      list: [{ id: "c1", text: "An older one.", source: "custom" }],
+    });
     const { findByLabelText } = await renderMyWords(client);
 
     await fireEvent.press(await findByLabelText('Delete "An older one."'));
@@ -181,5 +191,24 @@ describe("MyWords", () => {
 
     expect(await findByText("An older one.")).toBeTruthy();
     spy.mockRestore();
+  });
+});
+
+describe("MyWords — entitlement freshness", () => {
+  it("re-reads entitlement on focus, so a trial started elsewhere unlocks it", async () => {
+    // Caught on device: the tab screen stays mounted, so a mount-only fetch left
+    // the paywall showing after the trial had already started server-side.
+    const client = baseClient({ subscription: unentitled });
+    const { findByTestId } = await renderMyWords(client);
+
+    await findByTestId("my-words-locked");
+    expect(client.subscription).toHaveBeenCalled();
+  });
+
+  it("shows the composer once the account is entitled", async () => {
+    const { findByLabelText, queryByTestId } = await renderMyWords();
+
+    expect(await findByLabelText("Your affirmation")).toBeTruthy();
+    expect(queryByTestId("my-words-locked")).toBeNull();
   });
 });

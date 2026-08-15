@@ -51,7 +51,10 @@ describe("computeStreak", () => {
 
   it("remembers the longest run even after it breaks", () => {
     const days = [
-      "2026-07-01", "2026-07-02", "2026-07-03", "2026-07-04", // run of 4
+      "2026-07-01",
+      "2026-07-02",
+      "2026-07-03",
+      "2026-07-04", // run of 4
       "2026-08-04", // today, run of 1
     ];
     expect(computeStreak(days, "2026-08-04")).toMatchObject({ current: 1, longest: 4 });
@@ -114,9 +117,7 @@ describe("GET /api/streak", () => {
     const today = todayInZone("UTC");
 
     await request(app).get("/api/affirmations/today").set("authorization", auth);
-    await request(app)
-      .post(`/api/affirmations/feed/${today}/seen`)
-      .set("authorization", auth);
+    await request(app).post(`/api/affirmations/feed/${today}/seen`).set("authorization", auth);
 
     const res = await request(app).get("/api/streak").set("authorization", auth);
 

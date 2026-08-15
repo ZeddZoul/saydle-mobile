@@ -35,10 +35,9 @@ refreshTokenSchema.index({ expiresAt: 1 }, { expireAfterSeconds: 0 });
 
 refreshTokenSchema.methods.isUsable = function isUsable() {
   return (
-    this.revokedAt === null &&
-    this.rotatedAt === null &&
-    this.expiresAt.getTime() > Date.now()
+    this.revokedAt === null && this.rotatedAt === null && this.expiresAt.getTime() > Date.now()
   );
 };
 
-export const RefreshToken = mongoose.models.RefreshToken ?? mongoose.model("RefreshToken", refreshTokenSchema);
+export const RefreshToken =
+  mongoose.models.RefreshToken ?? mongoose.model("RefreshToken", refreshTokenSchema);

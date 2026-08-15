@@ -10,6 +10,13 @@ import {
   sendEmailVerificationCode,
 } from "../services/mailer.service.js";
 import { resolveLocale } from "../config/locales.js";
+import { scheduleReplenish } from "../services/affirmation.service.js";
+import {
+  requestDeletion,
+  cancelDeletion,
+  isPending,
+  serializeDeletion,
+} from "../services/deletion.service.js";
 import { AppError } from "../utils/AppError.js";
 import {
   signAccessToken,
@@ -62,6 +69,21 @@ export async function register(req, res, next) {
       req.log?.error({ err, userId: user.id }, "verification email failed"),
     );
 
+    // Start generating before the reader has finished signing up. The account is
+    // created at the end of the funnel, so there are a few seconds of paywall
+    // and navigation before Today is opened — enough, usually, for the first
+    // batch to land and for day one to be theirs rather than the bank's. Not
+    // awaited, and it costs nothing when it loses the race: the feed is filled
+    // instantly either way.
+    scheduleReplenish(user);
+
+    // Start the first batch now, while they are still finishing onboarding.
+    // Not awaited — registration must not inherit the model's latency — but
+    // starting it here is what buys the pool a head start on the first read, so
+    // a new account usually gets a generated line on day one rather than a
+    // curated stand-in.
+    scheduleReplenish(user);
+
     req.log?.info({ userId: user.id }, "user registered");
 
     res.status(201).json({
@@ -105,10 +127,9 @@ export async function login(req, res, next) {
 
 export async function refresh(req, res, next) {
   try {
-    const { userId, refreshToken } = await rotateRefreshToken(
-      req.body.refreshToken,
-      { userAgent: req.get("user-agent") },
-    );
+    const { userId, refreshToken } = await rotateRefreshToken(req.body.refreshToken, {
+      userAgent: req.get("user-agent"),
+    });
 
     const user = await User.findById(userId);
     if (!user) {
@@ -203,17 +224,82 @@ export async function me(req, res) {
   res.json({ user: req.user.toJSON() });
 }
 
+/**
+ * Ask to be deleted.
+ *
+ * Schedules rather than destroys: the account is marked, sessions are dropped so
+ * the app returns to signed-out exactly as it did before, and a purge job takes
+ * it once the grace period expires. Signing back in during the window is what
+ * offers the cancel — see `restoreMe`.
+ *
+ * Deliberately still a `DELETE /me` returning no body the client needs: the app
+ * already treats this as "you are signed out now", and that remains true.
+ */
 export async function deleteMe(req, res, next) {
   try {
+    const { password, confirmEmail } = req.body;
+
+    // Checked before the password so a typo in the confirmation never costs a
+    // rate-limit attempt, and so the two failures stay tellable apart.
+    if (confirmEmail.trim().toLowerCase() !== req.user.email) {
+      throw AppError.badRequest("That does not match the email on this account.", {
+        confirmEmail: "Type your email address exactly.",
+      });
+    }
+
+    // `requireAuth` attaches the user without the hash — it is `select: false`,
+    // and `verifyPassword` throws *synchronously* when it is missing, so a
+    // trailing `.catch()` on the call would never even be attached.
+    const account = await User.findById(req.user._id).select("+passwordHash");
+    const ok = await account.verifyPassword(password).catch(() => false);
+
+    if (!ok) {
+      // Rate limited at the route: without that this is an oracle for testing
+      // passwords against an account someone already has a session for.
+      throw AppError.unauthorized("That password is incorrect.");
+    }
+
+    requestDeletion(req.user);
+    await req.user.save();
+
+    // Dropped on purpose. The next sign-in is the moment we can ask whether
+    // they meant it, and leaving a live session would skip that conversation.
     await revokeAllForUser(req.user._id);
-    await User.deleteOne({ _id: req.user._id });
-    req.log?.info({ userId: req.user.id }, "account deleted");
-    res.status(204).end();
+
+    req.log?.info(
+      { userId: req.user.id, purgeAfter: req.user.deletion.purgeAfter },
+      "account deletion scheduled",
+    );
+
+    res.status(202).json({ deletion: serializeDeletion(req.user) });
   } catch (err) {
     next(err);
   }
 }
 
+/**
+ * Change of mind, from inside the grace period.
+ *
+ * Reachable because sign-in keeps working while an account is pending — the one
+ * rule this whole design rests on.
+ */
+export async function restoreMe(req, res, next) {
+  try {
+    if (!isPending(req.user)) {
+      // Not an error: the app may fire this from a stale screen, and "your
+      // account is fine" is the honest answer to that.
+      return res.json({ user: req.user.toJSON(), restored: false });
+    }
+
+    cancelDeletion(req.user);
+    await req.user.save();
+
+    req.log?.info({ userId: req.user.id }, "account deletion cancelled");
+    res.json({ user: req.user.toJSON(), restored: true });
+  } catch (err) {
+    next(err);
+  }
+}
 
 /**
  * Start a password reset.

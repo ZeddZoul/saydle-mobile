@@ -2,13 +2,20 @@ import { render, fireEvent, waitFor } from "@testing-library/react-native";
 import ProfileNudge from "../../components/ProfileNudge.jsx";
 import { NetworkError } from "../../lib/errors.js";
 
-const single = { key: "innerCritic", kind: "single", label: "Inner voice", options: ["harsh", "kind"] };
+const single = {
+  key: "innerCritic",
+  kind: "single",
+  label: "Inner voice",
+  options: ["harsh", "kind"],
+};
 const multi = { key: "values", kind: "multi", label: "Values", options: ["growth", "peace"] };
 const text = { key: "aspiration", kind: "text", label: "Who you're becoming" };
 
 describe("ProfileNudge", () => {
   it("renders nothing when there is no question to ask", async () => {
-    const { queryByTestId } = await render(<ProfileNudge suggestion={null} onAnswer={jest.fn()} />);
+    const { queryByTestId } = await render(
+      <ProfileNudge suggestion={null} onAnswer={jest.fn()} />,
+    );
     expect(queryByTestId("profile-nudge")).toBeNull();
   });
 
@@ -23,8 +30,15 @@ describe("ProfileNudge", () => {
   });
 
   it("falls back to readable labels for a field the funnel never asked", async () => {
-    const unknown = { key: "improveAreas", kind: "multi", label: "What you want to improve", options: ["positive-thinking"] };
-    const { findByText } = await render(<ProfileNudge suggestion={unknown} onAnswer={jest.fn()} />);
+    const unknown = {
+      key: "improveAreas",
+      kind: "multi",
+      label: "What you want to improve",
+      options: ["positive-thinking"],
+    };
+    const { findByText } = await render(
+      <ProfileNudge suggestion={unknown} onAnswer={jest.fn()} />,
+    );
 
     expect(await findByText("Positive thinking")).toBeTruthy();
   });
@@ -43,7 +57,9 @@ describe("ProfileNudge", () => {
 
   it("collects several answers before saving a multi-select", async () => {
     const onAnswer = jest.fn(async () => {});
-    const { findByText } = await render(<ProfileNudge suggestion={multi} onAnswer={onAnswer} />);
+    const { findByText } = await render(
+      <ProfileNudge suggestion={multi} onAnswer={onAnswer} />,
+    );
 
     await fireEvent.press(await findByText("Growth"));
     await fireEvent.press(await findByText("Peace"));

@@ -1,0 +1,73 @@
+diff --git a/plugin/build/ios/withPodfile.js b/plugin/build/ios/withPodfile.js
+index e39bf98439ad763668d7e31dfc70e2ab2b600352..d5e74aac88155063ccf96eb33b8d62826d0084da 100644
+--- a/plugin/build/ios/withPodfile.js
++++ b/plugin/build/ios/withPodfile.js
+@@ -45,33 +45,43 @@ const withPodfile = (config, options) => {
+     const AppExtValue = AppExtAPIOnly ? 'YES' : 'No';
+     const podFilePath = path.join(config.modRequest.platformProjectRoot, "Podfile");
+     let podFileContent = fs.readFileSync(podFilePath).toString();
+-    const podInstaller = `
+-target '${targetName}' do
+-  use_expo_modules!
+-  config = use_native_modules!
+-
+-  use_frameworks! :linkage => podfile_properties['ios.useFrameworks'].to_sym if podfile_properties['ios.useFrameworks']
+-  use_frameworks! :linkage => ENV['USE_FRAMEWORKS'].to_sym if ENV['USE_FRAMEWORKS']
+-
+-  use_react_native!(
+-    :path => config[:reactNativePath],
+-    :hermes_enabled => podfile_properties['expo.jsEngine'] == nil || podfile_properties['expo.jsEngine'] == 'hermes',
+-    # An absolute path to your application root.
+-    :app_path => "#{Pod::Config.instance.installation_root}/..",
+-    :privacy_file_aggregation_enabled => podfile_properties['apple.privacyManifestAggregationEnabled'] != 'false',
+-  )
+-end
+-`;
+-    const withAppExtFix = (0, generateCode_1.mergeContents)({
+-        tag: "app_ext_fix",
+-        src: podFileContent,
+-        newSrc: `
++    // PATCHED (saydle): the upstream block links expo-modules and React Native
++    // into the widget extension via `use_native_modules!` with no arguments —
++    // the pre-SDK-54 form, which falls back to @react-native-community/cli and
++    // now fails outright ("returned a status code of 1").
++    //
++    // Rather than fix the call, we emit nothing. A WidgetKit extension has no
++    // business linking React Native: ours imports WidgetKit and SwiftUI only
++    // and reads its data from the shared App Group, so it needs no pods at all.
++    // Xcode builds the target directly and CocoaPods leaves it alone.
++    //
++    // Restore an entry here if a widget ever needs a real pod dependency.
++    const podInstaller = '';
++    // PATCHED (saydle): this edit is anchored to a `resource_bundle_target`
++    // block that Expo's Podfile template no longer generates (gone by SDK 54),
++    // so mergeContents threw and took the whole prebuild with it.
++    //
++    // What it does is Sentry-specific — it forces APPLICATION_EXTENSION_API_ONLY
++    // off for every resource bundle except Sentry's. The `fix2` edit below
++    // already applies the same setting at target level, which is the part that
++    // actually matters, so when the anchor is missing we simply skip this.
++    let withAppExtFix;
++    try {
++        withAppExtFix = (0, generateCode_1.mergeContents)({
++            tag: "app_ext_fix",
++            src: podFileContent,
++            newSrc: `
+         config.build_settings['APPLICATION_EXTENSION_API_ONLY'] = resource_bundle_target.name == 'Sentry' ? 'YES' : 'No'
+         `,
+-        anchor: /resource_bundle_target.build_configurations.each do \|config\|/,
+-        offset: 1,
+-        comment: "#",
+-    });
++            anchor: /resource_bundle_target.build_configurations.each do \|config\|/,
++            offset: 1,
++            comment: "#",
++        });
++    }
++    catch (e) {
++        logger_1.Logging.logger.debug('Podfile has no resource_bundle_target block; skipping the Sentry app-extension fix');
++        withAppExtFix = { contents: podFileContent };
++    }
+     const withAppExtFixPt2 = (0, generateCode_1.mergeContents)({
+         tag: 'fix2',
+         src: withAppExtFix.contents,

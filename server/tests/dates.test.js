@@ -62,11 +62,7 @@ describe("addDays", () => {
 
 describe("dateRange", () => {
   it("produces a contiguous run starting at the given day", () => {
-    expect(dateRange("2026-08-03", 3)).toEqual([
-      "2026-08-03",
-      "2026-08-04",
-      "2026-08-05",
-    ]);
+    expect(dateRange("2026-08-03", 3)).toEqual(["2026-08-03", "2026-08-04", "2026-08-05"]);
   });
 });
 

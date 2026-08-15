@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useCallback, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
@@ -10,8 +10,12 @@ import {
   View,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import { useFocusEffect } from "expo-router";
 import * as Haptics from "expo-haptics";
 import GradientBackground from "../../components/GradientBackground.jsx";
+import FloatingHeader, {
+  FLOATING_HEADER_INSET,
+} from "../../components/FloatingHeader.jsx";
 import DisplayText from "../../components/DisplayText.jsx";
 import Button from "../../components/Button";
 import OfflineBanner from "../../components/OfflineBanner";
@@ -36,8 +40,16 @@ const MyWords = () => {
   const { t } = useT();
   const { theme } = useAppTheme();
   const toast = useToast();
-  const { affirmations, entitled, loading, offline, saving, create, remove } =
+  const { affirmations, entitled, loading, offline, saving, create, remove, refresh } =
     useCustomAffirmations();
+
+  // Tab screens stay mounted once visited, so without this the gate would keep
+  // showing the paywall after a trial or subscription started elsewhere.
+  useFocusEffect(
+    useCallback(() => {
+      refresh();
+    }, [refresh]),
+  );
 
   const [text, setText] = useState("");
   const [focused, setFocused] = useState(false);
@@ -76,6 +88,8 @@ const MyWords = () => {
   if (loading) {
     return (
       <GradientBackground style={styles.centered} testID="my-words-loading">
+      <FloatingHeader title={t("myWords.title")} />
+
         <ActivityIndicator size="large" color={theme.accent} />
       </GradientBackground>
     );
@@ -86,6 +100,8 @@ const MyWords = () => {
   if (!entitled) {
     return (
       <GradientBackground style={styles.centered} testID="my-words-locked">
+      <FloatingHeader title={t("myWords.title")} />
+
         <Ionicons name="create-outline" size={30} color={theme.accent} />
         <DisplayText style={[styles.lockedTitle, { color: theme.ink }]}>
           {t("myWords.lockedTitle")}
@@ -97,6 +113,8 @@ const MyWords = () => {
 
   return (
     <GradientBackground>
+      <FloatingHeader title={t("myWords.title")} />
+
       <OfflineBanner visible={offline} />
 
       <FlatList
@@ -134,7 +152,9 @@ const MyWords = () => {
         }
         renderItem={({ item }) => (
           <View style={[styles.card, { backgroundColor: theme.surface }]} testID="my-word">
-            <DisplayText style={[styles.cardText, { color: theme.ink }]}>{item.text}</DisplayText>
+            <DisplayText style={[styles.cardText, { color: theme.ink }]}>
+              {item.text}
+            </DisplayText>
 
             <Pressable
               onPress={() => onDelete(item)}
@@ -172,6 +192,10 @@ const styles = StyleSheet.create({
   list: {
     padding: spacing.xl,
     paddingBottom: 112,
+    // Clears the floating header, which overlays rather than occupies.
+    // Declared after any `padding` shorthand: that shorthand resets
+    // paddingTop, so ordering here is load-bearing.
+    paddingTop: FLOATING_HEADER_INSET,
   },
   composer: {
     marginBottom: spacing.xl,

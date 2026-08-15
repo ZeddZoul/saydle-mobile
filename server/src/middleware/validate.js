@@ -15,12 +15,7 @@ export const validate =
     const result = schema.safeParse(req[source]);
 
     if (!result.success) {
-      return next(
-        AppError.badRequest(
-          "Request validation failed.",
-          fieldErrors(result.error),
-        ),
-      );
+      return next(AppError.badRequest("Request validation failed.", fieldErrors(result.error)));
     }
 
     Object.defineProperty(req, source, {
