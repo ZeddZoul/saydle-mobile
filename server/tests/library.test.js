@@ -29,7 +29,10 @@ vi.mock("../src/config/env.js", async (importOriginal) => {
 const app = createApp();
 
 const lines = (n, prefix = "line") =>
-  Array.from({ length: n }, (_, i) => ({ text: `I can hold ${prefix} ${i}.`, category: "calm" }));
+  Array.from({ length: n }, (_, i) => ({
+    text: `I can hold ${prefix} ${i}.`,
+    category: "calm",
+  }));
 
 /**
  * The daily replenish and the library both call the model, and both insert into
@@ -102,7 +105,6 @@ describe("the paywall", () => {
 
 describe("the batch", () => {
   it("writes one big batch rather than many small ones", async () => {
-
     await refill(user, { size: 240 });
 
     // One call, because the prompt and the thinking budget are paid per call:
@@ -141,21 +143,32 @@ describe("the batch", () => {
   it("tracks where they are with a single number, not a row per line", async () => {
     await refill(user, { size: 240 });
 
-    await request(app).post("/api/library/seen").set("authorization", auth).send({ cursor: 60 });
+    await request(app)
+      .post("/api/library/seen")
+      .set("authorization", auth)
+      .send({ cursor: 60 });
 
     const page = await request(app).get("/api/library?limit=5").set("authorization", auth);
     expect(page.body.cursor).toBe(60);
     expect(page.body.remaining).toBe(180);
     // The 61st line of the batch, not the first — "new to them" is a position.
-    const batch = await Affirmation.find({ user: user._id, library: true }).sort({ _id: 1 }).lean();
+    const batch = await Affirmation.find({ user: user._id, library: true })
+      .sort({ _id: 1 })
+      .lean();
     expect(page.body.affirmations[0].text).toBe(batch[60].text);
   });
 
   it("never moves the cursor backwards", async () => {
     await refill(user, { size: 240 });
 
-    await request(app).post("/api/library/seen").set("authorization", auth).send({ cursor: 100 });
-    await request(app).post("/api/library/seen").set("authorization", auth).send({ cursor: 20 });
+    await request(app)
+      .post("/api/library/seen")
+      .set("authorization", auth)
+      .send({ cursor: 100 });
+    await request(app)
+      .post("/api/library/seen")
+      .set("authorization", auth)
+      .send({ cursor: 20 });
 
     // Scrolling back up must not un-read what they were already shown, or the
     // next batch repeats it.
@@ -170,7 +183,10 @@ describe("refilling", () => {
     generateAffirmations.mockClear();
 
     // Past the refill threshold with only a handful left.
-    await request(app).post("/api/library/seen").set("authorization", auth).send({ cursor: 45 });
+    await request(app)
+      .post("/api/library/seen")
+      .set("authorization", auth)
+      .send({ cursor: 45 });
     await flushRefills();
 
     expect(libraryCalls(240).length + libraryCalls(50).length).toBeGreaterThan(0);
@@ -180,7 +196,10 @@ describe("refilling", () => {
     await refill(user, { size: 240 });
     generateAffirmations.mockClear();
 
-    await request(app).post("/api/library/seen").set("authorization", auth).send({ cursor: 10 });
+    await request(app)
+      .post("/api/library/seen")
+      .set("authorization", auth)
+      .send({ cursor: 10 });
     await flushRefills();
 
     // Consumption is the trigger, not the calendar.
@@ -222,11 +241,15 @@ describe("refilling", () => {
 
   it("lets only one instance generate at a time", async () => {
     generateAffirmations.mockImplementation(
-      ({ count }) => new Promise((r) => setTimeout(() => r(lines(count, `c${(call += 1)}`)), 30)),
+      ({ count }) =>
+        new Promise((r) => setTimeout(() => r(lines(count, `c${(call += 1)}`)), 30)),
     );
 
     const fresh = await User.findById(user._id);
-    const [a, b] = await Promise.all([refill(fresh, { size: 40 }), refill(fresh, { size: 40 })]);
+    const [a, b] = await Promise.all([
+      refill(fresh, { size: 40 }),
+      refill(fresh, { size: 40 }),
+    ]);
 
     expect(libraryCalls(40)).toHaveLength(1);
     expect([a.written, b.written].sort()).toEqual([0, 40]);
@@ -238,7 +261,10 @@ describe("bookmarks", () => {
     await refill(user, { size: 10 });
     const one = await Affirmation.findOne({ user: user._id, library: true });
 
-    await request(app).put(`/api/library/${one._id}/save`).set("authorization", auth).expect(204);
+    await request(app)
+      .put(`/api/library/${one._id}/save`)
+      .set("authorization", auth)
+      .expect(204);
 
     const saved = await request(app).get("/api/library/saved").set("authorization", auth);
     expect(saved.body.saved).toHaveLength(1);
@@ -252,8 +278,14 @@ describe("bookmarks", () => {
     await refill(user, { size: 10 });
     const one = await Affirmation.findOne({ user: user._id, library: true });
 
-    await request(app).put(`/api/library/${one._id}/save`).set("authorization", auth).expect(204);
-    await request(app).put(`/api/library/${one._id}/save`).set("authorization", auth).expect(204);
+    await request(app)
+      .put(`/api/library/${one._id}/save`)
+      .set("authorization", auth)
+      .expect(204);
+    await request(app)
+      .put(`/api/library/${one._id}/save`)
+      .set("authorization", auth)
+      .expect(204);
 
     expect(await Saved.countDocuments({ user: user._id })).toBe(1);
   });
@@ -263,7 +295,10 @@ describe("bookmarks", () => {
     const one = await Affirmation.findOne({ user: user._id, library: true });
 
     await request(app).put(`/api/library/${one._id}/save`).set("authorization", auth);
-    await request(app).delete(`/api/library/${one._id}/save`).set("authorization", auth).expect(204);
+    await request(app)
+      .delete(`/api/library/${one._id}/save`)
+      .set("authorization", auth)
+      .expect(204);
 
     expect(await Saved.countDocuments({ user: user._id })).toBe(0);
   });
@@ -273,7 +308,9 @@ describe("the daily line is left alone", () => {
   it("does not appear in the daily feed", async () => {
     await refill(user, { size: 240 });
 
-    const feed = await request(app).get("/api/affirmations/feed?days=5").set("authorization", auth);
+    const feed = await request(app)
+      .get("/api/affirmations/feed?days=5")
+      .set("authorization", auth);
 
     // The library is a room next to the ritual, not a replacement for it: a
     // scheduled day must never be filled from the scroll.

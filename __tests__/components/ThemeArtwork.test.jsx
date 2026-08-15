@@ -105,7 +105,8 @@ describe("softness where there is no blur", () => {
 
   it("carries more alpha than the blurred route, to land at the same presence", async () => {
     const flat = await render(<ThemeArtwork theme={getTheme("dawn")} />);
-    const iosOpacity = (await flat.findAllByTestId("theme-artwork-shape"))[0].props.style.opacity;
+    const iosOpacity = (await flat.findAllByTestId("theme-artwork-shape"))[0].props.style
+      .opacity;
 
     await onAndroid(async () => {
       const soft = await render(<ThemeArtwork theme={getTheme("dawn")} />);

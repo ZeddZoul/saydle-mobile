@@ -17,9 +17,7 @@
       "supportsTablet": true,
       "bundleIdentifier": "com.saydle.app",
       "entitlements": {
-        "com.apple.security.application-groups": [
-          "group.com.saydle.app.expowidgets"
-        ]
+        "com.apple.security.application-groups": ["group.com.saydle.app.expowidgets"]
       }
     },
     "android": {
@@ -59,10 +57,7 @@
         "./plugins/withWidgetFonts",
         {
           "target": "SaydleWidgetExtension",
-          "fonts": [
-            "Fraunces_700Bold.ttf",
-            "Fraunces_600SemiBold.ttf"
-          ]
+          "fonts": ["Fraunces_700Bold.ttf", "Fraunces_600SemiBold.ttf"]
         }
       ],
       [
@@ -72,16 +67,12 @@
           "fonts": [
             {
               "filePath": "Fraunces_700Bold.ttf",
-              "targets": [
-                "SaydleWidgetExtension"
-              ],
+              "targets": ["SaydleWidgetExtension"],
               "platform": "ios"
             },
             {
               "filePath": "Fraunces_600SemiBold.ttf",
-              "targets": [
-                "SaydleWidgetExtension"
-              ],
+              "targets": ["SaydleWidgetExtension"],
               "platform": "ios"
             }
           ]
@@ -98,9 +89,7 @@
             "useLiveActivities": false,
             "frequentUpdates": false,
             "entitlements": {
-              "com.apple.security.application-groups": [
-                "group.com.saydle.app.expowidgets"
-              ]
+              "com.apple.security.application-groups": ["group.com.saydle.app.expowidgets"]
             }
           },
           "android": {

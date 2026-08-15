@@ -1,9 +1,7 @@
 import { useState } from "react";
 import { ScrollView, StyleSheet, Text, View } from "react-native";
 import GradientBackground from "../../components/GradientBackground.jsx";
-import FloatingHeader, {
-  FLOATING_HEADER_INSET,
-} from "../../components/FloatingHeader.jsx";
+import FloatingHeader, { FLOATING_HEADER_INSET } from "../../components/FloatingHeader.jsx";
 import DisplayText from "../../components/DisplayText.jsx";
 import ThemePicker from "../../components/ThemePicker.jsx";
 import { useAppTheme } from "../../contexts/ThemeContext.jsx";

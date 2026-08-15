@@ -22,14 +22,7 @@ const AnimatedView = Animated.createAnimatedComponent(View);
  * Each segment keeps the testIDs the rep dots used, because what they represent
  * has not changed — only how it looks.
  */
-const PracticeRing = ({
-  target = 7,
-  count = 0,
-  size = 300,
-  stroke = 5,
-  breath,
-  children,
-}) => {
+const PracticeRing = ({ target = 7, count = 0, size = 300, stroke = 5, breath, children }) => {
   const { theme } = useAppTheme();
 
   const r = (size - stroke) / 2;
@@ -42,7 +35,10 @@ const PracticeRing = ({
   const grow = useRef(new Animated.Value(0)).current;
   useEffect(() => {
     Animated.timing(grow, {
-      toValue: 1, duration: 260, easing: Easing.out(Easing.cubic), useNativeDriver: true,
+      toValue: 1,
+      duration: 260,
+      easing: Easing.out(Easing.cubic),
+      useNativeDriver: true,
     }).start();
     return () => grow.setValue(0);
   }, [count, grow]);

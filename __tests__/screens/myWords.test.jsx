@@ -11,7 +11,12 @@ import { ApiError } from "../../lib/errors.js";
 jest.mock("expo-router", () => ({
   useFocusEffect: (cb) => require("react").useEffect(cb, [cb]),
   // The floating header replaced the navigator's, and it navigates back itself.
-  useRouter: () => ({ push: jest.fn(), back: jest.fn(), replace: jest.fn(), canGoBack: () => true }),
+  useRouter: () => ({
+    push: jest.fn(),
+    back: jest.fn(),
+    replace: jest.fn(),
+    canGoBack: () => true,
+  }),
 }));
 
 const USER = { id: "u1", firstName: "Ada" };

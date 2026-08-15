@@ -55,7 +55,8 @@ export function cancelDeletion(user) {
 
 /** What the app needs to render the "keep my account?" card. */
 export function serializeDeletion(user, now = new Date()) {
-  if (!isPending(user)) return { pending: false, requestedAt: null, purgeAfter: null, daysLeft: null };
+  if (!isPending(user))
+    return { pending: false, requestedAt: null, purgeAfter: null, daysLeft: null };
 
   const purgeAfter = new Date(user.deletion.purgeAfter);
   const msLeft = purgeAfter.getTime() - now.getTime();

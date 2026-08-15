@@ -97,6 +97,9 @@ importers:
       react-native-purchases:
         specifier: ^10.6.0
         version: 10.6.0(react-native@0.81.5(@babel/core@7.28.5)(@types/react@19.2.18)(react@19.1.0))(react@19.1.0)
+      react-native-purchases-ui:
+        specifier: ^10.7.1
+        version: 10.7.1(react-native-purchases@10.6.0(react-native@0.81.5(@babel/core@7.28.5)(@types/react@19.2.18)(react@19.1.0))(react@19.1.0))(react-native@0.81.5(@babel/core@7.28.5)(@types/react@19.2.18)(react@19.1.0))(react@19.1.0)
       react-native-safe-area-context:
         specifier: ^5.6.2
         version: 5.6.2(react-native@0.81.5(@babel/core@7.28.5)(@types/react@19.2.18)(react@19.1.0))(react@19.1.0)
@@ -1764,6 +1767,9 @@ packages:
 
   '@revenuecat/purchases-typescript-internal@18.28.0':
     resolution: {integrity: sha512-VPbRlXsPuJaG99EcoJlE1fZNxJqj2yE9+ywX24JEUNAfA+Y1CHCsGu4DlEK/ngl5a2wwXkEY18tE9sdSxnvm5Q==}
+
+  '@revenuecat/purchases-typescript-internal@18.30.0':
+    resolution: {integrity: sha512-yqvd7vZ6Cp4A6FGqRIQHwF5OMAAPW/0D4XKx/NGED499F4jV/o+Q6AsVtGI4obAsj+aPTeW+QplTiOeF8wlzsw==}
 
   '@rollup/rollup-android-arm-eabi@4.62.4':
     resolution: {integrity: sha512-RrPokAb7dmbxFoeO3TloqHyOjgye8RkBhSqmp4aJMIex4c9r46ZstPnleDQOq1t46VOVjwIuwNogIqbodV1Vvg==}
@@ -5192,6 +5198,17 @@ packages:
       react: '*'
       react-native: '*'
 
+  react-native-purchases-ui@10.7.1:
+    resolution: {integrity: sha512-/djKXQMmftVQzNfeP5JSLgGWGFBT8t0GWzS1bGx2fS0DYl482NGcymDHCHG4+VJ4clB7icSXQTFvSx3t2At32A==}
+    peerDependencies:
+      react: '*'
+      react-native: '>= 0.73.0'
+      react-native-purchases: 10.7.1
+      react-native-web: '*'
+    peerDependenciesMeta:
+      react-native-web:
+        optional: true
+
   react-native-purchases@10.6.0:
     resolution: {integrity: sha512-JzwQEklktpN0IRycR0IBpdXxVW4uI/04dgkSkQXa+9OP9JNLfV4zWjNPH++JDRmGbtj1ZnX/r2kQVoZ/ne2xoA==}
     peerDependencies:
@@ -8269,6 +8286,8 @@ snapshots:
   '@revenuecat/purchases-js@1.49.1': {}
 
   '@revenuecat/purchases-typescript-internal@18.28.0': {}
+
+  '@revenuecat/purchases-typescript-internal@18.30.0': {}
 
   '@rollup/rollup-android-arm-eabi@4.62.4':
     optional: true
@@ -12288,6 +12307,13 @@ snapshots:
     dependencies:
       react: 19.1.0
       react-native: 0.81.5(@babel/core@7.28.5)(@types/react@19.2.18)(react@19.1.0)
+
+  react-native-purchases-ui@10.7.1(react-native-purchases@10.6.0(react-native@0.81.5(@babel/core@7.28.5)(@types/react@19.2.18)(react@19.1.0))(react@19.1.0))(react-native@0.81.5(@babel/core@7.28.5)(@types/react@19.2.18)(react@19.1.0))(react@19.1.0):
+    dependencies:
+      '@revenuecat/purchases-typescript-internal': 18.30.0
+      react: 19.1.0
+      react-native: 0.81.5(@babel/core@7.28.5)(@types/react@19.2.18)(react@19.1.0)
+      react-native-purchases: 10.6.0(react-native@0.81.5(@babel/core@7.28.5)(@types/react@19.2.18)(react@19.1.0))(react@19.1.0)
 
   react-native-purchases@10.6.0(react-native@0.81.5(@babel/core@7.28.5)(@types/react@19.2.18)(react@19.1.0))(react@19.1.0):
     dependencies:

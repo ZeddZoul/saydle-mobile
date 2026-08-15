@@ -71,7 +71,7 @@ const Practice = () => {
   // dead end for anyone who already had a favourite saved.
   const effectiveSource = pools[source]?.length
     ? source
-    : SOURCES.find((key) => pools[key].length) ?? source;
+    : (SOURCES.find((key) => pools[key].length) ?? source);
 
   const pool = pools[effectiveSource] ?? [];
   const affirmation = pool[index % Math.max(pool.length, 1)] ?? null;
@@ -84,7 +84,12 @@ const Practice = () => {
 
   const bump = useCallback(() => {
     press.setValue(0.97);
-    Animated.spring(press, { toValue: 1, useNativeDriver: true, speed: 18, bounciness: 10 }).start();
+    Animated.spring(press, {
+      toValue: 1,
+      useNativeDriver: true,
+      speed: 18,
+      bounciness: 10,
+    }).start();
     rep();
   }, [press, rep]);
 
@@ -95,12 +100,15 @@ const Practice = () => {
     setGuided(false);
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
     Animated.timing(done, {
-      toValue: 1, duration: 520, easing: Easing.out(Easing.cubic), useNativeDriver: true,
+      toValue: 1,
+      duration: 520,
+      easing: Easing.out(Easing.cubic),
+      useNativeDriver: true,
     }).start();
   }, [complete, done]);
 
   const onTap = () => {
-    if (complete || guided) return;   // guided mode counts for you
+    if (complete || guided) return; // guided mode counts for you
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
     bump();
   };
@@ -158,7 +166,11 @@ const Practice = () => {
               return (
                 <Pressable
                   key={key}
-                  onPress={() => { setSource(key); setIndex(0); setGuided(false); }}
+                  onPress={() => {
+                    setSource(key);
+                    setIndex(0);
+                    setGuided(false);
+                  }}
                   accessibilityRole="button"
                   accessibilityState={{ selected: on }}
                   style={[
@@ -228,7 +240,10 @@ const Practice = () => {
         {!complete && (
           <View style={styles.pills}>
             <Pressable
-              onPress={() => { Haptics.selectionAsync().catch(() => {}); setGuided((g) => !g); }}
+              onPress={() => {
+                Haptics.selectionAsync().catch(() => {});
+                setGuided((g) => !g);
+              }}
               accessibilityRole="switch"
               accessibilityState={{ checked: guided }}
               accessibilityLabel={t("practice.guided")}
@@ -256,8 +271,11 @@ const Practice = () => {
               onPress={onRecord}
               accessibilityRole="button"
               accessibilityLabel={
-                voice.recording ? t("practice.voiceStop")
-                  : voice.hasNote ? t("practice.voiceRedo") : t("practice.voiceRecord")
+                voice.recording
+                  ? t("practice.voiceStop")
+                  : voice.hasNote
+                    ? t("practice.voiceRedo")
+                    : t("practice.voiceRecord")
               }
               testID="practice-voice"
               style={[
@@ -271,10 +289,17 @@ const Practice = () => {
                 size={15}
                 color={voice.recording ? theme.surface : theme.ink}
               />
-              <Text style={[styles.pillText, { color: voice.recording ? theme.surface : theme.ink }]}>
+              <Text
+                style={[
+                  styles.pillText,
+                  { color: voice.recording ? theme.surface : theme.ink },
+                ]}
+              >
                 {voice.recording
                   ? `${Math.floor((voice.elapsed ?? 0) / 1000)}s`
-                  : voice.hasNote ? t("practice.voiceRedo") : t("practice.voiceRecord")}
+                  : voice.hasNote
+                    ? t("practice.voiceRedo")
+                    : t("practice.voiceRecord")}
               </Text>
             </Pressable>
 

@@ -13,8 +13,7 @@ jest.mock("expo-router", () => ({
 
 const USER = { id: "u1", firstName: "Ada", email: "ada@example.com" };
 
-const lines = (n) =>
-  Array.from({ length: n }, (_, i) => ({ id: `a${i}`, text: `Line ${i}` }));
+const lines = (n) => Array.from({ length: n }, (_, i) => ({ id: `a${i}`, text: `Line ${i}` }));
 
 const makeStore = () => ({
   hasSession: jest.fn(async () => true),

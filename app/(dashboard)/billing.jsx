@@ -1,10 +1,16 @@
 import { useState } from "react";
-import { ActivityIndicator, Linking, Platform, ScrollView, StyleSheet, Text, View } from "react-native";
+import {
+  ActivityIndicator,
+  Linking,
+  Platform,
+  ScrollView,
+  StyleSheet,
+  Text,
+  View,
+} from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import GradientBackground from "../../components/GradientBackground.jsx";
-import FloatingHeader, {
-  FLOATING_HEADER_INSET,
-} from "../../components/FloatingHeader.jsx";
+import FloatingHeader, { FLOATING_HEADER_INSET } from "../../components/FloatingHeader.jsx";
 import DisplayText from "../../components/DisplayText.jsx";
 import Button from "../../components/Button";
 import { useAppTheme } from "../../contexts/ThemeContext.jsx";
@@ -39,8 +45,7 @@ const formatDate = (value) => {
   return d.toLocaleDateString(undefined, { year: "numeric", month: "long", day: "numeric" });
 };
 
-const shortDate = (d) =>
-  d.toLocaleDateString(undefined, { day: "numeric", month: "short" });
+const shortDate = (d) => d.toLocaleDateString(undefined, { day: "numeric", month: "short" });
 
 const addDays = (date, days) => new Date(date.getTime() + days * 24 * 60 * 60 * 1000);
 
@@ -102,8 +107,16 @@ const Billing = () => {
   const { theme } = useAppTheme();
   const toast = useToast();
   const {
-    subscription, entitled, packages, canPurchase, loading, busy,
-    startTrial, purchase, restore, refresh,
+    subscription,
+    entitled,
+    packages,
+    canPurchase,
+    loading,
+    busy,
+    startTrial,
+    purchase,
+    restore,
+    refresh,
   } = useSubscription();
   const [working, setWorking] = useState(false);
 
@@ -114,8 +127,12 @@ const Billing = () => {
   const endsAt = formatDate(trialing ? subscription?.trialEndsAt : subscription?.expiresAt);
 
   const statusLabel = entitled
-    ? trialing ? t("billing.statusTrial") : t("billing.statusActive")
-    : status === "expired" ? t("billing.statusExpired") : t("billing.statusFree");
+    ? trialing
+      ? t("billing.statusTrial")
+      : t("billing.statusActive")
+    : status === "expired"
+      ? t("billing.statusExpired")
+      : t("billing.statusFree");
 
   const guard = async (fn, successMessage) => {
     setWorking(true);
@@ -198,12 +215,20 @@ const Billing = () => {
               </View>
 
               {subscription?.source ? (
-                <Row label={t("billing.purchasedVia")} value={subscription.source} theme={theme} />
+                <Row
+                  label={t("billing.purchasedVia")}
+                  value={subscription.source}
+                  theme={theme}
+                />
               ) : null}
               {/* An unverified entitlement is one no store has confirmed — a
                   trial we granted ourselves. Worth saying, not worth alarm. */}
               {entitled && subscription?.verified === false ? (
-                <Row label={t("billing.confirmed")} value={t("billing.notVerified")} theme={theme} />
+                <Row
+                  label={t("billing.confirmed")}
+                  value={t("billing.notVerified")}
+                  theme={theme}
+                />
               ) : null}
             </View>
 
@@ -247,9 +272,11 @@ const Billing = () => {
                     {packages.map((pkg) => (
                       <Button
                         key={pkg.identifier}
-                        title={pkg.product?.priceString
-                          ? `${t("paywall.subscribe")} — ${pkg.product.priceString}`
-                          : t("paywall.subscribe")}
+                        title={
+                          pkg.product?.priceString
+                            ? `${t("paywall.subscribe")} — ${pkg.product.priceString}`
+                            : t("paywall.subscribe")
+                        }
                         variant="secondary"
                         onPress={() => guard(() => purchase(pkg), t("billing.purchased"))}
                         disabled={busy || working}
@@ -276,7 +303,11 @@ const Billing = () => {
               </DisplayText>
               <Text style={[styles.hint, { color: theme.sub }]}>{t("billing.manageHint")}</Text>
               <View style={styles.actions}>
-                <Button title={t("billing.openStore")} variant="secondary" onPress={openStore} />
+                <Button
+                  title={t("billing.openStore")}
+                  variant="secondary"
+                  onPress={openStore}
+                />
                 <Button
                   title={t("billing.restore")}
                   variant="secondary"

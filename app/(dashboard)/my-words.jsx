@@ -13,9 +13,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { useFocusEffect } from "expo-router";
 import * as Haptics from "expo-haptics";
 import GradientBackground from "../../components/GradientBackground.jsx";
-import FloatingHeader, {
-  FLOATING_HEADER_INSET,
-} from "../../components/FloatingHeader.jsx";
+import FloatingHeader, { FLOATING_HEADER_INSET } from "../../components/FloatingHeader.jsx";
 import DisplayText from "../../components/DisplayText.jsx";
 import Button from "../../components/Button";
 import OfflineBanner from "../../components/OfflineBanner";
@@ -88,7 +86,7 @@ const MyWords = () => {
   if (loading) {
     return (
       <GradientBackground style={styles.centered} testID="my-words-loading">
-      <FloatingHeader title={t("myWords.title")} />
+        <FloatingHeader title={t("myWords.title")} />
 
         <ActivityIndicator size="large" color={theme.accent} />
       </GradientBackground>
@@ -100,7 +98,7 @@ const MyWords = () => {
   if (!entitled) {
     return (
       <GradientBackground style={styles.centered} testID="my-words-locked">
-      <FloatingHeader title={t("myWords.title")} />
+        <FloatingHeader title={t("myWords.title")} />
 
         <Ionicons name="create-outline" size={30} color={theme.accent} />
         <DisplayText style={[styles.lockedTitle, { color: theme.ink }]}>

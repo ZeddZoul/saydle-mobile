@@ -83,7 +83,8 @@ export async function generateForLibrary(user, count) {
   const docs = approved.map((a) => ({
     text: a.text,
     textKey: a.text.trim().toLowerCase(),
-    categorySlug: allowed && allowed.includes(a.category) ? a.category : (a.category ?? "general"),
+    categorySlug:
+      allowed && allowed.includes(a.category) ? a.category : (a.category ?? "general"),
     source: "generated",
     user: user._id,
     locale,

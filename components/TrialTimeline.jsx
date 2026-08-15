@@ -27,18 +27,11 @@ const Step = ({ step, isLast, theme }) => (
           },
         ]}
       >
-        <Ionicons
-          name={step.icon}
-          size={13}
-          color={step.reached ? theme.surface : theme.sub}
-        />
+        <Ionicons name={step.icon} size={13} color={step.reached ? theme.surface : theme.sub} />
       </View>
       {!isLast && (
         <View
-          style={[
-            styles.rail,
-            { backgroundColor: step.reached ? theme.accent : theme.border },
-          ]}
+          style={[styles.rail, { backgroundColor: step.reached ? theme.accent : theme.border }]}
         />
       )}
     </View>
@@ -46,11 +39,7 @@ const Step = ({ step, isLast, theme }) => (
     <View style={styles.body}>
       <DisplayText
         weight="bold"
-        style={[
-          styles.title,
-          { color: theme.ink },
-          step.done && styles.struck,
-        ]}
+        style={[styles.title, { color: theme.ink }, step.done && styles.struck]}
       >
         {step.title}
       </DisplayText>

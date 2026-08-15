@@ -70,13 +70,7 @@ authRouter.get("/me", requireAuth, auth.me);
 // Five attempts per window. The endpoint takes a password, so without this a
 // live session becomes a quiet way to test guesses against the account it
 // belongs to — and unlike login, nobody is watching this one.
-authRouter.delete(
-  "/me",
-  requireAuth,
-  limiter(5),
-  validate(deleteAccountSchema),
-  auth.deleteMe,
-);
+authRouter.delete("/me", requireAuth, limiter(5), validate(deleteAccountSchema), auth.deleteMe);
 // Cancelling has to be reachable by anyone mid-countdown, which is why sign-in
 // keeps working for a pending account.
 authRouter.post("/me/restore", requireAuth, auth.restoreMe);

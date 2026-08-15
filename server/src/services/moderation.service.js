@@ -75,7 +75,9 @@ const RULES = {
     forbidden: [
       esStem(String.raw`suicid|matarme|quitarme la vida|autolesi|cortarme`),
       // Violence toward others — mirrors the English rule above.
-      esStem(String.raw`matar|asesinat|asesin|apu[ñn]al|disparar|violenci|arma\b|lastimar a|hacer da[ñn]o a`),
+      esStem(
+        String.raw`matar|asesinat|asesin|apu[ñn]al|disparar|violenci|arma\b|lastimar a|hacer da[ñn]o a`,
+      ),
       esStem(String.raw`anorexi|bulimi|purga|calor[íi]a|dieta|delgad|adelgaz`),
       es(String.raw`peso`),
       // Mirrors the English rule: the body and appearance are off limits entirely.

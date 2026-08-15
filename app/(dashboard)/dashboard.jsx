@@ -195,75 +195,75 @@ const Dashboard = () => {
         </View>
 
         <View style={styles.middle}>
-        {affirmation ? (
-          <Animated.View
-            style={[
-              styles.affirmationWrap,
-              { opacity: enter, transform: [{ translateY: enterRise }] },
-            ]}
-          >
+          {affirmation ? (
             <Animated.View
               style={[
-                styles.breath,
-                { transform: [{ scale: breatheScale }, { translateY: floatY }] },
+                styles.affirmationWrap,
+                { opacity: enter, transform: [{ translateY: enterRise }] },
               ]}
             >
-              <Animated.Text
-                style={[styles.quote, { color: theme.accent, opacity: quoteOpacity }]}
+              <Animated.View
+                style={[
+                  styles.breath,
+                  { transform: [{ scale: breatheScale }, { translateY: floatY }] },
+                ]}
               >
-                &ldquo;
-              </Animated.Text>
-              {/* Tapping the line opens the immersive stream — the affirmation
+                <Animated.Text
+                  style={[styles.quote, { color: theme.accent, opacity: quoteOpacity }]}
+                >
+                  &ldquo;
+                </Animated.Text>
+                {/* Tapping the line opens the immersive stream — the affirmation
                   itself is the way in, rather than a button competing with it. */}
-              <Pressable
-                onPress={() => router.push("/stream")}
-                accessibilityRole="button"
-                accessibilityLabel={t("stream.open")}
-                testID="open-stream"
-              >
-                <DisplayText style={[styles.affirmation, { color: theme.ink }]}>
-                  {affirmation.text}
-                </DisplayText>
-              </Pressable>
-            </Animated.View>
-
-            <View style={styles.actions}>
-              <Pressable
-                onPress={onShare}
-                accessibilityRole="button"
-                accessibilityLabel={t("today.share")}
-                style={styles.actionButton}
-                hitSlop={8}
-              >
-                <Ionicons name="share-outline" size={24} color={theme.sub} />
-              </Pressable>
-
-              <Animated.View style={{ transform: [{ scale: heart }] }}>
                 <Pressable
-                  onPress={onFavorite}
+                  onPress={() => router.push("/stream")}
                   accessibilityRole="button"
-                  accessibilityLabel={t(favorited ? "today.unsave" : "today.save")}
-                  accessibilityState={{ selected: favorited }}
+                  accessibilityLabel={t("stream.open")}
+                  testID="open-stream"
+                >
+                  <DisplayText style={[styles.affirmation, { color: theme.ink }]}>
+                    {affirmation.text}
+                  </DisplayText>
+                </Pressable>
+              </Animated.View>
+
+              <View style={styles.actions}>
+                <Pressable
+                  onPress={onShare}
+                  accessibilityRole="button"
+                  accessibilityLabel={t("today.share")}
                   style={styles.actionButton}
                   hitSlop={8}
                 >
-                  <Ionicons
-                    name={favorited ? "heart" : "heart-outline"}
-                    size={30}
-                    color={theme.accent}
-                  />
+                  <Ionicons name="share-outline" size={24} color={theme.sub} />
                 </Pressable>
-              </Animated.View>
+
+                <Animated.View style={{ transform: [{ scale: heart }] }}>
+                  <Pressable
+                    onPress={onFavorite}
+                    accessibilityRole="button"
+                    accessibilityLabel={t(favorited ? "today.unsave" : "today.save")}
+                    accessibilityState={{ selected: favorited }}
+                    style={styles.actionButton}
+                    hitSlop={8}
+                  >
+                    <Ionicons
+                      name={favorited ? "heart" : "heart-outline"}
+                      size={30}
+                      color={theme.accent}
+                    />
+                  </Pressable>
+                </Animated.View>
+              </View>
+            </Animated.View>
+          ) : (
+            <View style={styles.empty}>
+              <Text style={[styles.emptyText, { color: theme.sub }]}>
+                {error ? messageFor(error) : t("today.empty")}
+              </Text>
+              <Button title={t("common.tryAgain")} onPress={refresh} variant="secondary" />
             </View>
-          </Animated.View>
-        ) : (
-          <View style={styles.empty}>
-            <Text style={[styles.emptyText, { color: theme.sub }]}>
-              {error ? messageFor(error) : t("today.empty")}
-            </Text>
-            <Button title={t("common.tryAgain")} onPress={refresh} variant="secondary" />
-          </View>
-        )}
+          )}
         </View>
 
         {/* Both live below the affirmation, never above it — the day's line is
@@ -289,7 +289,6 @@ const Dashboard = () => {
         onPractice={() => router.push("/practice")}
         onThemes={() => router.push("/themes")}
       />
-
 
       <ShareSheet
         visible={sharing}

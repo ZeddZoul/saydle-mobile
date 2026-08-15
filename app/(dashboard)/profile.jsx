@@ -3,9 +3,7 @@ import { Pressable, ScrollView, StyleSheet, Switch, Text, View } from "react-nat
 import * as Haptics from "expo-haptics";
 import { useRouter } from "expo-router";
 import GradientBackground from "../../components/GradientBackground.jsx";
-import FloatingHeader, {
-  FLOATING_HEADER_INSET,
-} from "../../components/FloatingHeader.jsx";
+import FloatingHeader, { FLOATING_HEADER_INSET } from "../../components/FloatingHeader.jsx";
 import DisplayText from "../../components/DisplayText.jsx";
 import Tile from "../../components/Tile.jsx";
 import Button from "../../components/Button";
@@ -312,21 +310,29 @@ const Profile = () => {
         </DisplayText>
         <View style={styles.grid}>
           <Tile
-            art="myWords" label={t("myWords.title")} testID="tile-my-words"
+            art="myWords"
+            label={t("myWords.title")}
+            testID="tile-my-words"
             onPress={() => router.push("/my-words")}
           />
           <Tile
-            art="favorites" label={t("tabs.favorites")} testID="tile-favorites"
+            art="favorites"
+            label={t("tabs.favorites")}
+            testID="tile-favorites"
             onPress={() => router.push("/favorites")}
           />
         </View>
         <View style={styles.grid}>
           <Tile
-            art="theme" label={t("profile.theme")} testID="tile-themes"
+            art="theme"
+            label={t("profile.theme")}
+            testID="tile-themes"
             onPress={() => router.push("/themes")}
           />
           <Tile
-            art="subscription" label={t("billing.title")} testID="tile-billing"
+            art="subscription"
+            label={t("billing.title")}
+            testID="tile-billing"
             onPress={() => router.push("/billing")}
           />
         </View>

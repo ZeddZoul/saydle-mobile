@@ -70,7 +70,10 @@ const DeleteAccountSheet = ({ visible, email, graceDays, onClose, onConfirm }) =
       presentationStyle="pageSheet"
       onRequestClose={close}
     >
-      <View style={[styles.sheet, { backgroundColor: theme.gradient[0] }]} testID="delete-sheet">
+      <View
+        style={[styles.sheet, { backgroundColor: theme.gradient[0] }]}
+        testID="delete-sheet"
+      >
         <SafeAreaView style={styles.safe} edges={["top", "bottom"]}>
           <View style={styles.header}>
             <DisplayText style={[styles.title, { color: theme.ink }]}>

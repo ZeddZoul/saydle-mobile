@@ -35,7 +35,10 @@ export function useBreath(active, onCycle) {
     if (!active) {
       scale.stopAnimation();
       Animated.timing(scale, {
-        toValue: 0.72, duration: 300, easing: Easing.out(Easing.quad), useNativeDriver: true,
+        toValue: 0.72,
+        duration: 300,
+        easing: Easing.out(Easing.quad),
+        useNativeDriver: true,
       }).start();
       setPhase(0);
       return undefined;

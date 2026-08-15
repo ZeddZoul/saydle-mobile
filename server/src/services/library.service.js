@@ -218,10 +218,7 @@ async function claim(user, now) {
   const won = await User.findOneAndUpdate(
     {
       _id: user._id,
-      $or: [
-        { "library.generatingUntil": null },
-        { "library.generatingUntil": { $lte: now } },
-      ],
+      $or: [{ "library.generatingUntil": null }, { "library.generatingUntil": { $lte: now } }],
     },
     { $set: { "library.generatingUntil": new Date(now.getTime() + CLAIM_MS) } },
     { projection: { _id: 1 } },

@@ -42,8 +42,13 @@ jobs:
       - name: Format
         run: pnpm format:check
 
+      # No `--` before the flag. pnpm forwards extra args to the script as-is,
+      # and jest's parser treats everything after `--` as a positional test-path
+      # pattern — so `pnpm test -- --ci` searched for test files *named* "--ci",
+      # found none, and exited 1. It reads like a broken test run rather than a
+      # broken invocation, and it never ran a single test.
       - name: Mobile tests
-        run: pnpm test -- --ci
+        run: pnpm test --ci
 
       # Spins up its own in-memory MongoDB, so there is no service container to
       # configure and nothing to clean up.

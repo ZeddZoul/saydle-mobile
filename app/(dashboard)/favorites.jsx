@@ -2,9 +2,7 @@ import { ActivityIndicator, FlatList, Pressable, StyleSheet, Text, View } from "
 import { Ionicons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
 import GradientBackground from "../../components/GradientBackground.jsx";
-import FloatingHeader, {
-  FLOATING_HEADER_INSET,
-} from "../../components/FloatingHeader.jsx";
+import FloatingHeader, { FLOATING_HEADER_INSET } from "../../components/FloatingHeader.jsx";
 import DisplayText from "../../components/DisplayText.jsx";
 import OfflineBanner from "../../components/OfflineBanner";
 import { useFavorites } from "../../hooks/useFavorites.js";
@@ -20,7 +18,7 @@ const Favorites = () => {
   if (loading) {
     return (
       <GradientBackground style={styles.centered} testID="favorites-loading">
-      <FloatingHeader title={t("tabs.favorites")} />
+        <FloatingHeader title={t("tabs.favorites")} />
 
         <ActivityIndicator size="large" color={theme.accent} />
       </GradientBackground>

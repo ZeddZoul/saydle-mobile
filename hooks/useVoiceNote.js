@@ -47,7 +47,9 @@ export function useVoiceNote(affirmationId) {
       setNotes(saved ?? {});
       setLoading(false);
     });
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+    };
   }, [userId, cache]);
 
   const persist = useCallback(

@@ -59,11 +59,7 @@ const Page = ({ item, height, theme, favorited, saved, onFavorite, onSave, onSha
         hitSlop={12}
         testID="library-favorite"
       >
-        <Ionicons
-          name={favorited ? "heart" : "heart-outline"}
-          size={28}
-          color={theme.accent}
-        />
+        <Ionicons name={favorited ? "heart" : "heart-outline"} size={28} color={theme.accent} />
       </Pressable>
 
       <Pressable
@@ -145,7 +141,7 @@ const Library = () => {
   if (library.locked) {
     return (
       <GradientBackground style={styles.centered} testID="library-locked">
-      <FloatingHeader title={t("library.title")} />
+        <FloatingHeader title={t("library.title")} />
 
         <Ionicons name="albums-outline" size={30} color={theme.accent} />
         <DisplayText weight="bold" style={[styles.lockedTitle, { color: theme.ink }]}>
@@ -161,7 +157,7 @@ const Library = () => {
   if (library.loading) {
     return (
       <GradientBackground style={styles.centered}>
-      <FloatingHeader title={t("library.title")} />
+        <FloatingHeader title={t("library.title")} />
 
         <ActivityIndicator color={theme.accent} testID="library-loading" />
       </GradientBackground>
@@ -171,7 +167,7 @@ const Library = () => {
   if (library.affirmations.length === 0) {
     return (
       <GradientBackground style={styles.centered} testID="library-empty">
-      <FloatingHeader title={t("library.title")} />
+        <FloatingHeader title={t("library.title")} />
 
         <ActivityIndicator color={theme.accent} />
         <Text style={[styles.lockedBody, { color: theme.sub }]}>
@@ -244,7 +240,12 @@ export default Library;
 
 const styles = StyleSheet.create({
   safe: { flex: 1 },
-  centered: { alignItems: "center", justifyContent: "center", gap: spacing.md, padding: spacing.xl },
+  centered: {
+    alignItems: "center",
+    justifyContent: "center",
+    gap: spacing.md,
+    padding: spacing.xl,
+  },
   page: {
     alignItems: "center",
     justifyContent: "center",
