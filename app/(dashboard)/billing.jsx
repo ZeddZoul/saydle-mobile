@@ -124,6 +124,25 @@ const buildTrialSteps = (t, { trialEndsAt, active }) => {
   ];
 };
 
+/**
+ * The store, in words rather than in ours.
+ *
+ * `subscription.source` is a stored enum — `trial`, `app_store`, `play_store` —
+ * and it was being rendered straight into the card, so the screen read
+ * "Purchased via app_store". Falls back to the raw value rather than showing
+ * nothing, so a source we add server-side later degrades to ugly instead of
+ * blank.
+ */
+const sourceLabel = (t, source) => {
+  const key = {
+    trial: "billing.sourceTrial",
+    app_store: "billing.sourceAppStore",
+    play_store: "billing.sourcePlayStore",
+  }[source];
+
+  return key ? t(key) : source;
+};
+
 const Row = ({ label, value, theme }) => (
   <View style={styles.row}>
     <Text style={[styles.rowLabel, { color: theme.sub }]}>{label}</Text>
@@ -262,7 +281,7 @@ const Billing = () => {
               {subscription?.source ? (
                 <Row
                   label={t("billing.purchasedVia")}
-                  value={subscription.source}
+                  value={sourceLabel(t, subscription.source)}
                   theme={theme}
                 />
               ) : null}
