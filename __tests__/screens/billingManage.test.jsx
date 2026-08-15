@@ -244,6 +244,59 @@ describe("managing a subscription", () => {
     expect(await findByText(/Renews /i)).toBeTruthy();
   });
 
+  /**
+   * The webhook lands after the purchase resolves, not before.
+   *
+   * The store confirms, tells RevenueCat, RevenueCat posts to us — so the read
+   * taken the moment `purchasePackage` returns is too early and sees the
+   * pre-purchase state. There used to be exactly one attempt, and the only
+   * other trigger was the AppState listener, which needs the app backgrounded.
+   * The result was a paid-up screen still saying "Free" until the user found
+   * Restore on their own.
+   */
+  it("keeps asking the server until the purchase lands", async () => {
+    mockPurchases.getOffering.mockResolvedValue({
+      available: true,
+      packages: [{ identifier: "monthly", product: { priceString: "$4.99" } }],
+    });
+    mockPurchases.purchasePackage.mockResolvedValue({ available: true, purchased: true });
+
+    // Not entitled on the first reads; the webhook lands on the third.
+    let call = 0;
+    const client = makeClient();
+    client.subscription = jest.fn(async () => {
+      call += 1;
+      return {
+        subscription:
+          call >= 3
+            ? { status: "active", entitled: true, verified: true, source: "app_store" }
+            : {
+                status: "trialing",
+                entitled: true,
+                verified: false,
+                trialEndsAt: TRIALING.trialEndsAt,
+              },
+      };
+    });
+
+    const { findByText } = await render(
+      <SafeAreaProvider initialMetrics={metrics}>
+        <AuthProvider store={makeStore()} cache={makeCache()} client={client}>
+          <ToastProvider>
+            <Billing />
+          </ToastProvider>
+        </AuthProvider>
+      </SafeAreaProvider>,
+    );
+
+    await fireEvent.press(await findByText(/Subscribe now — \$4\.99/));
+
+    // More than one read after the purchase is the whole point.
+    await waitFor(() => expect(client.subscription.mock.calls.length).toBeGreaterThan(2), {
+      timeout: 15000,
+    });
+  }, 20000);
+
   it("tells someone what to try when there is nothing to restore", async () => {
     mockPurchases.restorePurchases.mockResolvedValue({ available: true, entitled: false });
     const { findByText } = await renderBilling();

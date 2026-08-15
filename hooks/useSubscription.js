@@ -101,6 +101,39 @@ export function useSubscription() {
     }
   }, [client]);
 
+  /**
+   * Re-reads the server until the purchase shows up there, then stops.
+   *
+   * A sale is confirmed by the store, relayed to RevenueCat, and only then
+   * posted to our webhook — so the read taken the instant `purchasePackage`
+   * resolves is genuinely too early and returns the state from before the
+   * purchase. One attempt was all there was: the AppState listener only fires
+   * if the app was backgrounded, which a StoreKit sheet does and an in-app
+   * purchase modal does not. The screen sat on "Free" until someone thought to
+   * tap Restore, which is not a thing anyone should have to work out.
+   *
+   * Bounded deliberately. Entitlement is server-truth, so if the webhook is
+   * late or lost the next foreground still corrects it — polling until it
+   * arrives would turn a webhook outage into an endless request loop from every
+   * installed copy of the app.
+   */
+  const settle = useCallback(async () => {
+    const backoff = [0, 800, 1500, 2500, 4000];
+
+    for (const wait of backoff) {
+      if (wait) await new Promise((resolve) => setTimeout(resolve, wait));
+      const fresh = await refresh();
+      // `verified`, not `entitled`. Someone buying mid-trial is already
+      // entitled, so waiting on that returns instantly and never sees the
+      // purchase — which is the exact case this whole function exists for.
+      // `verifiedAt` is set only by the webhook and is explicitly null for a
+      // trial, so it means precisely "a store has confirmed this".
+      if (fresh?.verified) return fresh;
+    }
+
+    return null;
+  }, [refresh]);
+
   const purchase = useCallback(
     async (pkg) => {
       setBusy(true);
@@ -112,15 +145,15 @@ export function useSubscription() {
         if (result.cancelled) return { cancelled: true };
         if (!result.purchased) return { failed: true, error: result.error };
 
-        // The webhook may not have landed yet; the server stays the authority
-        // either way, and the next refresh picks it up.
-        await refresh();
-        return { purchased: true };
+        // `busy` stays set for the whole wait, which is what keeps the buttons
+        // disabled while we are confirming rather than guessing.
+        const fresh = await settle();
+        return { purchased: true, settled: Boolean(fresh?.verified) };
       } finally {
         setBusy(false);
       }
     },
-    [refresh],
+    [settle],
   );
 
   const restore = useCallback(async () => {

@@ -252,6 +252,28 @@ const Billing = () => {
     }
   };
 
+  /**
+   * Buying, with the same honesty as restoring.
+   *
+   * `settled` is the hook telling us whether the server has actually seen the
+   * purchase yet. Saying "you're subscribed" before it has would be promising
+   * something we cannot see, and the screen behind the toast would still say
+   * Free — so an unsettled purchase gets its own, truthful line.
+   */
+  const onPurchase = async (pkg) => {
+    setWorking(true);
+    try {
+      const result = await purchase(pkg);
+      if (result?.cancelled) return;
+      if (result?.failed) return toast.error(t("billing.purchaseFailed"));
+      toast.success(result?.settled ? t("billing.purchased") : t("billing.purchaseSyncing"));
+    } catch {
+      toast.error(t("billing.purchaseFailed"));
+    } finally {
+      setWorking(false);
+    }
+  };
+
   const openStore = () =>
     Linking.openURL(STORE_SUBSCRIPTIONS)
       .catch(() => Linking.openURL(STORE_SUBSCRIPTIONS_WEB))
@@ -378,13 +400,7 @@ const Billing = () => {
                             : t("paywall.subscribe")
                         }
                         variant="secondary"
-                        onPress={() =>
-                          guard(
-                            () => purchase(pkg),
-                            t("billing.purchased"),
-                            t("billing.purchaseFailed"),
-                          )
-                        }
+                        onPress={() => onPurchase(pkg)}
                         disabled={busy || working}
                       />
                     ))}
