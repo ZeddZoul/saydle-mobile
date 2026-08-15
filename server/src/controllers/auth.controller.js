@@ -17,6 +17,7 @@ import {
   isPending,
   serializeDeletion,
 } from "../services/deletion.service.js";
+import { sendDeletionScheduled } from "../services/deletionMail.service.js";
 import { AppError } from "../utils/AppError.js";
 import {
   signAccessToken,
@@ -265,6 +266,15 @@ export async function deleteMe(req, res, next) {
       { userId: req.user.id, purgeAfter: req.user.deletion.purgeAfter },
       "account deletion scheduled",
     );
+
+    // Not awaited, and deliberately swallowed: the countdown has already been
+    // written, and failing to send a confirmation must not turn a completed
+    // request into a 500 that has someone tapping delete a second time.
+    sendDeletionScheduled({
+      to: req.user.email,
+      firstName: req.user.firstName,
+      purgeAfter: req.user.deletion.purgeAfter,
+    }).catch((err) => req.log?.error({ err }, "deletion confirmation failed"));
 
     res.status(202).json({ deletion: serializeDeletion(req.user) });
   } catch (err) {
