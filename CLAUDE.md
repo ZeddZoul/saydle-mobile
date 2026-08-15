@@ -168,14 +168,22 @@ server/                 Express API — see server/README.md for its own layout
 
 ## Gotchas
 
-- **A RevenueCat `test_` key in a release build crashes the app on launch.** That prefix is the
-  Test Store — real-looking purchases with no App Store Connect or Play Console behind them, which
-  is how the purchase flow gets exercised before there is a listing. The SDK refuses one outside
-  development by showing an alert and terminating, deliberately, so test entitlements cannot reach
-  production. `EXPO_PUBLIC_*` is inlined **at build time**, so the machine's `.env` is what ships:
-  a release cut with the test key in place carries the crash. `usableKey()` in `lib/purchases.js`
-  withholds it when `__DEV__` is false so the boundary degrades to the trial instead — a seatbelt,
-  not a substitute for swapping in the `appl_`/`goog_` keys.
+- **A RevenueCat `test_` key must never reach a release build.** That prefix is the Test Store —
+  real-looking purchases with no App Store Connect or Play Console behind them, which is how the
+  purchase flow gets exercised before there is a listing. Two consequences, and the second is
+  worse: the SDK refuses one outside development by showing an alert and terminating, and — in
+  RevenueCat's own words — "apps submitted with a Test Store API key will be rejected during App
+  Review". `EXPO_PUBLIC_*` is inlined **at build time**, so the machine's `.env` is what ships: a
+  release cut with the test key in place carries both. `usableKey()` in `lib/purchases.js`
+  withholds it when `__DEV__` is false so the boundary degrades to the trial instead — a seatbelt
+  against the crash, and no help at all against the rejection. Swap in the `appl_`/`goog_` keys
+  before building for submission.
+- **`Failed to assemble ui_config` is expected and permanent — do not chase it.** The SDK fetches
+  the _hosted Paywall_ config blob at launch (missing keys: `app`, `custom_variables`,
+  `localizations`, `variable_config`). We do not use RevenueCat's hosted paywalls — `billing.jsx`
+  is our own — so there is nothing in the dashboard for it to assemble and there never will be.
+  It is not about Customer Center: that works with the warning present, which was verified on
+  device, and configuring Customer Center leaves the warning byte-identical.
 - **The entitlement _identifier_ is the contract, not its display name.** `EXPO_PUBLIC_REVENUECAT_ENTITLEMENT_ID`
   and `REVENUECAT_ENTITLEMENT_ID` must both equal the identifier in the RevenueCat dashboard
   (`premium`). A dashboard entitlement named "Saydle Pro" whose identifier is anything else means
