@@ -18,7 +18,8 @@
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
     "format": "prettier --write .",
-    "format:check": "prettier --check ."
+    "format:check": "prettier --check .",
+    "tunnel": "bash scripts/tunnel.sh"
   },
   "dependencies": {
     "@bittingz/expo-native-fonts": "^3.1.0",
