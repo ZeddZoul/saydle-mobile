@@ -8,21 +8,24 @@ import { AppError } from "../utils/AppError.js";
 /**
  * The one place the library's paywall is decided.
  *
- * Every handler below goes through it, so opening the library — for a
- * promotion, or because the trial is replaced by a hard paywall later — is a
- * single edit in config/library.js rather than an audit of route handlers.
+ * What premium buys is no longer *access* to the feed but *whose words are in
+ * it*: a free reader scrolls the curated bank, a subscriber reads a batch
+ * written for them. So reading, and marking how far you got, are open to
+ * everyone — `batchQuery` in library.service.js decides which rows come back —
+ * and this now guards only the parts that genuinely belong to premium.
+ *
+ * Bookmarking is one of them. It is the "keep this for later" shelf that My
+ * Words hangs off, and it is sold as part of premium.
  */
 function gate(user) {
   if (!REQUIRES_PREMIUM) return;
   if (isEntitled(user)) return;
 
-  throw AppError.forbidden("The affirmation library is part of Saydle premium.");
+  throw AppError.forbidden("Saving lines to your shelf is part of Saydle premium.");
 }
 
 export async function list(req, res, next) {
   try {
-    gate(req.user);
-
     const cursor = req.query.cursor === undefined ? undefined : Number(req.query.cursor);
     const limit = Math.min(Number(req.query.limit) || PAGE_SIZE, PAGE_SIZE);
 
@@ -41,7 +44,6 @@ export async function list(req, res, next) {
  */
 export async function seen(req, res, next) {
   try {
-    gate(req.user);
     res.json(await advanceCursor(req.user, Number(req.body.cursor)));
   } catch (err) {
     next(err);
@@ -103,7 +105,6 @@ export async function unsave(req, res, next) {
 /** Used by the onboarding screen that covers the first batch's latency. */
 export async function warm(req, res, next) {
   try {
-    gate(req.user);
     scheduleRefill(req.user);
     res.status(202).json({ started: true });
   } catch (err) {

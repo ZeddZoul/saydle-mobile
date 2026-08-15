@@ -76,13 +76,35 @@ beforeEach(async () => {
   user = account.user;
 });
 
+/**
+ * What premium buys is whose words are in the feed, not access to it.
+ *
+ * A free reader scrolls the curated bank — human-written, shared, costing
+ * nothing per head. A subscriber reads a batch generated for them alone. The
+ * paywall sits between those two, not between the reader and the app.
+ */
 describe("the paywall", () => {
-  it("refuses a reader without premium", async () => {
+  it("gives a free reader the curated bank rather than a locked door", async () => {
     const free = await registerUser(app, { email: "free@example.com" });
 
     const res = await request(app).get("/api/library").set("authorization", free.auth);
 
-    expect(res.status).toBe(403);
+    expect(res.status).toBe(200);
+    expect(res.body.affirmations.length).toBeGreaterThan(0);
+  });
+
+  it("gives a free reader nothing that was written for anyone", async () => {
+    const free = await registerUser(app, { email: "free3@example.com" });
+
+    const res = await request(app).get("/api/library").set("authorization", free.auth);
+
+    const ids = res.body.affirmations.map((a) => a.id);
+    const rows = await Affirmation.find({ _id: { $in: ids } }).lean();
+
+    // Curated rows belong to nobody. A generated line reaching a free feed
+    // would be a personalised affirmation handed out unpaid.
+    expect(rows.length).toBeGreaterThan(0);
+    expect(rows.every((r) => r.source === "curated" && r.user === null)).toBe(true);
   });
 
   it("lets a premium reader in", async () => {

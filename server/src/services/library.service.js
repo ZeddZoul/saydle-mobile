@@ -4,6 +4,7 @@ import { Saved } from "../models/Saved.js";
 import { User } from "../models/User.js";
 import { logger } from "../lib/logger.js";
 import { resolveLocale } from "../config/locales.js";
+import { isEntitled } from "./subscription.service.js";
 import { completeness } from "../services/profile.service.js";
 import { generateForLibrary } from "./libraryGeneration.js";
 import {
@@ -45,12 +46,18 @@ const publicLine = (a) => ({
 
 /** The reader's current batch, oldest first — the order they were written in. */
 function batchQuery(user) {
-  return {
-    user: user._id,
-    source: "generated",
-    locale: resolveLocale(user.locale),
-    library: true,
-  };
+  const locale = resolveLocale(user.locale);
+
+  // A free reader's feed is the curated bank: the same human-written rows the
+  // daily line falls back to, shared by everyone, written once and costing
+  // nothing per head. Premium reads the batch generated for them alone.
+  //
+  // Same collection, same shape, same real ids — so favouriting, saving and
+  // sharing work identically on both and nothing downstream has to care which
+  // kind of feed it is looking at.
+  if (!isEntitled(user)) return { user: null, source: "curated", locale };
+
+  return { user: user._id, source: "generated", locale, library: true };
 }
 
 /**
@@ -104,6 +111,10 @@ export async function advanceCursor(user, position) {
  * person we knew less about, or they are simply old.
  */
 function needsRefill(user, remaining) {
+  // The curated bank is fixed and shared; there is nothing to write more of,
+  // and writing it would mean generating for someone who has not paid.
+  if (!isEntitled(user)) return false;
+
   if (remaining <= REFILL_BELOW) return true;
 
   const batchAt = user.library?.batchAt;
@@ -118,6 +129,12 @@ function needsRefill(user, remaining) {
 
 /** Fire-and-forget. Never awaited by a request; returns the promise for tests. */
 export function scheduleRefill(user, options) {
+  // Same rule as scheduleReplenish, for the same reason: this is where the
+  // model gets paid, so this is where the decision belongs. `warm` calls it
+  // directly from a route, so relying on needsRefill alone would leave a door
+  // open straight to the bill.
+  if (!isEntitled(user)) return Promise.resolve(null);
+
   const key = String(user._id ?? user.id);
   const running = inFlight.get(key);
   if (running) return running;
