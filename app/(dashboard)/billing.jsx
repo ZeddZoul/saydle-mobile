@@ -40,6 +40,21 @@ const STORE_SUBSCRIPTIONS = Platform.select({
 });
 
 /**
+ * The same destination over https, used when the scheme above has no handler.
+ *
+ * `itms-apps://` is what opens the App Store app on real hardware, but the
+ * Simulator has no App Store, so nothing claims the scheme and `openURL`
+ * rejects. Without a fallback that surfaces as "Couldn't open the store" for a
+ * link which is perfectly fine on a device — an error that sends you looking
+ * for a bug in code that has none.
+ */
+const STORE_SUBSCRIPTIONS_WEB = Platform.select({
+  ios: "https://apps.apple.com/account/subscriptions",
+  android: "https://play.google.com/store/account/subscriptions",
+  default: "https://play.google.com/store/account/subscriptions",
+});
+
+/**
  * Where a refund is actually requested.
  *
  * Apple's is a real self-serve flow; Google's is the order history, which is
@@ -191,7 +206,9 @@ const Billing = () => {
   };
 
   const openStore = () =>
-    Linking.openURL(STORE_SUBSCRIPTIONS).catch(() => toast.error(t("billing.storeFailed")));
+    Linking.openURL(STORE_SUBSCRIPTIONS)
+      .catch(() => Linking.openURL(STORE_SUBSCRIPTIONS_WEB))
+      .catch(() => toast.error(t("billing.storeFailed")));
 
   const openRefund = () =>
     Linking.openURL(REFUND_URL).catch(() => toast.error(t("billing.storeFailed")));
@@ -287,10 +304,15 @@ const Billing = () => {
               </View>
             )}
 
-            {!entitled && (
+            {/* Shown while trialing too, not only when locked out.
+                Gating this on `!entitled` alone hid it from everyone on a
+                trial — who are exactly the people deciding whether to pay, and
+                who had no way to do it until their access lapsed. Only a
+                genuinely paying member has nothing to buy here. */}
+            {(!entitled || trialing) && (
               <View style={[styles.card, { backgroundColor: theme.surface }]}>
                 <DisplayText style={[styles.sectionTitle, { color: theme.ink }]}>
-                  {t("billing.upgrade")}
+                  {t(trialing ? "billing.upgradeTrialing" : "billing.upgrade")}
                 </DisplayText>
 
                 {neverTrialed && (

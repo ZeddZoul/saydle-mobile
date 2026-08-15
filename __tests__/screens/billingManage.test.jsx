@@ -44,23 +44,30 @@ const makeCache = () => ({
   clear: jest.fn(async () => {}),
 });
 
-const makeClient = () => ({
+const makeClient = (sub) => ({
   me: jest.fn(async () => ({ user: USER })),
   subscription: jest.fn(async () => ({
-    subscription: { status: "active", entitled: true, verified: true },
+    subscription: sub ?? { status: "active", entitled: true, verified: true },
   })),
   favorites: jest.fn(async () => ({ favorites: [] })),
 });
+
+const TRIALING = {
+  status: "trialing",
+  entitled: true,
+  verified: false,
+  trialEndsAt: new Date(Date.now() + 2 * 86400000).toISOString(),
+};
 
 const metrics = {
   frame: { x: 0, y: 0, width: 390, height: 844 },
   insets: { top: 47, left: 0, right: 0, bottom: 34 },
 };
 
-const renderBilling = () =>
+const renderBilling = (sub) =>
   render(
     <SafeAreaProvider initialMetrics={metrics}>
-      <AuthProvider store={makeStore()} cache={makeCache()} client={makeClient()}>
+      <AuthProvider store={makeStore()} cache={makeCache()} client={makeClient(sub)}>
         <ToastProvider>
           <Billing />
         </ToastProvider>
@@ -111,6 +118,44 @@ describe("managing a subscription", () => {
     // processor that purge.service.js cannot reach.
     expect(await findByText("Ada")).toBeTruthy();
     expect(await findByText("ada@example.com")).toBeTruthy();
+  });
+
+  /**
+   * Someone on a trial must be able to pay.
+   *
+   * The card was gated on `!entitled`, and a trial grants entitlement — so the
+   * only people actively deciding whether to subscribe were the only people
+   * with no way to do it. They had to wait for their access to lapse first.
+   */
+  it("lets someone on a trial subscribe without waiting for it to lapse", async () => {
+    mockPurchases.getOffering.mockResolvedValue({
+      available: true,
+      packages: [{ identifier: "monthly", product: { priceString: "$4.99" } }],
+    });
+
+    const { findByText } = await renderBilling(TRIALING);
+
+    expect(await findByText(/Become a member now/i)).toBeTruthy();
+    // The buyable control, not the standing price line — both carry the price.
+    expect(await findByText(/Subscribe now — \$4\.99/)).toBeTruthy();
+  });
+
+  it("hides the upgrade card from someone who already pays", async () => {
+    mockPurchases.getOffering.mockResolvedValue({
+      available: true,
+      packages: [{ identifier: "monthly", product: { priceString: "$4.99" } }],
+    });
+
+    const { queryByText, findByText } = await renderBilling({
+      status: "active",
+      entitled: true,
+      verified: true,
+    });
+
+    await findByText(/Manage or cancel/i);
+    // Nothing left to sell them.
+    expect(queryByText(/Become a member now/i)).toBeNull();
+    expect(queryByText(/Go premium/i)).toBeNull();
   });
 
   it("tells someone what to try when there is nothing to restore", async () => {
