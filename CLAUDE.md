@@ -14,8 +14,10 @@ Product inspiration: the "I am" daily affirmations app (Monkey Taps) on the App 
 
 ```bash
 pnpm start          # expo start
-pnpm ios            # expo start --ios
-pnpm android        # expo start --android
+pnpm ios            # expo run:ios      (native build; sets LANG for CocoaPods)
+pnpm android        # expo run:android
+pnpm prebuild       # expo prebuild     (add --clean to regenerate ios/ + android/)
+pnpm pod            # pod install in ios/
 pnpm web            # expo start --web
 pnpm api            # run the backend in watch mode
 pnpm test           # mobile test suite (jest-expo)
@@ -111,16 +113,6 @@ server/                 Express API — see server/README.md for its own layout
   a 15s client timeout, so the work completed and the reader was told "Could not reach Saydle".
   `flushReplenish()` awaits in-flight work — tests need it, since asserting straight after a
   request otherwise asserts against work that has not started and passes for the wrong reason.
-- **Reads never wait for the model.** `ensureFeed` fills missing days from the reader's own
-  generated pool and then the curated bank — database work only, ~90ms — and hands anything the
-  model must produce to `scheduleReplenish`, which is deliberately not awaited. `replenish` then
-  tops the pool up and re-points _future, unseen_ days that are holding curated lines at the fresh
-  ones. Today is never swapped mid-read, and a day already seen is history and is never rewritten.
-  Registration kicks a replenish too, so the funnel absorbs the first batch. This is not a
-  micro-optimisation: generating inline made a new account's first request take **20.2s** against
-  a 15s client timeout, so the work completed and the reader was told "Could not reach Saydle".
-  `flushReplenish()` awaits in-flight work — tests need it, since asserting straight after a
-  request otherwise asserts against work that has not started and passes for the wrong reason.
 - **Only one instance may generate for a reader at a time.** The in-process `inFlight` map dedupes
   the two requests every cold launch fires; the authority is `user.replenishingUntil`, claimed with
   one atomic `findOneAndUpdate` so a second server behind a load balancer cannot bill us for the
@@ -189,9 +181,21 @@ server/                 Express API — see server/README.md for its own layout
   (`premium`). A dashboard entitlement named "Saydle Pro" whose identifier is anything else means
   `entitlements.active[ENTITLEMENT_ID]` is forever undefined: nobody is entitled, every paid user
   sees the paywall, and nothing logs an error anywhere.
-- **`pod install` needs a UTF-8 locale.** Without it CocoaPods dies with
-  `Encoding::CompatibilityError`. Prefix prebuild/pod commands with
-  `LANG=en_US.UTF-8 LC_ALL=en_US.UTF-8`, or export both in your shell profile.
+- **`pod install` needs a UTF-8 locale**, and the reason is worth knowing because the error names
+  the wrong thing. With `LANG` unset the locale falls back to `C`; Ruby then refuses to assume a
+  character encoding for OS paths and tags the string from `Dir.pwd` as **`ASCII-8BIT`** — note
+  that `default_external` and `filesystem` are still `US-ASCII`, so checking those suggests
+  nothing is wrong. CocoaPods calls `.unicode_normalize` on that path in `config.rb`
+  (`installation_root`), which refuses ASCII-8BIT, and it dies with
+  `Encoding::CompatibilityError` before it ever reads the Podfile. The stack appears twice
+  because the error _reporter_ re-enters the same call. The `ios` / `prebuild` / `pod` scripts in
+  `package.json` set `LANG`/`LC_ALL` themselves, so use those rather than bare
+  `npx expo prebuild` — a shell profile export fixes one machine, the scripts fix everyone's.
+- **`[Xcodeproj] Consistency issue: no parent for object` means a stale `ios/`, not a bad edit.**
+  The widget config plugin re-registers its sources on every prebuild, and against an existing
+  `ios/` those accumulate until a file sits in two `SourcesBuildPhase`s and `pod install` fails in
+  the post-install hook. `ios/` and `android/` are generated and gitignored, so the fix is
+  `pnpm prebuild --clean` — never hand-editing the pbxproj.
 - The widget's **App Group is fixed by the plugin** as `group.<bundleId>.expowidgets` and is not
   read from config. `lib/widget.js`, `widgets/ios/SaydleShared.swift`, and `app.json` must all use
   it — a mismatch fails silently, with a widget that simply never updates.
