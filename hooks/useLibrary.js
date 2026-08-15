@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
+import { AppState } from "react-native";
 import { useAuth } from "../contexts/AuthContext.jsx";
 import { ApiError, NetworkError } from "../lib/errors.js";
 
@@ -75,6 +76,30 @@ export function useLibrary() {
     // Mount only; later pages come from the list reaching its end.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [userId]);
+
+  /**
+   * Try again when the app comes back, if the first attempt never landed.
+   *
+   * Mount was the only trigger. One failed load — a request made a second
+   * before the network settled, say — left the feed empty and offline with
+   * nothing to retry it: the screen's focus effect only fires on a *change* of
+   * focus, and Today is focused already. The feed sat on "being prepared"
+   * indefinitely while every other request in the app succeeded. Seen exactly
+   * that way on device.
+   *
+   * Only when there is nothing to show. Someone reading page forty must not be
+   * yanked back to the top because they took a call.
+   */
+  useEffect(() => {
+    if (!userId) return;
+
+    const sub = AppState.addEventListener("change", (next) => {
+      if (next !== "active") return;
+      if (offline || affirmations.length === 0) load().catch(() => {});
+    });
+
+    return () => sub.remove();
+  }, [userId, offline, affirmations.length, load]);
 
   /**
    * Tell the server how far they got.
