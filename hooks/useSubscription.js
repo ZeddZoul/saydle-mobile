@@ -11,6 +11,21 @@ import {
 } from "../lib/purchases.js";
 
 /**
+ * How long to keep asking after a purchase.
+ *
+ * FAST blocks the button (~9s, the common case). SLOW runs unawaited for
+ * another ~55s because a real Test Store webhook was measured arriving 80
+ * seconds after the sale. Both are bounded: entitlement is server-truth, so a
+ * webhook that never comes is still corrected on the next foreground, whereas
+ * polling forever would turn an outage into a request loop from every install.
+ */
+const FAST_SETTLE = [0, 800, 1500, 2500, 4000];
+const SLOW_SETTLE = [6000, 9000, 12000, 12000, 16000];
+
+/** The fields a purchase moves. Compared before and after, never read alone. */
+const signature = (s) => `${s?.status}|${s?.expiresAt ?? ""}|${s?.verified}`;
+
+/**
  * Entitlement, and the ways to get it.
  *
  * The server is the authority — always. A purchase here does not grant
@@ -106,33 +121,35 @@ export function useSubscription() {
    *
    * A sale is confirmed by the store, relayed to RevenueCat, and only then
    * posted to our webhook — so the read taken the instant `purchasePackage`
-   * resolves is genuinely too early and returns the state from before the
-   * purchase. One attempt was all there was: the AppState listener only fires
-   * if the app was backgrounded, which a StoreKit sheet does and an in-app
-   * purchase modal does not. The screen sat on "Free" until someone thought to
-   * tap Restore, which is not a thing anyone should have to work out.
+   * resolves is genuinely too early. One attempt was all there was: the
+   * AppState listener only fires if the app was backgrounded, which a StoreKit
+   * sheet does and an in-app purchase modal does not. The screen sat on "Free"
+   * until someone thought to tap Restore.
    *
-   * Bounded deliberately. Entitlement is server-truth, so if the webhook is
-   * late or lost the next foreground still corrects it — polling until it
-   * arrives would turn a webhook outage into an endless request loop from every
-   * installed copy of the app.
+   * It waits for the subscription to *change*, not for any particular flag to
+   * be true. Two earlier attempts got this wrong in the same way: `entitled` is
+   * already true for someone buying mid-trial, and `verified` is already true
+   * for anyone whose account has ever seen a webhook — `verifiedAt` is stamped
+   * on every event including EXPIRATION. Both returned on the first read and
+   * waited for nothing. A signature over the fields a purchase moves has no
+   * such prior state to be confused by.
+   *
+   * Measured against a real Test Store purchase, the webhook took **80
+   * seconds** to arrive, so the window has to be far wider than felt
+   * reasonable a priori — hence a fast blocking phase and a long quiet one.
    */
-  const settle = useCallback(async () => {
-    const backoff = [0, 800, 1500, 2500, 4000];
+  const settle = useCallback(
+    async (before, delays) => {
+      for (const wait of delays) {
+        if (wait) await new Promise((resolve) => setTimeout(resolve, wait));
+        const fresh = await refresh();
+        if (signature(fresh) !== signature(before)) return fresh;
+      }
 
-    for (const wait of backoff) {
-      if (wait) await new Promise((resolve) => setTimeout(resolve, wait));
-      const fresh = await refresh();
-      // `verified`, not `entitled`. Someone buying mid-trial is already
-      // entitled, so waiting on that returns instantly and never sees the
-      // purchase — which is the exact case this whole function exists for.
-      // `verifiedAt` is set only by the webhook and is explicitly null for a
-      // trial, so it means precisely "a store has confirmed this".
-      if (fresh?.verified) return fresh;
-    }
-
-    return null;
-  }, [refresh]);
+      return null;
+    },
+    [refresh],
+  );
 
   const purchase = useCallback(
     async (pkg) => {
@@ -145,15 +162,26 @@ export function useSubscription() {
         if (result.cancelled) return { cancelled: true };
         if (!result.purchased) return { failed: true, error: result.error };
 
-        // `busy` stays set for the whole wait, which is what keeps the buttons
-        // disabled while we are confirming rather than guessing.
-        const fresh = await settle();
-        return { purchased: true, settled: Boolean(fresh?.verified) };
+        // Two phases. The first blocks — `busy` stays set, buttons stay
+        // disabled — and covers the common case in about nine seconds. If the
+        // webhook is slower than that, we stop making the reader wait, tell
+        // them their payment landed, and keep asking quietly for another
+        // minute. The screen repaints itself the moment it arrives, which is
+        // the whole point: nobody should have to discover Restore.
+        const before = subscription;
+        const fresh = await settle(before, FAST_SETTLE);
+        if (fresh) return { purchased: true, settled: true };
+
+        // Deliberately not awaited.
+        settle(before, SLOW_SETTLE).catch(() => {});
+        return { purchased: true, settled: false };
       } finally {
         setBusy(false);
       }
     },
-    [settle],
+    // `subscription` matters: it is the before-state the signature compares
+    // against, and reading a stale one would make every poll look like a change.
+    [settle, subscription],
   );
 
   const restore = useCallback(async () => {
