@@ -176,6 +176,19 @@ server/                 Express API — see server/README.md for its own layout
 
 ## Gotchas
 
+- **A RevenueCat `test_` key in a release build crashes the app on launch.** That prefix is the
+  Test Store — real-looking purchases with no App Store Connect or Play Console behind them, which
+  is how the purchase flow gets exercised before there is a listing. The SDK refuses one outside
+  development by showing an alert and terminating, deliberately, so test entitlements cannot reach
+  production. `EXPO_PUBLIC_*` is inlined **at build time**, so the machine's `.env` is what ships:
+  a release cut with the test key in place carries the crash. `usableKey()` in `lib/purchases.js`
+  withholds it when `__DEV__` is false so the boundary degrades to the trial instead — a seatbelt,
+  not a substitute for swapping in the `appl_`/`goog_` keys.
+- **The entitlement _identifier_ is the contract, not its display name.** `EXPO_PUBLIC_REVENUECAT_ENTITLEMENT_ID`
+  and `REVENUECAT_ENTITLEMENT_ID` must both equal the identifier in the RevenueCat dashboard
+  (`premium`). A dashboard entitlement named "Saydle Pro" whose identifier is anything else means
+  `entitlements.active[ENTITLEMENT_ID]` is forever undefined: nobody is entitled, every paid user
+  sees the paywall, and nothing logs an error anywhere.
 - **`pod install` needs a UTF-8 locale.** Without it CocoaPods dies with
   `Encoding::CompatibilityError`. Prefix prebuild/pod commands with
   `LANG=en_US.UTF-8 LC_ALL=en_US.UTF-8`, or export both in your shell profile.
