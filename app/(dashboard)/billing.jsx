@@ -184,6 +184,24 @@ const Billing = () => {
       : t("billing.statusFree");
 
   /**
+   * The date line under the status, which must agree with the status.
+   *
+   * `expiresAt` outlives the subscription it describes: once one lapses the
+   * date is still there, and reading it as a renewal told someone sitting on
+   * "Free" that they renew next month. On a lapsed plan that same date is when
+   * it *ended*, which is the only true thing it can say.
+   */
+  const periodLine = !endsAt
+    ? entitled
+      ? t("billing.noExpiry")
+      : t("billing.freeHint")
+    : trialing
+      ? t("billing.trialEnds", { date: endsAt })
+      : entitled
+        ? t("billing.renews", { date: endsAt })
+        : t("billing.ended", { date: endsAt });
+
+  /**
    * Runs a billing action and reports it in billing's own words.
    *
    * `failureMessage` is not optional in practice: the fallback used to be
@@ -264,21 +282,16 @@ const Billing = () => {
                   <DisplayText weight="bold" style={[styles.plan, { color: theme.ink }]}>
                     {statusLabel}
                   </DisplayText>
-                  {endsAt ? (
-                    <Text style={[styles.hint, { color: theme.sub }]}>
-                      {trialing
-                        ? t("billing.trialEnds", { date: endsAt })
-                        : t("billing.renews", { date: endsAt })}
-                    </Text>
-                  ) : (
-                    <Text style={[styles.hint, { color: theme.sub }]}>
-                      {entitled ? t("billing.noExpiry") : t("billing.freeHint")}
-                    </Text>
-                  )}
+                  <Text style={[styles.hint, { color: theme.sub }]}>{periodLine}</Text>
                 </View>
               </View>
 
-              {subscription?.source ? (
+              {/* Only while there is something to have been purchased.
+                  `source` outlives the subscription too, so a lapsed account
+                  read "Free" and "Purchased via App Store" in the same card —
+                  two answers to "what am I on now", one of them history. The
+                  ended-on date above already says a subscription existed. */}
+              {entitled && subscription?.source ? (
                 <Row
                   label={t("billing.purchasedVia")}
                   value={sourceLabel(t, subscription.source)}

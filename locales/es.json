@@ -404,6 +404,7 @@
     "statusExpired": "Caducada",
     "trialEnds": "Tu prueba termina el {{date}}.",
     "renews": "Se renueva el {{date}}.",
+    "ended": "Finalizó el {{date}}.",
     "noExpiry": "Es tuyo — sin fecha de renovación.",
     "freeHint": "Estás en el plan gratuito.",
     "purchasedVia": "Comprado en",

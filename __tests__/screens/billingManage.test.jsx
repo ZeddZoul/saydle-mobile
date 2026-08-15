@@ -198,6 +198,52 @@ describe("managing a subscription", () => {
     expect(queryByText(/haven't been charged/i)).toBeNull();
   });
 
+  /**
+   * A lapsed subscription leaves its dates and its store behind.
+   *
+   * `expiresAt` and `source` both outlive the thing they describe, so the card
+   * showed "Free" alongside "Renews August 15" and "Purchased via App Store" —
+   * telling someone with no subscription that they renew next month and had
+   * bought one. Every line in that card has to agree with the status above it.
+   */
+  it("never tells a lapsed account that it renews", async () => {
+    const { findByText, queryByText } = await renderBilling({
+      status: "expired",
+      entitled: false,
+      source: "app_store",
+      expiresAt: new Date(Date.now() - 86400000).toISOString(),
+    });
+
+    expect(await findByText(/Ended /i)).toBeTruthy();
+    expect(queryByText(/Renews /i)).toBeNull();
+  });
+
+  it("does not claim a purchase on an account that has none", async () => {
+    const { findByText, queryByText } = await renderBilling({
+      status: "expired",
+      entitled: false,
+      source: "app_store",
+      expiresAt: new Date(Date.now() - 86400000).toISOString(),
+    });
+
+    await findByText(/Ended /i);
+    expect(queryByText(/Purchased via/i)).toBeNull();
+  });
+
+  it("still shows the store while a subscription is live", async () => {
+    const { findByText } = await renderBilling({
+      status: "active",
+      entitled: true,
+      verified: true,
+      source: "app_store",
+      expiresAt: new Date(Date.now() + 30 * 86400000).toISOString(),
+    });
+
+    expect(await findByText(/Purchased via/i)).toBeTruthy();
+    expect(await findByText("App Store")).toBeTruthy();
+    expect(await findByText(/Renews /i)).toBeTruthy();
+  });
+
   it("tells someone what to try when there is nothing to restore", async () => {
     mockPurchases.restorePurchases.mockResolvedValue({ available: true, entitled: false });
     const { findByText } = await renderBilling();

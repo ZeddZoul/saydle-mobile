@@ -252,6 +252,7 @@
     "statusExpired": "Expired",
     "trialEnds": "Your trial ends {{date}}.",
     "renews": "Renews {{date}}.",
+    "ended": "Ended {{date}}.",
     "noExpiry": "Yours to keep — no renewal date.",
     "freeHint": "You're on the free plan.",
     "purchasedVia": "Purchased via",
