@@ -27,60 +27,48 @@ const ART = {
   /** Stacked cards, fanned — a set of themes to leaf through. */
   theme: (s) => (
     <G>
-      {/* Three swatches fanned, each carrying its own bands — the old version
-          was three empty rectangles, which says "cards" but never says
-          "themes". What you are picking between is the artwork, so the
-          artwork has to be on them. */}
-      <G transform="rotate(-15 34 58)">
-        <Rect
-          x="16"
-          y="32"
-          width="36"
-          height="50"
-          rx="7"
-          stroke={s}
-          strokeWidth="1.2"
-          fill="none"
-          opacity="0.4"
-        />
-        <Path d="M22 62c8-6 16-6 24 0" stroke={s} strokeWidth="1" opacity="0.3" fill="none" />
-      </G>
-
-      <G transform="rotate(-6 46 54)">
-        <Rect
-          x="28"
-          y="28"
-          width="36"
-          height="50"
-          rx="7"
-          stroke={s}
-          strokeWidth="1.2"
-          fill="none"
-          opacity="0.65"
-        />
-        <Path d="M34 56c8-7 16-7 24 0" stroke={s} strokeWidth="1" opacity="0.5" fill="none" />
-      </G>
-
-      <G>
-        <Rect
-          x="42"
-          y="24"
-          width="38"
-          height="54"
-          rx="8"
-          stroke={s}
-          strokeWidth="1.4"
-          fill="none"
-        />
-        {/* The front card gets a full little scene: a horizon and a sun, so
-            the stack reads as backdrops rather than as blank paper. */}
-        <Path d="M48 58c8-9 18-9 26 0" stroke={s} strokeWidth="1.2" fill="none" />
-        <Path d="M61 41a5 5 0 1 1 0 .01" stroke={s} strokeWidth="1.2" fill="none" />
-        <Path d="M48 66h26" stroke={s} strokeWidth="1" opacity="0.45" strokeLinecap="round" />
-      </G>
-
-      <Sparkle x={94} y={40} stroke={s} />
-      <Sparkle x={16} y={80} r={3} stroke={s} opacity={0.5} />
+      {/* A deck stepped to the lower-left, occluded by omission. The last
+          version drew every card in full, and because line art has no fill,
+          the back cards' edges showed straight through the front card's face —
+          the clutter was overlap, not detail. Real line art never draws the
+          hidden part: each back card here is one open path covering only what
+          actually peeks out, so nothing ever crosses the scene. */}
+      <Path
+        d="M36 36h-3a7 7 0 0 0-7 7v42a7 7 0 0 0 7 7h24a7 7 0 0 0 7-7"
+        stroke={s}
+        strokeWidth="1.1"
+        opacity="0.35"
+        fill="none"
+      />
+      <Path
+        d="M46 29h-3a7 7 0 0 0-7 7v42a7 7 0 0 0 7 7h24a7 7 0 0 0 7-7"
+        stroke={s}
+        strokeWidth="1.2"
+        opacity="0.6"
+        fill="none"
+      />
+      {/* Only the front card carries the scene — sun and two hills, ending
+          exactly on the card's edges — because a theme is a backdrop. */}
+      <Rect
+        x="46"
+        y="22"
+        width="38"
+        height="56"
+        rx="8"
+        stroke={s}
+        strokeWidth="1.4"
+        fill="none"
+      />
+      <Path
+        d="M74 31.5a4.5 4.5 0 1 1 0 9a4.5 4.5 0 1 1 0-9Z"
+        stroke={s}
+        strokeWidth="1.2"
+        fill="none"
+      />
+      <Path d="M46 64c8-14 16-14 22 0" stroke={s} strokeWidth="1.2" fill="none" />
+      <Path d="M62 64c7-10 15-10 22 0" stroke={s} strokeWidth="1.1" opacity="0.7" fill="none" />
+      <Sparkle x={96} y={40} stroke={s} />
+      <Sparkle x={18} y={26} r={3} stroke={s} opacity={0.5} />
     </G>
   ),
 
