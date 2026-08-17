@@ -40,3 +40,23 @@ describe("formatFriendlyDate", () => {
     expect(formatted).toMatch(/August/i);
   });
 });
+
+/**
+ * A shared library line has no day attached.
+ *
+ * Today became a feed, so sharing moved from the daily entry to a library line
+ * — and those genuinely have no date. `formatFriendlyDate` was called with
+ * undefined, threw inside ShareCard's render, and took the whole screen down
+ * with a red box. A missing date should cost one line of text, not the screen.
+ */
+describe("formatFriendlyDate with no date", () => {
+  it("returns empty rather than throwing", () => {
+    expect(formatFriendlyDate(undefined)).toBe("");
+    expect(formatFriendlyDate(null)).toBe("");
+    expect(formatFriendlyDate("")).toBe("");
+  });
+
+  it("still formats a real date", () => {
+    expect(formatFriendlyDate("2026-08-17")).toMatch(/August/);
+  });
+});

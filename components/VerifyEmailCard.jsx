@@ -185,7 +185,10 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.sm,
     paddingHorizontal: spacing.md,
     borderRadius: radius.pill,
-    backgroundColor: "rgba(255,255,255,0.72)",
+    // Lighter than a card on purpose: this floats over the affirmation, and the
+    // line behind it should still read through. Matches the translucency the
+    // floating chrome uses rather than inventing a third weight.
+    backgroundColor: "rgba(255,255,255,0.42)",
   },
   barText: { flex: 1, fontSize: 13, fontWeight: "600", color: colors.ink },
   card: {

@@ -92,9 +92,15 @@ const ShareCard = forwardRef(
 
             {/* Almost unnoticeable on purpose — it dates the card without
               competing with the sentence, which is the only thing worth reading. */}
-            <Text style={[styles.date, { color: theme.ink, fontSize: size * 0.32 }]}>
-              {formatFriendlyDate(date)}
-            </Text>
+            {/* Only a line that belongs to a day carries one. The feed shares
+                library lines, which are not "your Tuesday" — they are just a
+                sentence, and dating them would be a claim about when they were
+                for. */}
+            {date ? (
+              <Text style={[styles.date, { color: theme.ink, fontSize: size * 0.32 }]}>
+                {formatFriendlyDate(date)}
+              </Text>
+            ) : null}
           </View>
         </LinearGradient>
       </View>
