@@ -130,7 +130,7 @@ describe("managing a subscription", () => {
 
     const { findByText } = await renderBilling(FREE);
 
-    expect(await findByText(/Go premium/i)).toBeTruthy();
+    expect(await findByText(/Written for you, not for everyone/i)).toBeTruthy();
     // The buyable control, not the standing price line — both carry the price.
     expect(await findByText(/Subscribe now — \$4\.99/)).toBeTruthy();
   });
@@ -149,8 +149,7 @@ describe("managing a subscription", () => {
 
     await findByText(/Manage or cancel/i);
     // Nothing left to sell them.
-    expect(queryByText(/Go premium/i)).toBeNull();
-    expect(queryByText(/Go premium/i)).toBeNull();
+    expect(queryByText(/Written for you, not for everyone/i)).toBeNull();
   });
 
   it("says nothing was charged when a purchase fails", async () => {
@@ -296,5 +295,57 @@ describe("managing a subscription", () => {
     // "Nothing to restore" is a dead end. The common cause is a second store
     // account, so the copy has to name it.
     expect(await findByText(/sign in to it and try again/i)).toBeTruthy();
+  });
+});
+
+/**
+ * The sample line is the paywall's whole argument.
+ *
+ * A promise that Saydle will write for you is worth far less than one sentence
+ * proving it — their name, their situation, generated at signup. It is also
+ * allowed to be absent (the model was down, or AI is off in this environment),
+ * and the card has to survive that without a hole in it.
+ */
+describe("the sample line", () => {
+  const withSub = (sub) =>
+    render(
+      <SafeAreaProvider initialMetrics={metrics}>
+        <AuthProvider store={makeStore()} cache={makeCache()} client={makeClient(sub)}>
+          <ToastProvider>
+            <Billing />
+          </ToastProvider>
+        </AuthProvider>
+      </SafeAreaProvider>,
+    );
+
+  it("shows what Saydle actually wrote for them", async () => {
+    const { findByText } = await withSub({
+      ...FREE,
+      sampleLine: "You can be steady about this, Ada, without being certain.",
+    });
+
+    expect(
+      await findByText("You can be steady about this, Ada, without being certain."),
+    ).toBeTruthy();
+  });
+
+  it("omits the card entirely when there is no sample", async () => {
+    const { findByText, queryByText } = await withSub({ ...FREE, sampleLine: null });
+
+    await findByText(/Written for you, not for everyone/i);
+    // No empty quote box, no placeholder — the argument is simply made without it.
+    expect(queryByText(/Here's one Saydle wrote for you/i)).toBeNull();
+  });
+
+  it("does not pitch to someone who already pays", async () => {
+    const { findByText, queryByText } = await withSub({
+      status: "active",
+      entitled: true,
+      verified: true,
+      sampleLine: "You can be steady about this, Ada, without being certain.",
+    });
+
+    await findByText(/Manage or cancel/i);
+    expect(queryByText(/Written for you, not for everyone/i)).toBeNull();
   });
 });

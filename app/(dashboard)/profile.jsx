@@ -17,6 +17,7 @@ import { useAppTheme } from "../../contexts/ThemeContext.jsx";
 import { useAuth } from "../../contexts/AuthContext.jsx";
 import { useToast } from "../../contexts/ToastContext.jsx";
 import { useReminders } from "../../hooks/useReminders.js";
+import { useSubscription } from "../../hooks/useSubscription.js";
 import { useProfileNudge } from "../../hooks/useProfileNudge.js";
 import { useLocale } from "../../hooks/useLocale.js";
 import { DELETION_GRACE_DAYS } from "../../lib/config.js";
@@ -53,6 +54,7 @@ const Chip = ({ label, active, disabled, onPress, theme }) => (
 const Profile = () => {
   const { t, tf } = useT();
   const router = useRouter();
+  const { entitled } = useSubscription();
   const { user, client, signOut, deleteAccount, updatePreferences, offline } = useAuth();
   const toast = useToast();
   const reminders = useReminders();
@@ -191,9 +193,30 @@ const Profile = () => {
               percent={nudge.completeness.percent}
               label={t("profile.personalizationValue", { percent: nudge.completeness.percent })}
             />
-            <Text style={[styles.hint, { color: theme.sub }]}>
-              {t("profile.personalizationHint")}
-            </Text>
+            {/* The same meter says two different things depending on whether
+                Saydle can act on any of it. For a free reader the number is the
+                argument: they have told us a great deal and none of it reaches
+                their affirmations yet. Their own data, reflected back — no
+                claim, no urgency, nothing manufactured. */}
+            {entitled ? (
+              <Text style={[styles.hint, { color: theme.sub }]}>
+                {t("profile.personalizationUnlocked")}
+              </Text>
+            ) : (
+              <>
+                <Text style={[styles.hint, { color: theme.sub }]}>
+                  {t("profile.personalizationLocked")}
+                </Text>
+                <Text style={[styles.gap, { color: theme.ink }]}>
+                  {t("profile.personalizationLockedGap")}
+                </Text>
+                <Button
+                  title={t("profile.personalizationCta")}
+                  onPress={() => router.push("/billing")}
+                  style={styles.personalizationCta}
+                />
+              </>
+            )}
           </View>
         ) : null}
 
@@ -364,6 +387,8 @@ const Profile = () => {
 export default Profile;
 
 const styles = StyleSheet.create({
+  gap: { ...type.body, fontSize: 15, fontWeight: "600", marginTop: spacing.sm },
+  personalizationCta: { marginTop: spacing.md },
   container: {
     padding: spacing.xl,
     // Clear the tab bar (≈88pt) with breathing room below Delete account.

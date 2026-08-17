@@ -24,6 +24,9 @@ export function serializeSubscription(user, now = new Date()) {
   const sub = user?.subscription ?? {};
 
   return {
+    // One line written for this person at signup. The paywall shows it as proof
+    // rather than promise — null is fine, and the card simply omits it.
+    sampleLine: user?.sampleLine ?? null,
     entitled: isEntitled(user, now),
     status: sub.status ?? "none",
     expiresAt: sub.expiresAt ?? null,

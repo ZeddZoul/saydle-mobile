@@ -113,7 +113,11 @@
     "personalizationHint": "Saydle pregunta una cosa más de vez en cuando. Cuanto más sabe, más suenan tus afirmaciones a algo escrito para ti.",
     "language": "Idioma",
     "languageHint": "Cambia el idioma de la app y de tus próximas afirmaciones. Las de hoy se quedan como están.",
-    "yourStuff": "Lo tuyo"
+    "yourStuff": "Lo tuyo",
+    "personalizationLocked": "A estas alturas Saydle te conoce bastante bien: en qué estás trabajando, el tono que te va, cómo has estado.",
+    "personalizationLockedGap": "Nada de eso llega todavía a tus afirmaciones.",
+    "personalizationCta": "Deja que Saydle escriba las tuyas",
+    "personalizationUnlocked": "Saydle usa todo esto. Cada afirmación que lees está escrita a partir de ello."
   },
   "offline": {
     "banner": "Sin conexión: mostrando tus afirmaciones guardadas"
@@ -411,7 +415,7 @@
     "confirmed": "Confirmado con la tienda",
     "notVerified": "Todavía no",
     "purchaseFailed": "No se completó: no se te ha cobrado nada. Inténtalo de nuevo en un momento.",
-    "upgrade": "Hazte premium",
+    "upgrade": "Escritas para ti, no para todos",
     "purchased": "Ya estás suscrito. Gracias.",
     "purchaseSyncing": "Pago recibido: tu suscripción aparecerá aquí en breve.",
     "storeUnavailable": "Las compras aún no están disponibles en este dispositivo.",
@@ -435,7 +439,17 @@
     "restoreNothing": "No hay ninguna compra anterior en esta cuenta de la tienda. Si pagaste con otra, inicia sesión con esa e inténtalo de nuevo.",
     "restoreUnavailable": "Las compras aún no están configuradas en esta versión.",
     "restoreSyncing": "Compra encontrada — aparecerá aquí en un momento.",
-    "restoreFailed": "No se pudo contactar con la tienda. Inténtalo de nuevo."
+    "restoreFailed": "No se pudo contactar con la tienda. Inténtalo de nuevo.",
+    "upgradeBody": "Las afirmaciones que lees están escritas para que le sirvan a cualquiera. Saydle Premium escribe las tuyas: desde tu nombre, lo que estás trabajando y el tono que pediste.",
+    "upgradeKicker": "No una biblioteca más grande. Otra autoría.",
+    "sampleEyebrow": "Esta la escribió Saydle para ti",
+    "sampleFooter": "Así es cada día a partir de aquí.",
+    "compareFree": "Gratis",
+    "comparePremium": "Premium",
+    "compareRow1": "Afirmaciones escritas a partir de tus respuestas",
+    "compareRow2": "Una voz que te las lee",
+    "compareRow3": "Tus propias palabras, guardadas",
+    "compareRow4": "Guardar frases para volver a ellas"
   },
   "themes": {
     "preview": "Así se verá tu afirmación."

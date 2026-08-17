@@ -126,6 +126,15 @@ const userSchema = new mongoose.Schema(
      * The account stays fully usable while these are set. See
      * config/deletion.js for why.
      */
+    /**
+     * One affirmation written for this person at signup, kept forever.
+     *
+     * Shown on the paywall as proof rather than promise. Never regenerated: a
+     * second call would double a cost that buys nothing, since the point is one
+     * honest example and not a fresh one.
+     */
+    sampleLine: { type: String, default: null },
+
     deletion: {
       requestedAt: { type: Date, default: null },
       // Indexed: the purge job's only query is "whose date has passed".

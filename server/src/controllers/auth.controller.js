@@ -11,6 +11,7 @@ import {
 } from "../services/mailer.service.js";
 import { resolveLocale } from "../config/locales.js";
 import { scheduleReplenish } from "../services/affirmation.service.js";
+import { ensureSampleLine } from "../services/sampleLine.service.js";
 import {
   requestDeletion,
   cancelDeletion,
@@ -79,6 +80,13 @@ export async function register(req, res, next) {
     // until they subscribe; `scheduleReplenish` makes that decision itself
     // rather than each caller having to remember to.
     scheduleReplenish(user);
+
+    // One line written for them, kept forever, shown on the paywall. The single
+    // deliberate exception to not spending model time on a free account — a
+    // promise that Saydle will write for you is worth far less than one
+    // sentence proving it. Not awaited: registration must not wait on a model,
+    // and a paywall without a sample is the paywall we had yesterday.
+    ensureSampleLine(user).catch(() => {});
 
     req.log?.info({ userId: user.id }, "user registered");
 

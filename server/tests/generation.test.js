@@ -411,8 +411,11 @@ describe("the read path never waits for the model", () => {
 
     // Registration still calls scheduleReplenish — the account is created at the
     // end of onboarding, so there are a few seconds of paywall and navigation to
-    // finish a batch in. It just declines to spend anything until they pay.
-    expect(generateAffirmations).not.toHaveBeenCalled();
+    // finish a batch in. It just declines to spend anything until they pay; the
+    // only call at signup is the one-line sample, which never asks for a batch.
+    const atSignup = generateAffirmations.mock.calls.map(([a]) => a.count);
+    for (const c of atSignup) expect(c).toBeLessThanOrEqual(5);
+    generateAffirmations.mockClear();
 
     const fresh = await User.findById(created.id);
     fresh.subscription.status = "active";
@@ -447,14 +450,18 @@ describe("who we spend model time on", () => {
 
   beforeEach(() => generateAffirmations.mockReset());
 
-  it("never calls the model for a free account", async () => {
+  it("never generates a batch for a free account", async () => {
     await seed();
     const { user: created } = await registerUser(app, { email: "free@example.com" });
     const user = await User.findById(created.id);
+    generateAffirmations.mockClear();
 
     await scheduleReplenish(user);
     await flushReplenish();
 
+    // Cleared after registration on purpose: the one-off sample line is the
+    // deliberate exception, and it is not what this is guarding. What must
+    // never happen is a *feed* generated for someone who has not paid.
     expect(generateAffirmations).not.toHaveBeenCalled();
   });
 
@@ -474,13 +481,19 @@ describe("who we spend model time on", () => {
     expect(generateAffirmations).toHaveBeenCalled();
   });
 
-  it("does not start a batch when a free account registers", async () => {
+  it("spends exactly one small call on a free signup, and no batch", async () => {
     await seed();
+    generateAffirmations.mockResolvedValue(["I can begin again on a Tuesday."]);
+
     await registerUser(app, { email: "signup@example.com" });
     await flushReplenish();
 
-    // Registration kicks scheduleReplenish for the head start; that head start
-    // is only worth paying for once someone has paid.
-    expect(generateAffirmations).not.toHaveBeenCalled();
+    // Registration kicks scheduleReplenish for the head start, which declines
+    // until they pay — so the only call is the sample line, and it asks for a
+    // handful rather than a batch. If this ever grows, someone has put a feed
+    // behind a free signup.
+    const counts = generateAffirmations.mock.calls.map(([a]) => a.count);
+    expect(counts.length).toBeLessThanOrEqual(1);
+    for (const c of counts) expect(c).toBeLessThanOrEqual(5);
   });
 });

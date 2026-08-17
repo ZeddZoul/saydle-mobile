@@ -113,7 +113,11 @@
     "personalizationHint": "Saydle asks for one more thing now and then. The more it knows, the more your affirmations sound like they were written for you.",
     "language": "Language",
     "languageHint": "Changes the app and the affirmations ahead. Today stays as it is.",
-    "yourStuff": "Your stuff"
+    "yourStuff": "Your stuff",
+    "personalizationLocked": "Saydle knows you fairly well by now — what you're working on, the tone that suits you, how you've been.",
+    "personalizationLockedGap": "None of it reaches your affirmations yet.",
+    "personalizationCta": "Let Saydle write yours",
+    "personalizationUnlocked": "Saydle uses all of this. Every affirmation you read is written from it."
   },
   "offline": {
     "banner": "Offline — showing your saved affirmations"
@@ -259,7 +263,7 @@
     "confirmed": "Confirmed with store",
     "notVerified": "Not yet",
     "purchaseFailed": "That didn't go through — you haven't been charged. Try again in a moment.",
-    "upgrade": "Go premium",
+    "upgrade": "Written for you, not for everyone",
     "purchased": "You're subscribed — thank you.",
     "purchaseSyncing": "Payment received — your subscription will appear here shortly.",
     "storeUnavailable": "Purchases aren't available on this device yet.",
@@ -283,7 +287,17 @@
     "restoreNothing": "No earlier purchase on this store account. If you paid with a different one, sign in to it and try again.",
     "restoreUnavailable": "Purchases aren't set up on this build yet.",
     "restoreSyncing": "Found your purchase — it'll appear here in a moment.",
-    "restoreFailed": "Couldn't reach the store. Try again in a moment."
+    "restoreFailed": "Couldn't reach the store. Try again in a moment.",
+    "upgradeBody": "The affirmations you're reading were written to be good for anyone. Saydle Premium writes yours — from your name, what you're working on, and the tone you asked for.",
+    "upgradeKicker": "Not a bigger library. A different author.",
+    "sampleEyebrow": "Here's one Saydle wrote for you",
+    "sampleFooter": "That's what every day looks like from here.",
+    "compareFree": "Free",
+    "comparePremium": "Premium",
+    "compareRow1": "Affirmations written from your answers",
+    "compareRow2": "A voice reading them to you",
+    "compareRow3": "Your own words, kept",
+    "compareRow4": "Save lines to come back to"
   },
   "themes": {
     "preview": "This is how your affirmation will look."

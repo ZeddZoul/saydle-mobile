@@ -272,6 +272,32 @@ const Billing = () => {
                   {t("billing.upgrade")}
                 </DisplayText>
 
+                <Text style={[styles.hint, { color: theme.sub }]}>
+                  {t("billing.upgradeBody")}
+                </Text>
+
+                <Text style={[styles.kicker, { color: theme.ink }]}>
+                  {t("billing.upgradeKicker")}
+                </Text>
+
+                {/* Proof rather than promise: one line Saydle actually wrote
+                    for this person at signup, with their name and their
+                    situation in it. Nothing else on this screen argues as
+                    well, and there is nothing to show if it never landed. */}
+                {subscription?.sampleLine ? (
+                  <View style={[styles.sample, { borderColor: theme.border }]}>
+                    <Text style={[styles.sampleEyebrow, { color: theme.accent }]}>
+                      {t("billing.sampleEyebrow")}
+                    </Text>
+                    <DisplayText style={[styles.sampleText, { color: theme.ink }]}>
+                      {subscription.sampleLine}
+                    </DisplayText>
+                    <Text style={[styles.hint, { color: theme.sub }]}>
+                      {t("billing.sampleFooter")}
+                    </Text>
+                  </View>
+                ) : null}
+
                 {canPurchase && packages.length > 0 && (
                   <View style={styles.actions}>
                     {packages.map((pkg) => (
@@ -338,6 +364,21 @@ const Billing = () => {
 export default Billing;
 
 const styles = StyleSheet.create({
+  kicker: { ...type.sectionTitle, fontSize: 17, marginTop: spacing.md },
+  sample: {
+    marginTop: spacing.lg,
+    padding: spacing.lg,
+    borderRadius: radius.lg,
+    borderWidth: 1,
+    gap: spacing.sm,
+  },
+  sampleEyebrow: {
+    fontSize: 11,
+    fontWeight: "700",
+    letterSpacing: 0.6,
+    textTransform: "uppercase",
+  },
+  sampleText: { fontSize: 22, lineHeight: 30 },
   container: {
     padding: spacing.xl,
     paddingBottom: 112,
