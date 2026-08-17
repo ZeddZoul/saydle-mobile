@@ -2,6 +2,7 @@ import { ActivityIndicator, FlatList, Pressable, StyleSheet, Text, View } from "
 import { Ionicons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
 import GradientBackground from "../../components/GradientBackground.jsx";
+import LineArt from "../../components/LineArt.jsx";
 import FloatingHeader, { FLOATING_HEADER_INSET } from "../../components/FloatingHeader.jsx";
 import DisplayText from "../../components/DisplayText.jsx";
 import OfflineBanner from "../../components/OfflineBanner";
@@ -43,9 +44,9 @@ const Favorites = () => {
         showsVerticalScrollIndicator={false}
         ListEmptyComponent={
           <View style={styles.empty}>
-            <View style={[styles.emptyBadge, { backgroundColor: theme.surfaceStrong }]}>
-              <Ionicons name="heart-outline" size={34} color={theme.accent} />
-            </View>
+            {/* The heart drawn in dots — there to be filled in, with the first
+                small one already arriving. An empty state should promise. */}
+            <LineArt name="favoritesEmpty" size={128} />
             <Text style={[styles.emptyText, { color: theme.sub }]}>{t("favorites.empty")}</Text>
           </View>
         }
@@ -113,15 +114,6 @@ const styles = StyleSheet.create({
   empty: {
     alignItems: "center",
     gap: spacing.lg,
-  },
-  emptyBadge: {
-    width: 76,
-    height: 76,
-    borderRadius: radius.pill,
-    backgroundColor: "rgba(255,255,255,0.6)",
-    alignItems: "center",
-    justifyContent: "center",
-    ...shadow.soft,
   },
   emptyText: {
     ...type.subtitle,

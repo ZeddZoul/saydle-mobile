@@ -205,6 +205,113 @@ const ART = {
       <Sparkle x={94} y={40} stroke={s} />
     </G>
   ),
+  /** The heart, dotted — drawn but not yet filled in. One small one arriving. */
+  favoritesEmpty: (s) => (
+    <G>
+      <Path
+        d="M57 84C40 72 24 60 24 45a16 16 0 0 1 33-7 16 16 0 0 1 33 7c0 15-16 27-33 39Z"
+        stroke={s}
+        strokeWidth="1.4"
+        strokeLinejoin="round"
+        strokeLinecap="round"
+        strokeDasharray="3 5.5"
+        fill="none"
+      />
+      {/* The first heart on its way in — the same shape, small and solid-lined,
+          so the empty state promises rather than just gapes. Stroke width is
+          compensated for the scale, since strokes scale with the group. */}
+      <G transform="translate(74 10) scale(0.24)">
+        <Path
+          d="M57 84C40 72 24 60 24 45a16 16 0 0 1 33-7 16 16 0 0 1 33 7c0 15-16 27-33 39Z"
+          stroke={s}
+          strokeWidth="4.8"
+          strokeLinejoin="round"
+          fill="none"
+        />
+      </G>
+      <Sparkle x={20} y={28} r={3} stroke={s} opacity={0.5} />
+      <Sparkle x={96} y={52} r={3.5} stroke={s} opacity={0.6} />
+    </G>
+  ),
+
+  /** The quill at the ready, above a line not yet written. */
+  wordsEmpty: (s) => (
+    <G>
+      <Path
+        d="M84 18c-4 20-14 34-27 43l-9 6-6-6 5-9C56 39 69 26 84 18Z"
+        stroke={s}
+        strokeWidth="1.3"
+        strokeLinejoin="round"
+        fill="none"
+      />
+      <Path d="M84 18 47 61" stroke={s} strokeWidth="1.1" opacity="0.55" />
+      <Path
+        d="M76 25l-6 1M69 32l-7 1M62 40l-7 1M55 48l-6 1"
+        stroke={s}
+        strokeWidth="1"
+        strokeLinecap="round"
+        opacity="0.45"
+      />
+      <Path d="M42 67 31 79" stroke={s} strokeWidth="1.3" strokeLinecap="round" />
+      <Path d="M31 79l-4 5 6-2Z" stroke={s} strokeWidth="1.1" fill="none" />
+      {/* Dashed where myWords has the written stroke: the same quill, nothing
+          laid down yet. The dashes are the invitation. */}
+      <Path
+        d="M22 90h40"
+        stroke={s}
+        strokeWidth="1.1"
+        strokeLinecap="round"
+        strokeDasharray="2.5 5"
+        opacity="0.6"
+      />
+      <Sparkle x={94} y={44} stroke={s} />
+      <Sparkle x={20} y={28} r={3} stroke={s} opacity={0.5} />
+    </G>
+  ),
+
+  /** A page mid-write, for a feed still being prepared. */
+  feedWriting: (s) => (
+    <G>
+      <Rect
+        x="34"
+        y="18"
+        width="46"
+        height="68"
+        rx="8"
+        stroke={s}
+        strokeWidth="1.4"
+        fill="none"
+      />
+      <Path
+        d="M44 36h26M44 46h26"
+        stroke={s}
+        strokeWidth="1.2"
+        strokeLinecap="round"
+        opacity="0.75"
+      />
+      <Path d="M44 56h14" stroke={s} strokeWidth="1.2" strokeLinecap="round" opacity="0.75" />
+      {/* The line being written trails off into beads, and the one after it is
+          only dashes — the page is arriving, not missing. */}
+      <Path
+        d="M62 56h11"
+        stroke={s}
+        strokeWidth="1.4"
+        strokeLinecap="round"
+        strokeDasharray="0.2 5"
+        opacity="0.6"
+      />
+      <Path
+        d="M44 66h26"
+        stroke={s}
+        strokeWidth="1.1"
+        strokeLinecap="round"
+        strokeDasharray="2.5 5"
+        opacity="0.4"
+      />
+      <Sparkle x={92} y={30} stroke={s} />
+      <Sparkle x={22} y={72} r={3} stroke={s} opacity={0.5} />
+    </G>
+  ),
 };
 
 const LineArt = ({ name, size = 104 }) => {

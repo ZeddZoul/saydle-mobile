@@ -13,6 +13,7 @@ import * as Haptics from "expo-haptics";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useFocusEffect } from "expo-router";
 import GradientBackground from "./GradientBackground.jsx";
+import LineArt from "./LineArt.jsx";
 import DisplayText from "./DisplayText.jsx";
 import ShareSheet from "./ShareSheet.jsx";
 import OfflineBanner from "./OfflineBanner";
@@ -172,6 +173,9 @@ const AffirmationFeed = ({ chrome }) => {
       <GradientBackground style={styles.centered} testID="library-empty">
         {chrome}
 
+        {/* A page mid-write. The spinner says "working"; this says what the
+            work is. */}
+        <LineArt name="feedWriting" size={116} />
         <ActivityIndicator color={theme.accent} />
         <Text style={[styles.lockedBody, { color: theme.sub }]}>
           {t(library.refilling ? "library.writing" : "library.empty")}

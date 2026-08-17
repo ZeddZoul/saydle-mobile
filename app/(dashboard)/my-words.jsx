@@ -13,6 +13,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { useFocusEffect } from "expo-router";
 import * as Haptics from "expo-haptics";
 import GradientBackground from "../../components/GradientBackground.jsx";
+import LineArt from "../../components/LineArt.jsx";
 import FloatingHeader, { FLOATING_HEADER_INSET } from "../../components/FloatingHeader.jsx";
 import DisplayText from "../../components/DisplayText.jsx";
 import Button from "../../components/Button";
@@ -146,7 +147,10 @@ const MyWords = () => {
           </View>
         }
         ListEmptyComponent={
-          <Text style={[styles.empty, { color: theme.sub }]}>{t("myWords.empty")}</Text>
+          <View style={styles.emptyWrap}>
+            <LineArt name="wordsEmpty" size={124} />
+            <Text style={[styles.empty, { color: theme.sub }]}>{t("myWords.empty")}</Text>
+          </View>
         }
         renderItem={({ item }) => (
           <View style={[styles.card, { backgroundColor: theme.surface }]} testID="my-word">
@@ -173,6 +177,7 @@ const MyWords = () => {
 export default MyWords;
 
 const styles = StyleSheet.create({
+  emptyWrap: { alignItems: "center", marginTop: spacing.xl },
   centered: {
     alignItems: "center",
     justifyContent: "center",
