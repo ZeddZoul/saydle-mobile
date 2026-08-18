@@ -200,7 +200,8 @@
     "voicePlay": "Play mine",
     "voiceStop": "Stop recording",
     "voiceDiscardHint": "Press and hold to delete this recording",
-    "voiceDenied": "Microphone access is off. Turn it on in Settings to record your voice."
+    "voiceDenied": "Microphone access is off. Turn it on in Settings to record your voice.",
+    "listen": "Listen to today's seven"
   },
   "tabs": {
     "today": "Today",

@@ -352,7 +352,8 @@
     "voicePlay": "Escuchar",
     "voiceStop": "Detener grabación",
     "voiceDiscardHint": "Mantén pulsado para borrar esta grabación",
-    "voiceDenied": "El micrófono está desactivado. Actívalo en Ajustes para grabar tu voz."
+    "voiceDenied": "El micrófono está desactivado. Actívalo en Ajustes para grabar tu voz.",
+    "listen": "Escucha tus siete de hoy"
   },
   "tabs": {
     "today": "Hoy",

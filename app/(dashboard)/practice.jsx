@@ -17,6 +17,8 @@ import { usePractice } from "../../hooks/usePractice.js";
 import { useLibrary } from "../../hooks/useLibrary.js";
 import { useBreath } from "../../hooks/useBreath.js";
 import { useVoiceNote } from "../../hooks/useVoiceNote.js";
+import { usePracticeSession } from "../../hooks/usePracticeSession.js";
+import ListeningSession from "../../components/ListeningSession.jsx";
 import { useT } from "../../lib/i18n.js";
 import { radius, spacing, type } from "../../theme/tokens.js";
 
@@ -41,6 +43,8 @@ const SOURCES = ["today", "saved", "mine"];
 
 const Practice = () => {
   const { t } = useT();
+  const listenSession = usePracticeSession();
+  const [listening, setListening] = useState(false);
   const { theme } = useAppTheme();
   const { user } = useAuth();
   const { todayEntry, loading: feedLoading } = useFeed();
@@ -146,6 +150,30 @@ const Practice = () => {
   const count = session?.count ?? 0;
   const sources = SOURCES.filter((key) => pools[key].length);
 
+  /**
+   * The listening session owns the screen outright while it runs.
+   *
+   * Not a modal over the practice screen: the whole point is that nothing
+   * competes with the line, and a header, a ring and a week strip behind a
+   * scrim are still things competing with it.
+   */
+  if (listening && listenSession.ready) {
+    return (
+      <GradientBackground>
+        <ListeningSession
+          lines={listenSession.lines}
+          onClose={() => setListening(false)}
+          onFinish={() => {
+            // A finished session counts as practice for the day — the streak
+            // has always measured "you did this today", and this is the doing.
+            rep();
+            setListening(false);
+          }}
+        />
+      </GradientBackground>
+    );
+  }
+
   return (
     <GradientBackground>
       <FloatingHeader title={t("tabs.practice")} />
@@ -159,6 +187,19 @@ const Practice = () => {
         style={styles.surface}
         testID="practice-surface"
       >
+        {/* The listening session, offered first — it is what Practice is
+            becoming. The tap-to-say ritual below it still works and still
+            feeds the same streak; the two are different ways to sit with the
+            same lines rather than one replacing the other today. */}
+        {listenSession.ready ? (
+          <Button
+            title={t("practice.listen")}
+            onPress={() => setListening(true)}
+            style={styles.listen}
+            testID="practice-listen"
+          />
+        ) : null}
+
         {sources.length > 1 && (
           <View style={styles.sources} testID="practice-sources">
             {sources.map((key) => {
@@ -335,6 +376,7 @@ const Practice = () => {
 export default Practice;
 
 const styles = StyleSheet.create({
+  listen: { marginBottom: spacing.lg },
   centered: { alignItems: "center", justifyContent: "center", padding: spacing.xl },
   surface: {
     flex: 1,
