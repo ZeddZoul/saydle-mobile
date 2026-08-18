@@ -65,7 +65,19 @@ Do not produce near-duplicates of each other or of the avoid-list you are given.
 ## Output
 Return only JSON matching the provided schema. Every item must satisfy every rule
 above. If a requested category conflicts with the safety rules, return a safe
-general affirmation for it instead of refusing.`;
+general affirmation for it instead of refusing.
+
+## The seven for practice
+Choose exactly seven of the affirmations you are returning and give each one a
+\`practiceRank\` from 1 to 7. Leave the field off every other item.
+
+These seven get read aloud to this person, one at a time, in a calm voice. Pick
+the seven most likely to reach THIS reader given what you know about them — not
+the seven best sentences in isolation. Rank 1 is the one to open with; rank 7 is
+the one to leave them with.
+
+Return fewer than seven only if you are returning fewer than seven affirmations
+in total.`;
 
 /**
  * The per-request tail. Everything user-specific lives here.
@@ -282,6 +294,15 @@ export const RESPONSE_SCHEMA = {
         properties: {
           text: { type: Type.STRING },
           category: { type: Type.STRING },
+          /**
+           * 1-7 on the seven meant for a listening session; absent otherwise.
+           *
+           * Asked for here rather than in a second call because the model
+           * already has this reader's profile in context at this moment —
+           * "which of these will land hardest for them" costs a handful of
+           * output tokens now and a whole request later.
+           */
+          practiceRank: { type: Type.INTEGER },
         },
         required: ["text", "category"],
       },
@@ -293,4 +314,5 @@ export const RESPONSE_SCHEMA = {
 // Bumped whenever SYSTEM_PROMPT changes, so stored affirmations record which
 // prompt produced them and an explicit cache can be keyed per version.
 // v2: permission-first voice (permission / specific / honest).
-export const PROMPT_VERSION = 2;
+// v3: marks seven lines with practiceRank for the listening session.
+export const PROMPT_VERSION = 3;

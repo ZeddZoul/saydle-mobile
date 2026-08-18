@@ -80,8 +80,25 @@ export async function generateForLibrary(user, count) {
 
   const allowed = prefs.categories?.length ? prefs.categories : null;
 
+  /**
+   * Re-rank after moderation, not before.
+   *
+   * The model ranks what it wrote; moderation then drops some of it. Keeping
+   * the original numbers would leave gaps — a session asking for ranks 1-7 and
+   * finding 1, 3, 4, 7 — so the survivors are renumbered in the order the model
+   * put them. Its judgement about *which* lines and in *what order* survives;
+   * only the arithmetic is redone.
+   */
+  const ranked = approved
+    .filter((a) => Number.isInteger(a.practiceRank))
+    .sort((a, b) => a.practiceRank - b.practiceRank)
+    .slice(0, 7);
+
+  const rankOf = new Map(ranked.map((a, i) => [a.text, i + 1]));
+
   const docs = approved.map((a) => ({
     text: a.text,
+    practiceRank: rankOf.get(a.text) ?? null,
     textKey: a.text.trim().toLowerCase(),
     categorySlug:
       allowed && allowed.includes(a.category) ? a.category : (a.category ?? "general"),

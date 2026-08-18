@@ -44,6 +44,15 @@ const affirmationSchema = new mongoose.Schema(
      * empty their collection. The daily feed never sets this.
      */
     library: { type: Boolean, default: false, index: true },
+
+    /**
+     * 1-7 on the seven the model marked for a listening session; null on the
+     * rest. Sparse-indexed because seven rows in a batch of 240 carry it.
+     *
+     * Stored rather than recomputed: it is a judgement the model made with this
+     * reader's profile in front of it, and nothing later has that context.
+     */
+    practiceRank: { type: Number, default: null, index: { sparse: true } },
   },
   { timestamps: true },
 );

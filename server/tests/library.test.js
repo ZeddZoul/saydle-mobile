@@ -344,3 +344,66 @@ describe("the daily line is left alone", () => {
     expect(feedTexts.some((t) => libraryTexts.has(t))).toBe(false);
   });
 });
+
+/**
+ * The seven the model marked for a listening session.
+ *
+ * Asked for inside the batch call rather than as a second request, because the
+ * model already has this reader's profile in front of it at that moment. The
+ * risk is not that it refuses to rank — it is that the ranks quietly stop
+ * arriving somewhere between the model and the app, and a session silently
+ * falls back to "the first seven" while looking exactly the same.
+ */
+describe("practiceRank", () => {
+  it("stores the ranks the model gave and serves them to the app", async () => {
+    generateAffirmations.mockResolvedValue(
+      Array.from({ length: 20 }, (_, i) => ({
+        text: `I can hold rank line ${i}.`,
+        category: "calm",
+        // Seven marked, scattered through the batch rather than at the front.
+        practiceRank: [3, 7, 11, 15, 2, 18, 9].indexOf(i) + 1 || undefined,
+      })),
+    );
+
+    await refill(user, { size: 20 });
+
+    const res = await request(app).get("/api/library?limit=40").set("authorization", auth);
+    const ranked = res.body.affirmations.filter((a) => a.practiceRank != null);
+
+    expect(ranked).toHaveLength(7);
+    expect(ranked.map((a) => a.practiceRank).sort((x, y) => x - y)).toEqual([
+      1, 2, 3, 4, 5, 6, 7,
+    ]);
+  });
+
+  it("closes the gaps when moderation drops a ranked line", async () => {
+    generateAffirmations.mockResolvedValue([
+      { text: "I can begin before I feel ready.", category: "calm", practiceRank: 1 },
+      // Second person — moderation rejects this one, taking rank 2 with it.
+      { text: "You are enough exactly as you are.", category: "calm", practiceRank: 2 },
+      { text: "I can let something be good enough.", category: "calm", practiceRank: 3 },
+      { text: "I am not behind. There is no schedule.", category: "calm" },
+    ]);
+
+    await refill(user, { size: 4 });
+
+    const res = await request(app).get("/api/library?limit=40").set("authorization", auth);
+    const ranks = res.body.affirmations
+      .filter((a) => a.practiceRank != null)
+      .map((a) => a.practiceRank)
+      .sort((x, y) => x - y);
+
+    // 1 and 3 survive and become 1 and 2. Leaving them as 1 and 3 would hand a
+    // session a gap it has no way to interpret.
+    expect(ranks).toEqual([1, 2]);
+  });
+
+  it("never ranks a curated line", async () => {
+    const free = await registerUser(app, { email: "freerank@example.com" });
+
+    const res = await request(app).get("/api/library").set("authorization", free.auth);
+
+    // The bank is shared, so no ranking of it could be about any one reader.
+    expect(res.body.affirmations.every((a) => a.practiceRank === null)).toBe(true);
+  });
+});

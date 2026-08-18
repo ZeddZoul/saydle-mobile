@@ -42,6 +42,10 @@ const publicLine = (a) => ({
   categorySlug: a.categorySlug,
   locale: a.locale,
   source: a.source,
+  // The listening session sorts on this. Null on all but seven rows in a
+  // batch, and null on every curated line, which is correct: the bank is
+  // shared, so no ranking of it could be about any particular reader.
+  practiceRank: a.practiceRank ?? null,
 });
 
 /** The reader's current batch, oldest first — the order they were written in. */
