@@ -94,6 +94,12 @@ const Login = () => {
                 onChangeText={handleChange("email")}
                 error={fieldErrors.email}
                 autoCapitalize="none"
+                // autoCapitalize alone does not hold: iOS autocorrect rewrites
+                // the domain to uppercase on its own, which reads as the app
+                // mangling what was typed. The server lowercases regardless, so
+                // this is about what the reader sees, not what gets sent.
+                autoCorrect={false}
+                spellCheck={false}
                 autoComplete="email"
                 keyboardType="email-address"
                 textContentType="emailAddress"

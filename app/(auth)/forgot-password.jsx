@@ -139,6 +139,8 @@ const ForgotPassword = () => {
                   onChangeText={handleChange("email")}
                   error={fieldErrors.email}
                   autoCapitalize="none"
+                  autoCorrect={false}
+                  spellCheck={false}
                   autoComplete="email"
                   keyboardType="email-address"
                   textContentType="emailAddress"

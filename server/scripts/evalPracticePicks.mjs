@@ -93,10 +93,35 @@ const READERS = [
   },
 ];
 
+/**
+ * Shuffle the pool, deterministically, before every reader sees it.
+ *
+ * The first run showed a mean pick index of 14.0 against an unbiased 19.5 — a
+ * mild lean toward earlier lines. That could be the model favouring what it
+ * read first, or it could be that the stronger sentences happen to sit early in
+ * a hand-written list. Shuffling separates the two: if the lean survives a
+ * shuffle it is the model, and if it vanishes it was the list all along.
+ *
+ * Seeded rather than random so a surprising result can be reproduced.
+ */
+function shuffled(items, seed = 1337) {
+  const out = [...items];
+  let state = seed;
+  const next = () => (state = (state * 1103515245 + 12345) % 2147483648) / 2147483648;
+
+  for (let i = out.length - 1; i > 0; i -= 1) {
+    const j = Math.floor(next() * (i + 1));
+    [out[i], out[j]] = [out[j], out[i]];
+  }
+  return out;
+}
+
+const ORDER = shuffled(POOL);
+
 const ai = new GoogleGenAI({ vertexai: true, project: PROJECT, location: LOCATION });
 
 async function pickSeven(reader) {
-  const numbered = POOL.map((t, i) => `${i}. ${t}`).join("\n");
+  const numbered = ORDER.map((t, i) => `${i}. ${t}`).join("\n");
 
   const response = await ai.models.generateContent({
     model: MODEL,
@@ -143,7 +168,7 @@ for (const reader of READERS) {
   console.log(`\n── ${reader.id} ─────────────────────────────`);
   console.log(`   count: ${picks.length}${picks.length === 7 ? "" : "  <-- NOT 7"}`);
   console.log(`   why:   ${why}`);
-  for (const i of picks) console.log(`   ${String(i).padStart(2)}  ${POOL[i]}`);
+  for (const i of picks) console.log(`   ${String(i).padStart(2)}  ${ORDER[i]}`);
 }
 
 console.log("\n═══ verdict ═══════════════════════════════");
@@ -153,12 +178,13 @@ const positions = results.flatMap((r) => r.picks);
 const avgIndex = mean(positions);
 console.log(
   `position   mean index ${avgIndex.toFixed(1)} of 39 ` +
-    `(19.5 = no bias; near 3 = it took the first seven)`,
+    `(19.5 = no bias; near 3 = it took the first seven). ` +
+    `Pool is shuffled, so a lean here is the model, not the list.`,
 );
 
 // 2. Length proxy: are the picks simply the longest sentences?
-const pickedLen = mean(positions.map((i) => POOL[i].length));
-const poolLen = mean(POOL.map((t) => t.length));
+const pickedLen = mean(positions.map((i) => ORDER[i].length));
+const poolLen = mean(ORDER.map((t) => t.length));
 console.log(
   `length     picked ${pickedLen.toFixed(1)} chars vs pool ${poolLen.toFixed(1)} ` +
     `(close = not sorting by length)`,
