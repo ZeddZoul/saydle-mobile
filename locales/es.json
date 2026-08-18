@@ -135,7 +135,8 @@
     "perk3": "Tus favoritos siempre a mano, incluso sin conexión",
     "price": "Cancela cuando quieras.",
     "subscribe": "Suscribirme",
-    "creating": "Creando afirmaciones solo para ti…"
+    "creating": "Creando afirmaciones solo para ti…",
+    "perMonth": "Son {{price}} al mes."
   },
   "nudge": {
     "eyebrow": "Hazlo más tuyo",

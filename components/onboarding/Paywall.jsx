@@ -12,18 +12,28 @@ import { useT } from "../../lib/i18n.js";
  * The end-of-flow paywall. This is where the account gets created — either path
  * (`` / `onSubscribe`) triggers sign-up in the controller.
  *
- * The trial is real: it is granted server-side and expires on a date. The
- * subscription button appears only when RevenueCat is configured — see
+ * There is no trial: premium is the only way to affirmations written for you,
+ * and the buttons appear only when RevenueCat is configured — see
  * lib/purchases.js.
  *
- * PLACEHOLDER: the price line is still hardcoded copy. Once there is a store
- * listing it should come from the offering's own localized price string — the
- * store is the authority on what something costs in a given country, and a
- * hardcoded "$4.99" is wrong everywhere else.
+ * Every price here comes from the offering's own localized string. The store is
+ * the authority on what something costs in a given country, so nothing about
+ * money is written into this file.
  */
+
+/** Per-month equivalent, so the two terms can actually be compared. */
+const monthlyEquivalent = (pkg) => {
+  const price = pkg?.product?.price;
+  const period = pkg?.packageType;
+  if (typeof price !== "number" || period !== "ANNUAL") return null;
+
+  const currency = pkg.product.currencyCode ?? "";
+  const per = (price / 12).toFixed(2);
+  return `${currency} ${per}`.trim();
+};
 const PERK_KEYS = ["paywall.perk1", "paywall.perk2", "paywall.perk3"];
 
-const Paywall = ({ onSubscribe, canPurchase = false }) => {
+const Paywall = ({ onSubscribe, canPurchase = false, packages = [] }) => {
   const { t } = useT();
 
   return (
@@ -48,15 +58,40 @@ const Paywall = ({ onSubscribe, canPurchase = false }) => {
         </ScrollView>
 
         <View style={styles.footer}>
-          <Text style={styles.price}>{t("paywall.price")}</Text>
-          <Spacer height={spacing.md} />
-          {/* Hidden until there is something to actually buy: an unset RevenueCat
-            key means tapping this could only ever fall through to the trial,
-            and a button that silently does something else is worse than no
-            button. */}
-          {canPurchase ? (
-            <Button title={t("paywall.subscribe")} variant="secondary" onPress={onSubscribe} />
+          {/* Hidden until there is something to actually buy: an unset
+              RevenueCat key means these could never complete, and a button that
+              silently does nothing is worse than no button. */}
+          {canPurchase && packages.length > 0 ? (
+            <>
+              {packages.map((pkg) => {
+                const annual = pkg.packageType === "ANNUAL";
+                const per = monthlyEquivalent(pkg);
+
+                return (
+                  <View key={pkg.identifier} style={styles.planWrap}>
+                    <Button
+                      title={`${pkg.product?.title ?? pkg.identifier} — ${
+                        pkg.product?.priceString ?? ""
+                      }`}
+                      variant={annual ? "primary" : "secondary"}
+                      onPress={() => onSubscribe(pkg)}
+                    />
+                    {/* The per-month figure is the whole argument for annual,
+                        and it is arithmetic on the store's own number rather
+                        than a claim of ours. */}
+                    {per ? (
+                      <Text style={styles.perMonth}>
+                        {t("paywall.perMonth", { price: per })}
+                      </Text>
+                    ) : null}
+                  </View>
+                );
+              })}
+              <Spacer height={spacing.sm} />
+            </>
           ) : null}
+
+          <Text style={styles.price}>{t("paywall.price")}</Text>
         </View>
       </SafeAreaView>
     </GradientBackground>
@@ -66,6 +101,14 @@ const Paywall = ({ onSubscribe, canPurchase = false }) => {
 export default Paywall;
 
 const styles = StyleSheet.create({
+  planWrap: { marginBottom: spacing.sm },
+  perMonth: {
+    ...type.body,
+    fontSize: 12,
+    textAlign: "center",
+    marginTop: spacing.xs,
+    color: colors.mauveDeep,
+  },
   safe: { flex: 1 },
   scroll: {
     flexGrow: 1,

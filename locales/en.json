@@ -135,7 +135,8 @@
     "perk3": "Instant offline access to your saved favorites",
     "price": "Cancel anytime.",
     "subscribe": "Subscribe now",
-    "creating": "Crafting affirmations just for you…"
+    "creating": "Crafting affirmations just for you…",
+    "perMonth": "That's {{price}} a month."
   },
   "nudge": {
     "eyebrow": "Make it more yours",

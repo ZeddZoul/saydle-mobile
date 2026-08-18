@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { ActivityIndicator, StyleSheet } from "react-native";
 import { useRouter } from "expo-router";
 import GradientBackground from "../components/GradientBackground.jsx";
@@ -36,7 +36,9 @@ const Onboarding = () => {
   const { signUp, updatePreferences, client } = useAuth();
   const toast = useToast();
 
-  const [phase, setPhase] = useState("questions"); // questions | paywall | creating
+  // questions | paywall | creating
+  const [phase, setPhase] = useState("questions");
+  const [packages, setPackages] = useState([]);
   const [index, setIndex] = useState(0);
   const [answers, setAnswers] = useState({});
   // Mirror of answers, updated synchronously — a single-select advances on a
@@ -82,14 +84,19 @@ const Onboarding = () => {
    * trial. Best-effort throughout, because the account already exists by this
    * point and a billing hiccup must not strand someone inside signup.
    */
-  const grantAccess = async (intent, userId) => {
+  const grantAccess = async (intent, userId, chosen = null) => {
     try {
       if (intent === "subscribe" && purchasesAvailable()) {
         await configurePurchases(userId);
         const { packages } = await getOffering();
 
-        if (packages.length > 0) {
-          const result = await purchasePackage(packages[0]);
+        // The one they tapped, not whichever RevenueCat happened to list
+        // first. With two terms on offer, `packages[0]` was picking the plan
+        // for them — and picking it arbitrarily.
+        const pick = packages.find((p) => p.identifier === chosen?.identifier) ?? packages[0];
+
+        if (pick) {
+          const result = await purchasePackage(pick);
           // A real purchase is confirmed by the server via RevenueCat's
           // webhook, never by this return value — so there is nothing to record
           // here. Anything short of a purchase falls through to the trial.
@@ -101,7 +108,30 @@ const Onboarding = () => {
     }
   };
 
-  const createAccount = async (intent = "trial") => {
+  /**
+   * The offering, loaded when the paywall appears.
+   *
+   * The screen has to show what each term actually costs, and the store is the
+   * only authority on that — it is what localises the currency. Failing here is
+   * silent: the paywall simply shows no prices, which is the state it was in
+   * before it showed any.
+   */
+  useEffect(() => {
+    if (phase !== "paywall" || !purchasesAvailable()) return;
+
+    let cancelled = false;
+    getOffering()
+      .then(({ packages: found }) => {
+        if (!cancelled) setPackages(found ?? []);
+      })
+      .catch(() => {});
+
+    return () => {
+      cancelled = true;
+    };
+  }, [phase]);
+
+  const createAccount = async (intent = "trial", chosen = null) => {
     setPhase("creating");
     const { account, preferences, profile, reminderWindow } = buildSignupPayload(answers);
 
@@ -134,7 +164,7 @@ const Onboarding = () => {
         }
       }
 
-      await grantAccess(intent, created?.id);
+      await grantAccess(intent, created?.id, chosen);
 
       router.replace("/dashboard");
     } catch (err) {
@@ -165,7 +195,8 @@ const Onboarding = () => {
   if (phase === "paywall") {
     return (
       <Paywall
-        onSubscribe={() => createAccount("subscribe")}
+        packages={packages}
+        onSubscribe={(pkg) => createAccount("subscribe", pkg)}
         canPurchase={purchasesAvailable()}
       />
     );

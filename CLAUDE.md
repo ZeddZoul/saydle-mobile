@@ -166,6 +166,28 @@ server/                 Express API — see server/README.md for its own layout
 | Pink tint | `#f7cac5d2` | Page background (`CustomView`)          |
 | White     | `#FFFFFF`   | Text on coral                           |
 
+## Pricing
+
+**$9.99/month, $49.99/year.** Both set in the RevenueCat dashboard, never in code —
+`grep` for a hardcoded price should return nothing, because the store is the authority on
+what something costs in a given country and a literal is wrong everywhere but one.
+
+$49.99 rather than the $79.99 the Test Store was configured with, and rather than the
+$39.99 the raw margin allows. The category anchors it: "I Am", which Saydle is modelled
+on, sits around $20–30/year, while Calm and Headspace are ~$70 — $79.99 asked Calm's price
+with a fraction of Calm's catalogue. $49.99 clears both, and leaves ~60% margin even on
+the worst ElevenLabs tier, where $39.99 gets thin once Practice's voice ships.
+
+The 5:1 monthly-to-annual ratio is deliberate. Monthly's job is to make annual obvious.
+
+Measured COGS per subscriber per month: generation ~$0.12 (240-line batches, thinking
+capped), TTS $0.76–1.89 depending on tier, infra ~$0.25. **Voice is 10–20x the AI cost** —
+it is the only line that scales with engagement, which is why the cache is keyed on
+`(text, voiceId)` and a voice change only takes effect the next day.
+
+**Enrol in the Apple Small Business Program before listing.** Under $1M/year it drops the
+store cut from 30% to 15%, worth more than every cost optimisation in this file combined.
+
 ## Gotchas
 
 - **A RevenueCat `test_` key must never reach a release build.** That prefix is the Test Store —
