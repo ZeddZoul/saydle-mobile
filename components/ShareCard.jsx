@@ -25,7 +25,7 @@ export const RATIOS = {
  * exactly what gets sent.
  */
 const ShareCard = forwardRef(
-  ({ text, date, theme, ratio = RATIOS.square, width = 320 }, ref) => {
+  ({ text, date, theme, ratio = RATIOS.square, width = 320, testID = "share-card" }, ref) => {
     const height = Math.round(width / ratio.ratio);
     const isStory = ratio.key === "story";
 
@@ -34,7 +34,7 @@ const ShareCard = forwardRef(
     const size = isStory ? width * 0.085 : width * 0.075;
 
     return (
-      <View ref={ref} collapsable={false} style={{ width, height }} testID="share-card">
+      <View ref={ref} collapsable={false} style={{ width, height }} testID={testID}>
         <LinearGradient
           colors={theme.gradient}
           start={{ x: 0, y: 0 }}

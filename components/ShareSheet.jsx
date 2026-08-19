@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import {
   ActivityIndicator,
   Modal,
@@ -16,7 +16,9 @@ import ShareCard, { RATIOS } from "./ShareCard.jsx";
 import Button from "./Button.jsx";
 import { useAppTheme } from "../contexts/ThemeContext.jsx";
 import { THEMES, getTheme } from "../theme/themes.js";
+import StoryFrames from "./StoryFrames.jsx";
 import { shareCard } from "../lib/shareImage.js";
+import { exportStory, shareVideo, videoShareAvailable } from "../lib/videoStory.js";
 import { useT } from "../lib/i18n.js";
 import { colors, radius, spacing, type } from "../theme/tokens.js";
 
@@ -27,8 +29,13 @@ import { colors, radius, spacing, type } from "../theme/tokens.js";
  * not a separate share-only palette, so what they post is recognisably the
  * product they use. Their own theme is where it opens; changing it here is for
  * this one card and never touches their settings.
+ *
+ * Given several lines it can also send a video: the same cards, in order, held
+ * long enough to read. That is only offered on a build that can actually encode
+ * one — the module is native, so `videoShareAvailable()` is false in Expo Go and
+ * the option simply is not there rather than failing when tapped.
  */
-const ShareSheet = ({ visible, affirmation, date, onClose }) => {
+const ShareSheet = ({ visible, affirmation, lines = null, date, onClose }) => {
   const { t } = useT();
   const { theme: appTheme } = useAppTheme();
   const { width } = useWindowDimensions();
@@ -37,6 +44,23 @@ const ShareSheet = ({ visible, affirmation, date, onClose }) => {
   const [slug, setSlug] = useState(appTheme.slug);
   const [ratio, setRatio] = useState(RATIOS.square);
   const [busy, setBusy] = useState(false);
+  const [asVideo, setAsVideo] = useState(false);
+
+  // A video needs more than one line to be worth the name, and a build that can
+  // encode it. Computed once so the toggle cannot appear and vanish mid-sheet.
+  const canVideo = useMemo(
+    () => Boolean(lines?.length > 1) && videoShareAvailable(),
+    [lines?.length],
+  );
+
+  // One ref per line, created once. `useRef` in a loop is not allowed and a ref
+  // array rebuilt on render would hand `captureRef` a detached object.
+  const frameRefs = useRef([]);
+  if (frameRefs.current.length !== (lines?.length ?? 0)) {
+    frameRefs.current = Array.from({ length: lines?.length ?? 0 }, (_, i) => ({
+      current: frameRefs.current[i]?.current ?? null,
+    }));
+  }
 
   const theme = getTheme(slug);
   // Leaves room for the sheet's own chrome on a small phone.
@@ -47,6 +71,20 @@ const ShareSheet = ({ visible, affirmation, date, onClose }) => {
     Haptics.selectionAsync().catch(() => {});
 
     try {
+      if (asVideo && canVideo) {
+        const result = await exportStory({ refs: frameRefs.current });
+
+        // A failed encode still leaves them a card to send, which is a better
+        // outcome than an error toast and an empty-handed exit.
+        if (result.uri) {
+          await shareVideo(result.uri, {
+            text: `${lines[0]?.text}\n\n— Saydle`,
+            dialogTitle: t("share.videoTitle"),
+          });
+          return;
+        }
+      }
+
       await shareCard(cardRef, {
         text: `${affirmation?.text}\n\n— Saydle`,
         dialogTitle: t("share.title"),
@@ -92,41 +130,93 @@ const ShareSheet = ({ visible, affirmation, date, onClose }) => {
               text={affirmation.text}
               date={date}
               theme={theme}
-              ratio={ratio}
+              ratio={asVideo ? RATIOS.story : ratio}
               width={cardWidth}
             />
 
+            {asVideo ? (
+              <Text style={[styles.note, { color: appTheme.sub }]}>
+                {t("share.videoNote", { count: lines.length })}
+              </Text>
+            ) : null}
+
             <View style={styles.controls}>
-              <Text style={[styles.label, { color: appTheme.sub }]}>{t("share.shape")}</Text>
-              <View style={styles.row}>
-                {Object.values(RATIOS).map((option) => (
-                  <Pressable
-                    key={option.key}
-                    onPress={() => setRatio(option)}
-                    accessibilityRole="radio"
-                    accessibilityState={{ selected: ratio.key === option.key }}
-                    accessibilityLabel={t(`share.${option.key}`)}
-                    style={[
-                      styles.pill,
-                      { borderColor: appTheme.border },
-                      ratio.key === option.key && {
-                        backgroundColor: appTheme.accent,
-                        borderColor: appTheme.accent,
-                      },
-                    ]}
-                  >
-                    <Text
-                      style={[
-                        styles.pillText,
-                        { color: appTheme.sub },
-                        ratio.key === option.key && styles.pillTextActive,
-                      ]}
-                    >
-                      {t(`share.${option.key}`)}
-                    </Text>
-                  </Pressable>
-                ))}
-              </View>
+              {canVideo ? (
+                <>
+                  <Text style={[styles.label, { color: appTheme.sub }]}>
+                    {t("share.format")}
+                  </Text>
+                  <View style={styles.row}>
+                    {[false, true].map((video) => (
+                      <Pressable
+                        key={String(video)}
+                        onPress={() => setAsVideo(video)}
+                        accessibilityRole="radio"
+                        accessibilityState={{ selected: asVideo === video }}
+                        accessibilityLabel={t(video ? "share.asVideo" : "share.asImage")}
+                        testID={video ? "share-format-video" : "share-format-image"}
+                        style={[
+                          styles.pill,
+                          { borderColor: appTheme.border },
+                          asVideo === video && {
+                            backgroundColor: appTheme.accent,
+                            borderColor: appTheme.accent,
+                          },
+                        ]}
+                      >
+                        <Text
+                          style={[
+                            styles.pillText,
+                            { color: appTheme.sub },
+                            asVideo === video && styles.pillTextActive,
+                          ]}
+                        >
+                          {t(video ? "share.asVideo" : "share.asImage")}
+                        </Text>
+                      </Pressable>
+                    ))}
+                  </View>
+                </>
+              ) : null}
+
+              {/* A video is always 9:16, so the shape control has nothing to
+                  offer while one is selected. */}
+              {asVideo ? null : (
+                <>
+                  <Text style={[styles.label, { color: appTheme.sub }]}>
+                    {t("share.shape")}
+                  </Text>
+                  <View style={styles.row}>
+                    {Object.values(RATIOS).map((option) => (
+                      <Pressable
+                        key={option.key}
+                        onPress={() => setRatio(option)}
+                        accessibilityRole="radio"
+                        accessibilityState={{ selected: ratio.key === option.key }}
+                        accessibilityLabel={t(`share.${option.key}`)}
+                        style={[
+                          styles.pill,
+                          { borderColor: appTheme.border },
+                          ratio.key === option.key && {
+                            backgroundColor: appTheme.accent,
+                            borderColor: appTheme.accent,
+                          },
+                        ]}
+                      >
+                        <Text
+                          style={[
+                            styles.pillText,
+                            { color: appTheme.sub },
+                            ratio.key === option.key && styles.pillTextActive,
+                          ]}
+                        >
+                          {t(`share.${option.key}`)}
+                        </Text>
+                      </Pressable>
+                    ))}
+                  </View>
+                </>
+              )}
 
               <Text style={[styles.label, { color: appTheme.sub }]}>{t("share.look")}</Text>
               <View style={styles.row}>
@@ -156,9 +246,21 @@ const ShareSheet = ({ visible, affirmation, date, onClose }) => {
             {busy ? (
               <ActivityIndicator color={appTheme.accent} testID="share-busy" />
             ) : (
-              <Button title={t("share.send")} onPress={onShare} />
+              <Button title={t(asVideo ? "share.sendVideo" : "share.send")} onPress={onShare} />
             )}
           </View>
+
+          {/* Mounted only while a video is actually being composed: seven live
+              cards are seven live gradients, and there is no reason to carry
+              them for someone sending a still. */}
+          {asVideo && canVideo ? (
+            <StoryFrames
+              lines={lines}
+              refs={frameRefs.current}
+              theme={theme}
+              width={cardWidth}
+            />
+          ) : null}
         </SafeAreaView>
       </View>
     </Modal>
@@ -193,6 +295,12 @@ const styles = StyleSheet.create({
   label: {
     ...type.label,
     marginTop: spacing.sm,
+  },
+  note: {
+    ...type.body,
+    fontSize: 13,
+    textAlign: "center",
+    marginTop: -spacing.sm,
   },
   row: {
     flexDirection: "row",

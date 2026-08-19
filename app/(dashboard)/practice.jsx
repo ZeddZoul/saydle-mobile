@@ -18,7 +18,10 @@ import { useLibrary } from "../../hooks/useLibrary.js";
 import { useBreath } from "../../hooks/useBreath.js";
 import { useVoiceNote } from "../../hooks/useVoiceNote.js";
 import { usePracticeSession } from "../../hooks/usePracticeSession.js";
+import { useVoicePreference } from "../../hooks/useVoicePreference.js";
 import ListeningSession from "../../components/ListeningSession.jsx";
+import VoiceSheet from "../../components/VoiceSheet.jsx";
+import ShareSheet from "../../components/ShareSheet.jsx";
 import { useT } from "../../lib/i18n.js";
 import { radius, spacing, type } from "../../theme/tokens.js";
 
@@ -45,6 +48,9 @@ const Practice = () => {
   const { t } = useT();
   const listenSession = usePracticeSession();
   const [listening, setListening] = useState(false);
+  const [pickingVoice, setPickingVoice] = useState(false);
+  const [sharingSession, setSharingSession] = useState(false);
+  const voicePref = useVoicePreference();
   const { theme } = useAppTheme();
   const { user } = useAuth();
   const { todayEntry, loading: feedLoading } = useFeed();
@@ -162,6 +168,7 @@ const Practice = () => {
       <GradientBackground>
         <ListeningSession
           lines={listenSession.lines}
+          voice={voicePref.voice.speech}
           onClose={() => setListening(false)}
           onFinish={() => {
             // A finished session counts as practice for the day — the streak
@@ -192,12 +199,52 @@ const Practice = () => {
             feeds the same streak; the two are different ways to sit with the
             same lines rather than one replacing the other today. */}
         {listenSession.ready ? (
-          <Button
-            title={t("practice.listen")}
-            onPress={() => setListening(true)}
-            style={styles.listen}
-            testID="practice-listen"
-          />
+          <>
+            <Button
+              title={t("practice.listen")}
+              onPress={() => setListening(true)}
+              style={styles.listen}
+              testID="practice-listen"
+            />
+
+            {/* Named rather than labelled "Voice", so the choice already made
+                is visible without opening anything. */}
+            <Pressable
+              onPress={() => setPickingVoice(true)}
+              hitSlop={8}
+              accessibilityRole="button"
+              accessibilityLabel={t("voices.change")}
+              style={styles.voiceRow}
+              testID="practice-voice"
+            >
+              <Ionicons name="volume-medium-outline" size={14} color={theme.sub} />
+              <Text style={[styles.voiceLabel, { color: theme.sub }]}>
+                {voicePref.pending
+                  ? t("voices.pendingRow", {
+                      name: t(`voices.${voicePref.pending}.name`),
+                    })
+                  : t("voices.activeRow", {
+                      name: t(`voices.${voicePref.active}.name`),
+                    })}
+              </Text>
+            </Pressable>
+
+            {/* The seven are the shareable object, not one line pulled out of
+                them — which is also the only thing worth making a video of. */}
+            <Pressable
+              onPress={() => setSharingSession(true)}
+              hitSlop={8}
+              accessibilityRole="button"
+              accessibilityLabel={t("practice.shareSession")}
+              style={styles.voiceRow}
+              testID="practice-share-session"
+            >
+              <Ionicons name="share-outline" size={14} color={theme.sub} />
+              <Text style={[styles.voiceLabel, { color: theme.sub }]}>
+                {t("practice.shareSession")}
+              </Text>
+            </Pressable>
+          </>
         ) : null}
 
         {sources.length > 1 && (
@@ -368,6 +415,21 @@ const Practice = () => {
         )}
 
         <PracticeWeek history={history} today={today} />
+
+        <ShareSheet
+          visible={sharingSession}
+          affirmation={listenSession.lines?.[0] ?? null}
+          lines={listenSession.lines}
+          onClose={() => setSharingSession(false)}
+        />
+
+        <VoiceSheet
+          visible={pickingVoice}
+          active={voicePref.active}
+          pending={voicePref.pending}
+          onChoose={voicePref.choose}
+          onClose={() => setPickingVoice(false)}
+        />
       </View>
     </GradientBackground>
   );
@@ -376,6 +438,14 @@ const Practice = () => {
 export default Practice;
 
 const styles = StyleSheet.create({
+  voiceRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: spacing.xs,
+    marginTop: spacing.sm,
+  },
+  voiceLabel: { ...type.body, fontSize: 13 },
   listen: { marginBottom: spacing.lg },
   centered: { alignItems: "center", justifyContent: "center", padding: spacing.xl },
   surface: {

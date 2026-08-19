@@ -136,4 +136,49 @@ describe("the listening session", () => {
 
     await waitFor(() => expect(onFinish).toHaveBeenCalled());
   });
+
+  describe("the chosen voice", () => {
+    it("reads in the parameters it was given", async () => {
+      await renderSession({ voice: { pitch: 1.12, rate: 0.78 } });
+
+      await waitFor(() => expect(voice.speakLine).toHaveBeenCalled());
+      expect(voice.speakLine.mock.calls[0][1]).toMatchObject({ pitch: 1.12, rate: 0.78 });
+    });
+
+    it("keeps that voice for every line of the session", async () => {
+      await renderSession({ voice: { pitch: 0.72, rate: 0.76 } });
+
+      await waitFor(() => expect(voice.speakLine).toHaveBeenCalled());
+      await finishLine();
+      await waitFor(() => expect(voice.speakLine).toHaveBeenCalledTimes(2));
+
+      // A session that changed voice partway through would read as a glitch.
+      expect(voice.speakLine.mock.calls[1][1]).toMatchObject({ pitch: 0.72, rate: 0.76 });
+    });
+
+    it("does not restart the current line when the preference object changes", async () => {
+      const { rerender } = await renderSession({ voice: { pitch: 1, rate: 0.9 } });
+      await waitFor(() => expect(voice.speakLine).toHaveBeenCalledTimes(1));
+
+      // A new object identity for the same choice — a re-render, not a change.
+      await act(async () => {
+        rerender(
+          <SafeAreaProvider initialMetrics={metrics}>
+            <ListeningSession lines={LINES} voice={{ pitch: 1, rate: 0.9 }} />
+          </SafeAreaProvider>,
+        );
+      });
+
+      // Speaking again here would restart the sentence mid-read.
+      expect(voice.speakLine).toHaveBeenCalledTimes(1);
+    });
+
+    it("reads without a voice at all", async () => {
+      // Practice must work before the preference has loaded.
+      await renderSession();
+
+      await waitFor(() => expect(voice.speakLine).toHaveBeenCalled());
+      expect(voice.speakLine.mock.calls[0][0]).toBe("Line number 0.");
+    });
+  });
 });

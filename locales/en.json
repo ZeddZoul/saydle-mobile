@@ -201,7 +201,8 @@
     "voiceStop": "Stop recording",
     "voiceDiscardHint": "Press and hold to delete this recording",
     "voiceDenied": "Microphone access is off. Turn it on in Settings to record your voice.",
-    "listen": "Listen to today's seven"
+    "listen": "Listen to today's seven",
+    "shareSession": "Share these seven"
   },
   "tabs": {
     "today": "Today",
@@ -247,7 +248,13 @@
     "square": "Square",
     "story": "Story",
     "look": "Look",
-    "send": "Share"
+    "send": "Share",
+    "format": "Send as",
+    "asImage": "Image",
+    "asVideo": "Video",
+    "sendVideo": "Share video",
+    "videoTitle": "Share your session",
+    "videoNote": "All {{count}} lines, held long enough to read."
   },
   "billing": {
     "title": "Subscription",
@@ -303,5 +310,40 @@
   },
   "themes": {
     "preview": "This is how your affirmation will look."
+  },
+  "voices": {
+    "sample": "You can be steady about this, without being certain.",
+    "readingToday": "Reading today",
+    "fromTomorrow": "From tomorrow",
+    "title": "Voice",
+    "hint": "Tap a voice to hear it. A change takes effect tomorrow, so today's session stays as it is.",
+    "father": {
+      "name": "Fatherly",
+      "desc": "Steady and low. Certain on your behalf.",
+      "preview": "Hear the fatherly voice"
+    },
+    "mentor": {
+      "name": "Mentor",
+      "desc": "Warm, with some edge to it.",
+      "preview": "Hear the mentor voice"
+    },
+    "peer": {
+      "name": "Alongside",
+      "desc": "Someone beside you, not above.",
+      "preview": "Hear the alongside voice"
+    },
+    "mother": {
+      "name": "Motherly",
+      "desc": "Soft, and slow enough to land.",
+      "preview": "Hear the motherly voice"
+    },
+    "grandmother": {
+      "name": "Grandmotherly",
+      "desc": "Unhurried. Someone with time.",
+      "preview": "Hear the grandmotherly voice"
+    },
+    "change": "Change the voice",
+    "activeRow": "Read by {{name}}",
+    "pendingRow": "{{name}} from tomorrow"
   }
 }

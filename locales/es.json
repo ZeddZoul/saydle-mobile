@@ -353,7 +353,8 @@
     "voiceStop": "Detener grabación",
     "voiceDiscardHint": "Mantén pulsado para borrar esta grabación",
     "voiceDenied": "El micrófono está desactivado. Actívalo en Ajustes para grabar tu voz.",
-    "listen": "Escucha tus siete de hoy"
+    "listen": "Escucha tus siete de hoy",
+    "shareSession": "Compartir las siete"
   },
   "tabs": {
     "today": "Hoy",
@@ -399,7 +400,13 @@
     "square": "Cuadrado",
     "story": "Historia",
     "look": "Estilo",
-    "send": "Compartir"
+    "send": "Compartir",
+    "format": "Enviar como",
+    "asImage": "Imagen",
+    "asVideo": "Vídeo",
+    "sendVideo": "Compartir vídeo",
+    "videoTitle": "Comparte tu sesión",
+    "videoNote": "Las {{count}} frases, con tiempo para leerlas."
   },
   "billing": {
     "title": "Suscripción",
@@ -455,5 +462,40 @@
   },
   "themes": {
     "preview": "Así se verá tu afirmación."
+  },
+  "voices": {
+    "sample": "Puedes estar en calma con esto, sin tener certeza.",
+    "readingToday": "Te lee hoy",
+    "fromTomorrow": "Desde mañana",
+    "title": "Voz",
+    "hint": "Toca una voz para escucharla. El cambio se aplica mañana, así que la sesión de hoy no cambia.",
+    "father": {
+      "name": "Paterna",
+      "desc": "Serena y grave. Segura por ti.",
+      "preview": "Escuchar la voz paterna"
+    },
+    "mentor": {
+      "name": "Mentora",
+      "desc": "Cálida, con algo de carácter.",
+      "preview": "Escuchar la voz mentora"
+    },
+    "peer": {
+      "name": "A tu lado",
+      "desc": "Alguien contigo, no por encima.",
+      "preview": "Escuchar la voz a tu lado"
+    },
+    "mother": {
+      "name": "Materna",
+      "desc": "Suave, y lo bastante lenta.",
+      "preview": "Escuchar la voz materna"
+    },
+    "grandmother": {
+      "name": "De la abuela",
+      "desc": "Sin prisa. Alguien con tiempo.",
+      "preview": "Escuchar la voz de la abuela"
+    },
+    "change": "Cambiar la voz",
+    "activeRow": "Voz {{name}}",
+    "pendingRow": "{{name}} desde mañana"
   }
 }

@@ -11,6 +11,7 @@ function makeStorage() {
     multiRemove: jest.fn(async (keys) => {
       keys.forEach((key) => data.delete(key));
     }),
+    getAllKeys: jest.fn(async () => [...data.keys()]),
   };
 }
 
@@ -150,5 +151,93 @@ describe("createCache", () => {
     // A second account on the same phone must not inherit the first's cadence.
     expect(await cache.loadProfile("u2")).toBeNull();
     expect(await cache.loadNudgeState("u2")).toBeNull();
+  });
+
+  describe("saveJson / loadJson", () => {
+    it("round-trips an arbitrary value", async () => {
+      const cache = createCache(makeStorage());
+
+      await cache.saveJson("u1", "voicePreference", { pending: "father" });
+
+      expect(await cache.loadJson("u1", "voicePreference")).toEqual({ pending: "father" });
+    });
+
+    it("returns null for something never written", async () => {
+      const cache = createCache(makeStorage());
+      expect(await cache.loadJson("u1", "voicePreference")).toBeNull();
+    });
+
+    it("keeps one user's value out of another's", async () => {
+      const cache = createCache(makeStorage());
+
+      await cache.saveJson("u1", "voicePreference", { pending: "father" });
+
+      expect(await cache.loadJson("u2", "voicePreference")).toBeNull();
+    });
+
+    it("is taken by clear, like everything else namespaced to the user", async () => {
+      const cache = createCache(makeStorage());
+
+      await cache.saveJson("u1", "voicePreference", { pending: "father" });
+      await cache.clear("u1");
+
+      // Signing out must not leave the next account reading in their voice.
+      expect(await cache.loadJson("u1", "voicePreference")).toBeNull();
+    });
+  });
+
+  describe("clear", () => {
+    it("sweeps everything for that user, including keys nobody listed", async () => {
+      const storage = makeStorage();
+      const cache = createCache(storage);
+
+      await cache.saveFeed("u1", { entries: [] });
+      await cache.saveVoiceNotes("u1", { a1: { uri: "file:///note.m4a" } });
+      await cache.saveJson("u1", "somethingAddedLater", { x: 1 });
+
+      await cache.clear("u1");
+
+      // The old hand-kept list silently missed voice notes; a prefix sweep
+      // cannot miss the next thing either.
+      expect(await cache.loadFeed("u1")).toBeNull();
+      // Voice notes read back as an empty map rather than null.
+      expect(await cache.loadVoiceNotes("u1")).toEqual({});
+      expect(await cache.loadJson("u1", "somethingAddedLater")).toBeNull();
+    });
+
+    it("leaves other accounts on the device alone", async () => {
+      const cache = createCache(makeStorage());
+
+      await cache.saveJson("u1", "voicePreference", { pending: "father" });
+      await cache.saveJson("u2", "voicePreference", { pending: "peer" });
+
+      await cache.clear("u1");
+
+      expect(await cache.loadJson("u2", "voicePreference")).toEqual({ pending: "peer" });
+    });
+
+    it("falls back to the known names when the storage cannot enumerate", async () => {
+      const storage = makeStorage();
+      delete storage.getAllKeys;
+      const cache = createCache(storage);
+
+      await cache.saveFeed("u1", { entries: [] });
+      await cache.clear("u1");
+
+      expect(await cache.loadFeed("u1")).toBeNull();
+    });
+
+    it("still clears when enumeration throws", async () => {
+      const storage = makeStorage();
+      storage.getAllKeys = jest.fn(async () => {
+        throw new Error("storage unavailable");
+      });
+      const cache = createCache(storage);
+
+      await cache.saveFeed("u1", { entries: [] });
+      await cache.clear("u1");
+
+      expect(await cache.loadFeed("u1")).toBeNull();
+    });
   });
 });

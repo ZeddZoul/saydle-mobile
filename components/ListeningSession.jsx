@@ -25,7 +25,7 @@ const FADE_MS = 700;
  * The rest between lines is the only fixed interval, and it is silence on
  * purpose: the pause after a sentence is where it lands.
  */
-const ListeningSession = ({ lines, onFinish, onClose }) => {
+const ListeningSession = ({ lines, voice, onFinish, onClose }) => {
   const { theme } = useAppTheme();
 
   const [index, setIndex] = useState(0);
@@ -92,6 +92,10 @@ const ListeningSession = ({ lines, onFinish, onClose }) => {
     fadeTo(1);
 
     speakLine(line.text, {
+      // Whatever the reader chose — and for today only. A change made mid-week
+      // lands tomorrow, which is what keeps a session's voice consistent from
+      // its first line to its seventh.
+      ...voice,
       onDone: () => {
         if (cancelled || !alive.current) return;
         timer.current = setTimeout(advance, REST_MS);
@@ -103,6 +107,8 @@ const ListeningSession = ({ lines, onFinish, onClose }) => {
       clearTimeout(timer.current);
       stopSpeaking();
     };
+    // `voice` is read but deliberately not a dependency: a preference that
+    // changed while a line was being read would restart it mid-sentence.
   }, [line?.id, playing]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const toggle = () => {
