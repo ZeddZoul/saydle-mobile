@@ -93,6 +93,24 @@ const userSchema = new mongoose.Schema(
         start: { type: String, default: "09:00" }, // "HH:MM", device-local
         end: { type: String, default: "22:00" },
       },
+      /**
+       * Which of the five voices reads the listening session.
+       *
+       * Lives here rather than on the device because this is what decides which
+       * voice we pay to render in, and the render happens on the server.
+       *
+       * A change takes effect the NEXT local day, never today: today's seven
+       * lines are already rendered and cached per (text, voiceId), so switching
+       * now would discard them and bill us to render the same sentences again.
+       * `pendingFrom` is a plain YYYY-MM-DD in the reader's own day, resolved on
+       * read — there is no reliable moment to run a migration for a phone that
+       * may not be open at midnight.
+       */
+      voice: {
+        active: { type: String, default: "" },
+        pending: { type: String, default: "" },
+        pendingFrom: { type: String, default: "" },
+      },
     },
     // Optional, ever-expandable personalization collected after signup via
     // progressive nudges. Every field is optional; none gates the app.

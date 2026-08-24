@@ -25,6 +25,11 @@ const schema = z
     // Outbound email. Unset in development means reset codes are logged rather
     // than sent, so the flow is testable without a provider account.
     RESEND_API_KEY: z.string().optional(),
+
+    // Renders the listening session. Optional on purpose: without it Practice
+    // falls back to the device's own speech, which is how it worked before, so
+    // a missing key costs the quality of the voice and nothing else.
+    ELEVENLABS_API_KEY: z.string().optional(),
     MAIL_FROM: z.string().default("Saydle <noreply@saydle.app>"),
 
     CORS_ORIGIN: z.string().default(""),

@@ -15,6 +15,7 @@ import { libraryRouter } from "./routes/library.routes.js";
 import { profileRouter } from "./routes/profile.routes.js";
 import { streakRouter } from "./routes/streak.routes.js";
 import { subscriptionRouter } from "./routes/subscription.routes.js";
+import { voiceRouter } from "./routes/voice.routes.js";
 import { notFound, errorHandler } from "./middleware/error.js";
 
 export function createApp() {
@@ -53,6 +54,7 @@ export function createApp() {
   app.use("/api/profile", profileRouter);
   app.use("/api/streak", streakRouter);
   app.use("/api/subscription", subscriptionRouter);
+  app.use("/api/voice", voiceRouter);
 
   app.use(notFound);
   app.use(errorHandler);
