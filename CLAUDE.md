@@ -144,6 +144,12 @@ server/                 Express API — see server/README.md for its own layout
 - **The stream runs backwards only** (`hooks/useStream.js`): today, then days already read. The
   server schedules weeks ahead so the app works offline, but letting anyone swipe into that buffer
   would turn a daily line into a list to get through.
+- **A voice change takes effect tomorrow, never today** (`hooks/useVoicePreference.js`). Today's
+  audio is rendered and cached per `(text, voiceId)`, so switching now would discard it and pay to
+  render the same seven lines again. Stored as `{ active, pending, pendingFrom }` and resolved on
+  read — there is no reliable moment to run a migration on a phone that may not be open at
+  midnight. It also reads better: a choice this personal should not feel like a toggle to flip
+  mid-listen.
 - **`EXPO_PUBLIC_API_URL`** points the app at the API. It's inlined at build time, so
   never put a secret in any `EXPO_PUBLIC_*` var. Defaults per platform in `lib/config.js`.
 
@@ -297,7 +303,7 @@ match jest-expo 57; do not bump it to v30.
 
 ## Current state
 
-Full vertical slice, end to end, with tests on both halves (**641 total**: 253 API + 388 mobile).
+Full vertical slice, end to end, with tests on both halves (**858 total**: 313 API + 545 mobile).
 Verified on a native iOS dev build, not just in Expo Go — including the home-screen widget
 rendering real data in the active theme, at both small and medium sizes.
 
@@ -328,12 +334,19 @@ The 13-item roadmap is complete and verified on device. What remains:
 
 - **Fill the remaining env vars** in `.env.example` — RevenueCat keys and `APPLE_TEAM_ID`.
   JWT secrets, Resend, DeepL and Vertex are all filled and exercised.
-- **Both bundle identifiers are still `com.anonymous.*`.** Changing `ios.bundleIdentifier` also
-  moves the widget's App Group (`group.<bundleId>.expowidgets`), so that path needs re-verifying
-  afterwards. The display name and icon are done — `expo.name` is `Saydle`, and the icons are
-  generated wordmarks in Fraunces (see below).
+- **Bookmarks save into a void.** The feed offers one (`AffirmationFeed`), the server stores it and
+  serves `/api/library/saved`, and `api.saved()` exists in the client — but nothing in the app ever
+  calls it. There is no shelf. It is the only control in the product that does nothing, and the
+  comment above it ("a heart is a reaction; a bookmark is an intention") promises exactly the
+  distinction the missing screen fails to deliver.
 - **A real purchase has never been made** — only the trial path is exercised. Needs a store listing
   and a sandbox tester.
+- **The five voices are placeholders.** `lib/voices.js` maps each archetype to device-TTS
+  pitch/rate so the pacing can be judged, with an `elevenLabsId: null` slot per voice. Filling
+  them changes `lib/voice.js` and nothing else — the picker, the preference and the session all
+  talk about a voice by its key already.
+- **The Android video export has never run on a device.** The Kotlin compiles; only the iOS half
+  is verified against real output.
 - **Vertex is deploy-ready but undeployed.** Generation runs as
   `saydle-api@saydle-web.iam.gserviceaccount.com` (`roles/aiplatform.user`, nothing else), via
   `GOOGLE_APPLICATION_CREDENTIALS` in `server/.env`. On a Google host, attach that service account
