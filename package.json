@@ -4,7 +4,7 @@
   "main": "expo-router/entry",
   "scripts": {
     "start": "expo start",
-    "android": "expo run:android",
+    "android": "JAVA_HOME=\"${JAVA_HOME:-/Applications/Android Studio.app/Contents/jbr/Contents/Home}\" ANDROID_HOME=\"${ANDROID_HOME:-$HOME/Library/Android/sdk}\" expo run:android && pnpm android:reverse",
     "ios": "LANG=en_US.UTF-8 LC_ALL=en_US.UTF-8 expo run:ios",
     "prebuild": "LANG=en_US.UTF-8 LC_ALL=en_US.UTF-8 expo prebuild",
     "pod": "cd ios && LANG=en_US.UTF-8 LC_ALL=en_US.UTF-8 pod install",
@@ -19,7 +19,8 @@
     "lint:fix": "eslint . --fix",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
-    "tunnel": "bash scripts/tunnel.sh"
+    "tunnel": "bash scripts/tunnel.sh",
+    "android:reverse": "\"${ANDROID_HOME:-$HOME/Library/Android/sdk}/platform-tools/adb\" reverse tcp:4000 tcp:4000"
   },
   "dependencies": {
     "@bittingz/expo-native-fonts": "^3.1.0",

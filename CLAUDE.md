@@ -217,6 +217,21 @@ store cut from 30% to 15%, worth more than every cost optimisation in this file 
   (`premium`). A dashboard entitlement named "Saydle Pro" whose identifier is anything else means
   `entitlements.active[ENTITLEMENT_ID]` is forever undefined: nobody is entitled, every paid user
   sees the paywall, and nothing logs an error anywhere.
+- **`pnpm android` needs `JAVA_HOME` and `ANDROID_HOME`, and neither error names the variable.**
+  Android Studio ships a JDK (`/Applications/Android Studio.app/Contents/jbr/Contents/Home`) but
+  exports nothing, so Gradle dies with **`Unable to locate a Java Runtime`** — which sounds like
+  Java is not installed. Then `ANDROID_HOME` is unset and `android/local.properties` does not
+  exist, because `android/` is generated and gitignored, so the next run dies with **`SDK location
+not found`**. The `android` script sets both itself, `${VAR:-default}` so a real JDK or SDK
+  already on the machine still wins — same reasoning as the `LANG` exports below: a shell profile
+  export fixes one machine, the script fixes everyone's.
+- **The Android emulator cannot reach the API on `localhost`.** `localhost` inside the emulator is
+  the emulator. `lib/config.js` defaults Android to `10.0.2.2` for exactly this reason, but an
+  explicit `EXPO_PUBLIC_API_URL=http://localhost:4000` in `.env` overrides that default and is
+  inlined at build time, so the app ships pointing at nothing and reports "Could not reach Saydle".
+  `pnpm android` runs `adb reverse tcp:4000 tcp:4000` after installing, which makes the emulator's
+  own `localhost:4000` the host's. **It does not survive an emulator restart** — re-run
+  `pnpm android:reverse` rather than rebuilding the app to get a port forward back.
 - **`pod install` needs a UTF-8 locale**, and the reason is worth knowing because the error names
   the wrong thing. With `LANG` unset the locale falls back to `C`; Ruby then refuses to assume a
   character encoding for OS paths and tags the string from `Dir.pwd` as **`ASCII-8BIT`** — note
