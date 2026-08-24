@@ -42,6 +42,9 @@ export async function session(req, res, next) {
     const clips = await clipsForSession(
       ordered.map((l) => ({ id: l._id, text: l.text })),
       VOICE_IDS[voice],
+      // Passed so it can be taken back out. The model was told to use it, and
+      // a name is the one word a synthetic voice must not get wrong.
+      { name: req.user.firstName },
     );
 
     res.json({

@@ -1,6 +1,7 @@
 import { env } from "../config/env.js";
 import { logger } from "../lib/logger.js";
 import { VoiceClip, clipKey } from "../models/VoiceClip.js";
+import { spokenFor } from "./spoken.service.js";
 
 /**
  * Rendering a line in one of the five voices.
@@ -124,19 +125,32 @@ export async function clipFor(text, voiceId, options = {}) {
 /**
  * Renders a whole session.
  *
+ * What gets rendered is the *spoken* form, not the written one — second person,
+ * and with the reader's name removed. See spoken.service.js for why; the short
+ * version is that another person reading "I am enough" to you is incoherent,
+ * and that a name in the text would both be mispronounced and make the clip
+ * unshareable, which is the cache's whole premise.
+ *
+ * `text` in the response stays the written form. It is what the screen shows
+ * while the audio plays, and the reader should still see the line as it was
+ * written for them.
+ *
  * Sequential on purpose. Seven parallel requests is a burst against a
  * per-minute quota for no wall-clock benefit worth having — the reader is not
  * waiting on line seven while line one plays. It also means a rate-limit hit
  * costs one line rather than all of them.
  */
-export async function clipsForSession(lines, voiceId) {
+export async function clipsForSession(lines, voiceId, { name } = {}) {
   const clips = [];
 
   for (const line of lines) {
-    const clip = await clipFor(line.text, voiceId);
+    const spoken = spokenFor(line.text, { name });
+    const clip = await clipFor(spoken, voiceId);
+
     clips.push({
       id: String(line.id ?? line._id ?? ""),
       text: line.text,
+      spoken,
       // Null means "read this one with the device voice" — a partial session is
       // better than none, and the seam already handles a mixed source.
       clipId: clip ? String(clip._id) : null,
