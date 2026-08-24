@@ -318,7 +318,7 @@ match jest-expo 57; do not bump it to v30.
 
 ## Current state
 
-Full vertical slice, end to end, with tests on both halves (**858 total**: 313 API + 545 mobile).
+Full vertical slice, end to end, with tests on both halves (**891 total**: 334 API + 557 mobile).
 Verified on a native iOS dev build, not just in Expo Go — including the home-screen widget
 rendering real data in the active theme, at both small and medium sizes.
 
@@ -356,15 +356,25 @@ The 13-item roadmap is complete and verified on device. What remains:
   distinction the missing screen fails to deliver.
 - **A real purchase has never been made** — only the trial path is exercised. Needs a store listing
   and a sandbox tester.
-- **The five voices are chosen but not yet rendered.** `lib/voices.js` names the ElevenLabs voice
+- **The listening session is read by ElevenLabs, and the server is the only thing that talks to
+  it.** The key can never be an `EXPO_PUBLIC_*` var — those are inlined at build time — so
+  rendering, the cache and the voice preference all live on the API (`voice.service.js`,
+  `VoiceClip`, `/api/voice/*`). `VoiceClip` is the cost model rather than a convenience: clips are
+  keyed on a hash of `(voiceId, text)`, never on an affirmation id, so two readers given the same
+  curated line share one clip, and an edited line becomes a new clip instead of a stale one served
+  under the old id. Sessions are requested by affirmation **id**; accepting text would let anyone
+  spend our credits rendering anything. A failed render, or no key at all, returns the line with a
+  null clip and the phone reads that one with device speech — `playClip` in `lib/voice.js` is the
+  single seam, so nothing above it knows which source it got.
+- **The five voices are chosen but not yet exercised against the real API.** `lib/voices.js` names the ElevenLabs voice
   per archetype — Sam, Ellen, Mark, Blondie and Spuds Oxley, all free-tier, none carrying the
   $0.20/1,000-credit surcharge (~$2.34/subscriber/month against $3.54 net, which removes the
   margin rather than denting it) and none with Live Moderation, which screens submitted text and
   so could refuse to read someone's own words back to them from "My words". The device-TTS
   pitch/rate stay as the fallback. **What is left is server-side**: the key can never be an
   `EXPO_PUBLIC_*` var, so rendering, the `(text, voiceId)` cache and an endpoint serving the
-  session its seven files all live on the API — and the voice preference has to move there with
-  them, since the server is what needs to know which voice to render in.
+  session its seven files all live on the API. **Untested against the real service** — there is no
+  key here, so every test mocks `fetch`. The first real render is what proves the ids.
 - **The Android video export has never run on a device.** The Kotlin compiles; only the iOS half
   is verified against real output.
 - **Vertex is deploy-ready but undeployed.** Generation runs as

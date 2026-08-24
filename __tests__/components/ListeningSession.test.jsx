@@ -2,10 +2,14 @@ import { render, fireEvent, waitFor, act } from "@testing-library/react-native";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import ListeningSession from "../../components/ListeningSession.jsx";
 
-// The speech boundary is mocked, never called: these are about what drives the
-// session forward, not about how a device says a sentence.
+// The audio boundary is mocked, never called: these are about what drives the
+// session forward, not about how a sentence gets said. `playClip` is the one
+// entry point — it decides between a rendered clip and device speech, so the
+// session never has to.
 jest.mock("../../lib/voice.js", () => ({
   voiceAvailable: jest.fn(() => true),
+  clipPlaybackAvailable: jest.fn(() => true),
+  playClip: jest.fn(),
   speakLine: jest.fn(),
   stopSpeaking: jest.fn(),
 }));
@@ -29,9 +33,9 @@ const renderSession = (props = {}) =>
     </SafeAreaProvider>,
   );
 
-/** Runs whatever `onDone` the last speakLine call was given. */
+/** Runs whatever `onDone` the last playClip call was given. */
 const finishLine = async () => {
-  const call = voice.speakLine.mock.calls.at(-1);
+  const call = voice.playClip.mock.calls.at(-1);
   await act(async () => {
     call?.[1]?.onDone?.();
     jest.advanceTimersByTime(4000);
@@ -57,23 +61,23 @@ describe("the listening session", () => {
   it("reads the first line without being asked", async () => {
     await renderSession();
 
-    await waitFor(() => expect(voice.speakLine).toHaveBeenCalled());
-    expect(voice.speakLine.mock.calls[0][0]).toBe("Line number 0.");
+    await waitFor(() => expect(voice.playClip).toHaveBeenCalled());
+    expect(voice.playClip.mock.calls[0][1].text).toBe("Line number 0.");
   });
 
   it("moves on when the voice finishes, not on a clock", async () => {
     await renderSession();
-    await waitFor(() => expect(voice.speakLine).toHaveBeenCalledTimes(1));
+    await waitFor(() => expect(voice.playClip).toHaveBeenCalledTimes(1));
 
     // Time alone must not advance it — only the voice reporting it is done.
     await act(async () => {
       jest.advanceTimersByTime(30_000);
     });
-    expect(voice.speakLine).toHaveBeenCalledTimes(1);
+    expect(voice.playClip).toHaveBeenCalledTimes(1);
 
     await finishLine();
-    await waitFor(() => expect(voice.speakLine).toHaveBeenCalledTimes(2));
-    expect(voice.speakLine.mock.calls[1][0]).toBe("Line number 1.");
+    await waitFor(() => expect(voice.playClip).toHaveBeenCalledTimes(2));
+    expect(voice.playClip.mock.calls[1][1].text).toBe("Line number 1.");
   });
 
   it("finishes after the seventh, not before", async () => {
@@ -91,7 +95,7 @@ describe("the listening session", () => {
 
   it("stops speaking when paused", async () => {
     const { findByTestId } = await renderSession();
-    await waitFor(() => expect(voice.speakLine).toHaveBeenCalled());
+    await waitFor(() => expect(voice.playClip).toHaveBeenCalled());
 
     await fireEvent.press(await findByTestId("session-toggle"));
 
@@ -102,7 +106,7 @@ describe("the listening session", () => {
 
   it("silences itself on the way out", async () => {
     const { unmount } = await renderSession();
-    await waitFor(() => expect(voice.speakLine).toHaveBeenCalled());
+    await waitFor(() => expect(voice.playClip).toHaveBeenCalled());
 
     voice.stopSpeaking.mockClear();
     // Awaited: RNTL v14's unmount is async like render and fireEvent, and
@@ -120,7 +124,7 @@ describe("the listening session", () => {
     // The boundary calls onDone even when it could not speak. A session that
     // only advanced on success would hang forever in exactly the case where
     // it must not.
-    voice.speakLine.mockImplementation((_text, { onDone }) => {
+    voice.playClip.mockImplementation((_url, { onDone }) => {
       setTimeout(() => onDone?.(), 0);
       return { available: false };
     });
@@ -141,24 +145,24 @@ describe("the listening session", () => {
     it("reads in the parameters it was given", async () => {
       await renderSession({ voice: { pitch: 1.12, rate: 0.78 } });
 
-      await waitFor(() => expect(voice.speakLine).toHaveBeenCalled());
-      expect(voice.speakLine.mock.calls[0][1]).toMatchObject({ pitch: 1.12, rate: 0.78 });
+      await waitFor(() => expect(voice.playClip).toHaveBeenCalled());
+      expect(voice.playClip.mock.calls[0][1]).toMatchObject({ pitch: 1.12, rate: 0.78 });
     });
 
     it("keeps that voice for every line of the session", async () => {
       await renderSession({ voice: { pitch: 0.72, rate: 0.76 } });
 
-      await waitFor(() => expect(voice.speakLine).toHaveBeenCalled());
+      await waitFor(() => expect(voice.playClip).toHaveBeenCalled());
       await finishLine();
-      await waitFor(() => expect(voice.speakLine).toHaveBeenCalledTimes(2));
+      await waitFor(() => expect(voice.playClip).toHaveBeenCalledTimes(2));
 
       // A session that changed voice partway through would read as a glitch.
-      expect(voice.speakLine.mock.calls[1][1]).toMatchObject({ pitch: 0.72, rate: 0.76 });
+      expect(voice.playClip.mock.calls[1][1]).toMatchObject({ pitch: 0.72, rate: 0.76 });
     });
 
     it("does not restart the current line when the preference object changes", async () => {
       const { rerender } = await renderSession({ voice: { pitch: 1, rate: 0.9 } });
-      await waitFor(() => expect(voice.speakLine).toHaveBeenCalledTimes(1));
+      await waitFor(() => expect(voice.playClip).toHaveBeenCalledTimes(1));
 
       // A new object identity for the same choice — a re-render, not a change.
       await act(async () => {
@@ -170,15 +174,15 @@ describe("the listening session", () => {
       });
 
       // Speaking again here would restart the sentence mid-read.
-      expect(voice.speakLine).toHaveBeenCalledTimes(1);
+      expect(voice.playClip).toHaveBeenCalledTimes(1);
     });
 
     it("reads without a voice at all", async () => {
       // Practice must work before the preference has loaded.
       await renderSession();
 
-      await waitFor(() => expect(voice.speakLine).toHaveBeenCalled());
-      expect(voice.speakLine.mock.calls[0][0]).toBe("Line number 0.");
+      await waitFor(() => expect(voice.playClip).toHaveBeenCalled());
+      expect(voice.playClip.mock.calls[0][1].text).toBe("Line number 0.");
     });
   });
 });

@@ -1,16 +1,15 @@
 import { act, renderHook, waitFor } from "@testing-library/react-native";
 import { AuthProvider } from "../../contexts/AuthContext.jsx";
 import { useVoicePreference } from "../../hooks/useVoicePreference.js";
-import { todayLocal } from "../../lib/dates.js";
 
 /**
- * The rule this hook exists for: choosing a voice changes tomorrow, never
- * today. It is not a nicety — today's audio is rendered and cached per
- * (text, voice), so a change that took effect immediately would throw that
- * away and pay to render the same seven lines again.
+ * Which voice reads, and when a change to it lands.
  *
- * So the tests are about *time*, and every one of them pins a date rather than
- * trusting the clock.
+ * The server owns this now, because the server is what pays to render — a
+ * change that took effect today would discard seven already-rendered clips and
+ * bill us to make them again. So these tests are mostly about the hook
+ * *deferring* to that answer rather than inventing its own, and about staying
+ * usable when it cannot reach it.
  */
 const USER = { id: "u1", firstName: "Ada", email: "ada@example.com", preferences: {} };
 
@@ -35,17 +34,28 @@ const makeCache = (saved = null) => {
     saveFavorites: jest.fn(async () => {}),
     loadOutbox: jest.fn(async () => []),
     saveOutbox: jest.fn(async () => {}),
-    loadJson: jest.fn(async (_userId, name) => store.get(name) ?? null),
-    saveJson: jest.fn(async (_userId, name, value) => void store.set(name, value)),
+    loadJson: jest.fn(async (_id, name) => store.get(name) ?? null),
+    saveJson: jest.fn(async (_id, name, value) => void store.set(name, value)),
     clear: jest.fn(async () => {}),
   };
 };
 
-// `renderHook` is async in RNTL v14 — spreading it without awaiting hands back
-// a promise, and every `result.current` reads undefined.
-const setup = async ({ cache = makeCache(), user = USER } = {}) => {
-  const client = { me: jest.fn(async () => ({ user })) };
+const makeClient = (over = {}) => ({
+  me: jest.fn(async () => ({ user: USER })),
+  voicePreference: jest.fn(async () => ({
+    active: "mother",
+    pending: null,
+    pendingFrom: null,
+  })),
+  setVoicePreference: jest.fn(async (voice) => ({
+    active: "mother",
+    pending: voice === "mother" ? null : voice,
+    pendingFrom: voice === "mother" ? null : "2026-08-25",
+  })),
+  ...over,
+});
 
+const setup = async ({ cache = makeCache(), client = makeClient() } = {}) => {
   const Wrapper = ({ children }) => (
     <AuthProvider store={makeStore()} cache={cache} client={client}>
       {children}
@@ -53,118 +63,129 @@ const setup = async ({ cache = makeCache(), user = USER } = {}) => {
   );
   Wrapper.displayName = "AuthWrapper";
 
-  return { cache, ...(await renderHook(() => useVoicePreference(), { wrapper: Wrapper })) };
+  // renderHook is async in RNTL v14 — spreading it unawaited hands back a
+  // promise and every result.current reads undefined.
+  return {
+    cache,
+    client,
+    ...(await renderHook(() => useVoicePreference(), { wrapper: Wrapper })),
+  };
 };
 
-const DAY = 24 * 60 * 60 * 1000;
-
 describe("useVoicePreference", () => {
-  afterEach(() => jest.useRealTimers());
+  it("takes the voice the server says is reading today", async () => {
+    const client = makeClient({
+      voicePreference: jest.fn(async () => ({ active: "father", pending: null })),
+    });
+    const { result } = await setup({ client });
 
-  it("starts on the voice suggested by their onboarding tone", async () => {
-    const user = { ...USER, preferences: { tone: "grounded" } };
-    const { result } = await setup({ user, cache: makeCache() });
-
-    await waitFor(() => expect(result.current.loading).toBe(false));
-    expect(result.current.active).toBe("father");
+    await waitFor(() => expect(result.current.active).toBe("father"));
     expect(result.current.pending).toBeNull();
   });
 
-  it("falls back when they never picked a tone", async () => {
-    const { result } = await setup();
+  it("paints from cache before the server answers", async () => {
+    const cache = makeCache({ active: "grandfather", pending: "", pendingFrom: "" });
+    let release;
+    const client = makeClient({
+      voicePreference: jest.fn(() => new Promise((r) => (release = r))),
+    });
 
-    await waitFor(() => expect(result.current.loading).toBe(false));
-    expect(result.current.active).toBe("mother");
+    const { result } = await setup({ cache, client });
+
+    // The picker shows the right voice immediately rather than after a round trip.
+    await waitFor(() => expect(result.current.active).toBe("grandfather"));
+    await act(async () => release({ active: "mother", pending: null }));
+    await waitFor(() => expect(result.current.active).toBe("mother"));
   });
 
   it("does not change today's voice when a new one is chosen", async () => {
     const { result } = await setup();
     await waitFor(() => expect(result.current.loading).toBe(false));
 
-    const before = result.current.active;
     await act(async () => result.current.choose("grandfather"));
 
-    // The whole point: today reads in the voice today's audio was made for.
-    expect(result.current.active).toBe(before);
-    expect(result.current.pending).toBe("grandfather");
-  });
-
-  it("persists the choice with the day it lands", async () => {
-    const { result, cache } = await setup();
-    await waitFor(() => expect(result.current.loading).toBe(false));
-
-    await act(async () => result.current.choose("mentor"));
-
-    const [, name, value] = cache.saveJson.mock.calls.at(-1);
-    expect(name).toBe("voicePreference");
-    expect(value.pending).toBe("mentor");
-    expect(value.pendingFrom).toBe(todayLocal(new Date(Date.now() + DAY)));
-  });
-
-  it("takes effect once that day arrives", async () => {
-    const saved = {
-      active: "mother",
-      pending: "father",
-      // Yesterday: a choice made two days ago has already landed.
-      pendingFrom: todayLocal(new Date(Date.now() - DAY)),
-    };
-
-    const { result } = await setup({ cache: makeCache(saved) });
-    await waitFor(() => expect(result.current.loading).toBe(false));
-
-    expect(result.current.active).toBe("father");
-    // Nothing left waiting — it is simply the voice now.
-    expect(result.current.pending).toBeNull();
-  });
-
-  it("lands on the day itself, not the day after", async () => {
-    // An off-by-one here is a voice change that appears to have been ignored.
-    const saved = { active: "mother", pending: "peer", pendingFrom: todayLocal() };
-
-    const { result } = await setup({ cache: makeCache(saved) });
-    await waitFor(() => expect(result.current.loading).toBe(false));
-
-    expect(result.current.active).toBe("peer");
-  });
-
-  it("keeps a choice pending until its day", async () => {
-    const saved = {
-      active: "mother",
-      pending: "grandfather",
-      pendingFrom: todayLocal(new Date(Date.now() + DAY)),
-    };
-
-    const { result } = await setup({ cache: makeCache(saved) });
-    await waitFor(() => expect(result.current.loading).toBe(false));
-
+    // Today's clips are already rendered and paid for.
     expect(result.current.active).toBe("mother");
     expect(result.current.pending).toBe("grandfather");
   });
 
-  it("lets a pending choice be changed again before it lands", async () => {
-    const { result, cache } = await setup();
+  it("asks the server rather than deciding locally", async () => {
+    const { result, client } = await setup();
     await waitFor(() => expect(result.current.loading).toBe(false));
 
-    await act(async () => result.current.choose("mentor"));
     await act(async () => result.current.choose("peer"));
 
-    // Not two queued changes — the last word before midnight wins.
-    expect(result.current.pending).toBe("peer");
+    // The date a change lands is the server's to set, not the phone's.
+    expect(client.setVoicePreference).toHaveBeenCalledWith("peer", expect.any(String));
+  });
+
+  it("keeps the current voice when the server refuses", async () => {
+    const client = makeClient({
+      setVoicePreference: jest.fn(async () => {
+        throw new Error("offline");
+      }),
+    });
+    const { result } = await setup({ client });
+    await waitFor(() => expect(result.current.loading).toBe(false));
+
+    await act(async () => result.current.choose("father"));
+
+    // Not optimistic, deliberately: a picker claiming a voice the renderer
+    // never heard of is worse than a tap that visibly did nothing.
     expect(result.current.active).toBe("mother");
-    expect(cache.saveJson.mock.calls.at(-1)[2].pending).toBe("peer");
+    expect(result.current.pending).toBeNull();
   });
 
   it("reports no pending change when they re-pick the current voice", async () => {
     const { result } = await setup();
     await waitFor(() => expect(result.current.loading).toBe(false));
 
-    await act(async () => result.current.choose(result.current.active));
+    await act(async () => result.current.choose("mother"));
 
     // "Motherly from tomorrow" under a voice already reading today is noise.
     expect(result.current.pending).toBeNull();
   });
 
-  it("exposes the speech parameters the session actually reads with", async () => {
+  it("ignores a second tap while the first is in flight", async () => {
+    let release;
+    const client = makeClient({
+      setVoicePreference: jest.fn(() => new Promise((r) => (release = r))),
+    });
+    const { result } = await setup({ client });
+    await waitFor(() => expect(result.current.loading).toBe(false));
+
+    await act(async () => {
+      result.current.choose("father");
+    });
+    await act(async () => {
+      result.current.choose("peer");
+    });
+
+    // Two writes racing would land whichever returned last, not whichever was
+    // tapped last.
+    expect(client.setVoicePreference).toHaveBeenCalledTimes(1);
+    await act(async () => release({ active: "mother", pending: "father" }));
+  });
+
+  it("caches the server's answer for the next cold start", async () => {
+    const { result, cache } = await setup();
+    await waitFor(() => expect(result.current.loading).toBe(false));
+
+    await waitFor(() => expect(cache.saveJson).toHaveBeenCalled());
+    const [, name, value] = cache.saveJson.mock.calls.at(-1);
+    expect(name).toBe("voicePreference");
+    expect(value.active).toBe("mother");
+  });
+
+  it("falls back to a tone-suggested voice before anything is stored", async () => {
+    const client = makeClient({ voicePreference: jest.fn(async () => null) });
+    const { result } = await setup({ client });
+
+    await waitFor(() => expect(result.current.loading).toBe(false));
+    expect(result.current.active).toBe("mother");
+  });
+
+  it("exposes the speech parameters the device fallback reads with", async () => {
     const { result } = await setup();
     await waitFor(() => expect(result.current.loading).toBe(false));
 
@@ -172,15 +193,15 @@ describe("useVoicePreference", () => {
     expect(typeof result.current.voice.speech.rate).toBe("number");
   });
 
-  it("survives a cache that cannot read", async () => {
-    const cache = makeCache();
-    cache.loadJson = jest.fn(async () => {
-      throw new Error("AsyncStorage unavailable");
+  it("stays usable offline", async () => {
+    const client = makeClient({
+      voicePreference: jest.fn(async () => {
+        throw new Error("offline");
+      }),
     });
+    const { result } = await setup({ client });
 
-    const { result } = await setup({ cache });
-
-    // A preference that fails to load must leave Practice usable, not blank.
+    // Practice must open, with some voice, whatever the network is doing.
     await waitFor(() => expect(result.current.loading).toBe(false));
     expect(result.current.active).toBe("mother");
   });
@@ -196,9 +217,5 @@ describe("useVoicePreference", () => {
     // would otherwise leave the hook loading forever.
     await waitFor(() => expect(result.current.loading).toBe(false));
     expect(result.current.active).toBe("mother");
-
-    // And choosing still moves the UI, even with nowhere to write it.
-    await act(async () => result.current.choose("peer"));
-    expect(result.current.pending).toBe("peer");
   });
 });

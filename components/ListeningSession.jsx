@@ -4,7 +4,7 @@ import { Ionicons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
 import DisplayText from "./DisplayText.jsx";
 import { useAppTheme } from "../contexts/ThemeContext.jsx";
-import { speakLine, stopSpeaking } from "../lib/voice.js";
+import { playClip, stopSpeaking } from "../lib/voice.js";
 import { spacing, type } from "../theme/tokens.js";
 
 /** Held after a line finishes, before the next fades in. */
@@ -91,10 +91,16 @@ const ListeningSession = ({ lines, voice, onFinish, onClose }) => {
     let cancelled = false;
     fadeTo(1);
 
-    speakLine(line.text, {
+    // A rendered clip when the server had one, the device's own speech when it
+    // did not. `playClip` decides, so a session with six clips and one failed
+    // render still plays all seven — the reader hears a different voice for one
+    // sentence rather than a gap.
+    playClip(line.clipUrl, {
+      text: line.text,
       // Whatever the reader chose — and for today only. A change made mid-week
       // lands tomorrow, which is what keeps a session's voice consistent from
-      // its first line to its seventh.
+      // its first line to its seventh. Only reaches device speech; a clip was
+      // already rendered in the right voice.
       ...voice,
       onDone: () => {
         if (cancelled || !alive.current) return;
