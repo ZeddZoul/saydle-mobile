@@ -356,10 +356,15 @@ The 13-item roadmap is complete and verified on device. What remains:
   distinction the missing screen fails to deliver.
 - **A real purchase has never been made** — only the trial path is exercised. Needs a store listing
   and a sandbox tester.
-- **The five voices are placeholders.** `lib/voices.js` maps each archetype to device-TTS
-  pitch/rate so the pacing can be judged, with an `elevenLabsId: null` slot per voice. Filling
-  them changes `lib/voice.js` and nothing else — the picker, the preference and the session all
-  talk about a voice by its key already.
+- **The five voices are chosen but not yet rendered.** `lib/voices.js` names the ElevenLabs voice
+  per archetype — Sam, Ellen, Mark, Blondie and Spuds Oxley, all free-tier, none carrying the
+  $0.20/1,000-credit surcharge (~$2.34/subscriber/month against $3.54 net, which removes the
+  margin rather than denting it) and none with Live Moderation, which screens submitted text and
+  so could refuse to read someone's own words back to them from "My words". The device-TTS
+  pitch/rate stay as the fallback. **What is left is server-side**: the key can never be an
+  `EXPO_PUBLIC_*` var, so rendering, the `(text, voiceId)` cache and an endpoint serving the
+  session its seven files all live on the API — and the voice preference has to move there with
+  them, since the server is what needs to know which voice to render in.
 - **The Android video export has never run on a device.** The Kotlin compiles; only the iOS half
   is verified against real output.
 - **Vertex is deploy-ready but undeployed.** Generation runs as

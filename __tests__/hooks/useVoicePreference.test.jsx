@@ -82,11 +82,11 @@ describe("useVoicePreference", () => {
     await waitFor(() => expect(result.current.loading).toBe(false));
 
     const before = result.current.active;
-    await act(async () => result.current.choose("grandmother"));
+    await act(async () => result.current.choose("grandfather"));
 
     // The whole point: today reads in the voice today's audio was made for.
     expect(result.current.active).toBe(before);
-    expect(result.current.pending).toBe("grandmother");
+    expect(result.current.pending).toBe("grandfather");
   });
 
   it("persists the choice with the day it lands", async () => {
@@ -130,7 +130,7 @@ describe("useVoicePreference", () => {
   it("keeps a choice pending until its day", async () => {
     const saved = {
       active: "mother",
-      pending: "grandmother",
+      pending: "grandfather",
       pendingFrom: todayLocal(new Date(Date.now() + DAY)),
     };
 
@@ -138,7 +138,7 @@ describe("useVoicePreference", () => {
     await waitFor(() => expect(result.current.loading).toBe(false));
 
     expect(result.current.active).toBe("mother");
-    expect(result.current.pending).toBe("grandmother");
+    expect(result.current.pending).toBe("grandfather");
   });
 
   it("lets a pending choice be changed again before it lands", async () => {

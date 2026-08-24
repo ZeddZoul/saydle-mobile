@@ -489,13 +489,13 @@
       "desc": "Suave, y lo bastante lenta.",
       "preview": "Escuchar la voz materna"
     },
-    "grandmother": {
-      "name": "De la abuela",
-      "desc": "Sin prisa. Alguien con tiempo.",
-      "preview": "Escuchar la voz de la abuela"
-    },
     "change": "Cambiar la voz",
     "activeRow": "Voz {{name}}",
-    "pendingRow": "{{name}} desde mañana"
+    "pendingRow": "{{name}} desde mañana",
+    "grandfather": {
+      "name": "Del abuelo",
+      "desc": "Sin prisa. Alguien con tiempo.",
+      "preview": "Escuchar la voz del abuelo"
+    }
   }
 }

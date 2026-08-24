@@ -12,7 +12,7 @@ describe("voices", () => {
     const keys = VOICES.map((v) => v.key);
     expect(new Set(keys).size).toBe(5);
     expect(keys).toEqual(
-      expect.arrayContaining(["father", "mentor", "peer", "mother", "grandmother"]),
+      expect.arrayContaining(["father", "mentor", "peer", "mother", "grandfather"]),
     );
   });
 
@@ -26,11 +26,19 @@ describe("voices", () => {
     }
   });
 
-  it("leaves the ElevenLabs slot empty and present", () => {
-    // Present, so filling it is an edit rather than a redesign.
+  it("names a real ElevenLabs voice for every archetype", () => {
     for (const voice of VOICES) {
-      expect(voice).toHaveProperty("elevenLabsId", null);
+      // A null id renders silence, and nothing upstream would report why.
+      expect(typeof voice.elevenLabsId).toBe("string");
+      expect(voice.elevenLabsId.length).toBeGreaterThan(0);
     }
+  });
+
+  it("gives each archetype its own ElevenLabs voice", () => {
+    // A duplicated id is the quiet failure: the picker offers five voices, two
+    // of them sound identical, and there is no error anywhere to explain it.
+    const ids = VOICES.map((v) => v.elevenLabsId);
+    expect(new Set(ids).size).toBe(VOICES.length);
   });
 
   it("sounds different between archetypes", () => {

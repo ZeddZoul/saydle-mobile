@@ -337,13 +337,13 @@
       "desc": "Soft, and slow enough to land.",
       "preview": "Hear the motherly voice"
     },
-    "grandmother": {
-      "name": "Grandmotherly",
-      "desc": "Unhurried. Someone with time.",
-      "preview": "Hear the grandmotherly voice"
-    },
     "change": "Change the voice",
     "activeRow": "Read by {{name}}",
-    "pendingRow": "{{name}} from tomorrow"
+    "pendingRow": "{{name}} from tomorrow",
+    "grandfather": {
+      "name": "Grandfatherly",
+      "desc": "Unhurried. Someone with time.",
+      "preview": "Hear the grandfatherly voice"
+    }
   }
 }

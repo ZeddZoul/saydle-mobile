@@ -46,12 +46,12 @@ describe("VoicePicker", () => {
   it("reads the sample in that voice's own parameters", async () => {
     const { findByTestId } = await renderPicker();
 
-    await fireEvent.press(await findByTestId("voice-preview-grandmother"));
+    await fireEvent.press(await findByTestId("voice-preview-grandfather"));
 
     const [text, options] = mockSpeak.mock.calls[0];
     expect(text).toBeTruthy();
-    const grandmother = VOICES.find((v) => v.key === "grandmother");
-    expect(options).toMatchObject(grandmother.speech);
+    const grandfather = VOICES.find((v) => v.key === "grandfather");
+    expect(options).toMatchObject(grandfather.speech);
   });
 
   it("stops the previous sample before starting another", async () => {
