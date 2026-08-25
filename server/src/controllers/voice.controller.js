@@ -2,8 +2,17 @@ import { Affirmation } from "../models/Affirmation.js";
 import { VoiceClip } from "../models/VoiceClip.js";
 import { User } from "../models/User.js";
 import { AppError } from "../utils/AppError.js";
-import { clipsForSession, voiceAvailable } from "../services/voice.service.js";
+import { clipFor, clipsForSession, voiceAvailable } from "../services/voice.service.js";
 import { DEFAULT_VOICE, VOICE_IDS, isVoiceKey, resolveVoice } from "../config/voices.js";
+
+/**
+ * What each voice says when auditioned.
+ *
+ * Second person, like everything else spoken, and deliberately not one of the
+ * real affirmations — a sample that is also somebody's line for today would be
+ * spent before they got to it.
+ */
+const PREVIEW_LINE = "You can be steady about this, without being certain.";
 
 /** The reader's own local day, sent by the app. Their midnight, not the server's. */
 function localDay(req) {
@@ -74,6 +83,31 @@ export async function clip(req, res, next) {
     res.set("Content-Length", String(found.bytes));
     res.set("Cache-Control", "public, max-age=31536000, immutable");
     res.send(found.audio);
+  } catch (err) {
+    next(err);
+  }
+}
+
+/**
+ * One voice reading a fixed sample, so the picker can be auditioned.
+ *
+ * The whole reason to offer five is that the difference between them is audible
+ * and not describable — a picker that previews all five with the device's own
+ * speech makes people choose blind, which is worse than offering one voice.
+ *
+ * The sample is the same sentence for everyone, so after the first reader
+ * auditions a voice it is rendered once and never again, for anybody. Five
+ * clips in total, permanently, across the entire user base.
+ */
+export async function preview(req, res, next) {
+  try {
+    const key = String(req.params.key ?? "");
+    if (!isVoiceKey(key)) throw AppError.notFound("No such voice.");
+
+    const clip = await clipFor(PREVIEW_LINE, VOICE_IDS[key]);
+    if (!clip) return res.json({ voice: key, clipId: null, available: voiceAvailable() });
+
+    res.json({ voice: key, clipId: String(clip._id), available: true });
   } catch (err) {
     next(err);
   }

@@ -2,11 +2,17 @@ import { fireEvent, render } from "@testing-library/react-native";
 import VoicePicker from "../../components/VoicePicker.jsx";
 import { VOICES } from "../../lib/voices.js";
 
-const mockSpeak = jest.fn();
+const mockPlay = jest.fn();
 const mockStop = jest.fn();
 jest.mock("../../lib/voice.js", () => ({
-  speakLine: (...args) => mockSpeak(...args),
+  playClip: (...args) => mockPlay(...args),
+  speakLine: jest.fn(),
   stopSpeaking: (...args) => mockStop(...args),
+}));
+
+const mockPreview = jest.fn(async (key) => ({ voice: key, clipId: `clip-${key}` }));
+jest.mock("../../contexts/AuthContext.jsx", () => ({
+  useAuth: () => ({ client: { voicePreview: (...a) => mockPreview(...a) } }),
 }));
 
 /**
@@ -18,8 +24,10 @@ const renderPicker = (props = {}) =>
   render(<VoicePicker active="mother" pending={null} onChoose={jest.fn()} {...props} />);
 
 beforeEach(() => {
-  mockSpeak.mockClear();
+  mockPlay.mockClear();
   mockStop.mockClear();
+  mockPreview.mockClear();
+  mockPreview.mockImplementation(async (key) => ({ voice: key, clipId: `clip-${key}` }));
 });
 
 describe("VoicePicker", () => {
@@ -40,17 +48,32 @@ describe("VoicePicker", () => {
     // Auditioning must not commit: someone trying all five would otherwise
     // end up with whichever they happened to hear last.
     expect(onChoose).not.toHaveBeenCalled();
-    expect(mockSpeak).toHaveBeenCalledTimes(1);
+    expect(mockPlay).toHaveBeenCalledTimes(1);
   });
 
-  it("reads the sample in that voice's own parameters", async () => {
+  it("plays the real voice, not the device reading the sample", async () => {
     const { findByTestId } = await renderPicker();
 
     await fireEvent.press(await findByTestId("voice-preview-grandfather"));
 
-    const [text, options] = mockSpeak.mock.calls[0];
-    expect(text).toBeTruthy();
+    // Five archetypes previewed in device speech is the same voice five times
+    // with the pitch nudged — worse than no preview, because it misrepresents
+    // exactly the thing being chosen.
+    expect(mockPreview).toHaveBeenCalledWith("grandfather");
+    expect(mockPlay.mock.calls[0][0]).toContain("clip-grandfather");
+  });
+
+  it("carries the device parameters as the fallback", async () => {
+    mockPreview.mockRejectedValue(new Error("offline"));
+    const { findByTestId } = await renderPicker();
+
+    await fireEvent.press(await findByTestId("voice-preview-grandfather"));
+
+    const [url, options] = mockPlay.mock.calls[0];
     const grandfather = VOICES.find((v) => v.key === "grandfather");
+    // No clip to play, so playClip reads the sample with the device instead —
+    // which at least confirms the control does something.
+    expect(url).toBeNull();
     expect(options).toMatchObject(grandfather.speech);
   });
 
@@ -72,7 +95,7 @@ describe("VoicePicker", () => {
 
     expect(onChoose).toHaveBeenCalledWith("mentor");
     // Choosing is not auditioning either — no sound on commit.
-    expect(mockSpeak).not.toHaveBeenCalled();
+    expect(mockPlay).not.toHaveBeenCalled();
   });
 
   it("marks the voice reading today", async () => {

@@ -3,7 +3,7 @@ import { Animated, Easing, Pressable, StyleSheet, Text, View } from "react-nativ
 import { Ionicons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
 import GradientBackground from "../../components/GradientBackground.jsx";
-import FloatingHeader from "../../components/FloatingHeader.jsx";
+import FloatingHeader, { FLOATING_HEADER_INSET } from "../../components/FloatingHeader.jsx";
 import DisplayText from "../../components/DisplayText.jsx";
 import Button from "../../components/Button";
 import PracticeRing from "../../components/PracticeRing.jsx";
@@ -453,6 +453,10 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     paddingHorizontal: spacing.lg,
+    // The header floats over this rather than occupying space above it, so the
+    // room it needs has to be reserved here. Without this the listen button
+    // sits on top of the word "Practice".
+    paddingTop: FLOATING_HEADER_INSET,
     // Clears the controls and week strip pinned to the bottom.
     paddingBottom: 150,
   },

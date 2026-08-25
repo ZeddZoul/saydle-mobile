@@ -324,6 +324,39 @@ describe("without an API key", () => {
   });
 });
 
+describe("GET /api/voice/preview/:key", () => {
+  it("renders the sample in that voice", async () => {
+    const res = await request(app).get("/api/voice/preview/grandfather");
+
+    expect(res.status).toBe(200);
+    expect(res.body.voice).toBe("grandfather");
+    expect(res.body.clipId).toBeTruthy();
+    expect(fetchMock.mock.calls[0][0]).toContain(VOICE_IDS.grandfather);
+  });
+
+  it("renders each sample once, ever, for everybody", async () => {
+    await request(app).get("/api/voice/preview/mother");
+    await request(app).get("/api/voice/preview/mother");
+
+    // The sample is the same sentence for every reader, so five clips cover
+    // auditioning across the entire user base, permanently.
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+
+  it("needs no session — a preview belongs to a voice, not a person", async () => {
+    // The audio player fetches this directly and carries no token.
+    const res = await request(app).get("/api/voice/preview/peer");
+    expect(res.status).toBe(200);
+  });
+
+  it("404s for a voice we do not ship", async () => {
+    const res = await request(app).get("/api/voice/preview/morgan-freeman");
+
+    expect(res.status).toBe(404);
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+});
+
 describe("clipKey", () => {
   it("is the same for the same text and voice", () => {
     expect(clipKey("I can begin again.", "v1")).toBe(clipKey("I can begin again.", "v1"));

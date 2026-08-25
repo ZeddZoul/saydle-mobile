@@ -1,11 +1,13 @@
-import { Pressable, StyleSheet, Text, View } from "react-native";
+import { useState } from "react";
+import { ActivityIndicator, Pressable, StyleSheet, Text, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
 import DisplayText from "./DisplayText.jsx";
 import { useAppTheme } from "../contexts/ThemeContext.jsx";
+import { useAuth } from "../contexts/AuthContext.jsx";
 import { useT } from "../lib/i18n.js";
-import { VOICES } from "../lib/voices.js";
-import { speakLine, stopSpeaking } from "../lib/voice.js";
+import { VOICES, clipUrl } from "../lib/voices.js";
+import { playClip, stopSpeaking } from "../lib/voice.js";
 import { radius, spacing, type } from "../theme/tokens.js";
 
 /** Short enough to hear the voice, long enough to judge it. */
@@ -19,6 +21,12 @@ const SAMPLE_KEY = "voices.sample";
  * list of names would make people pick blind. Choosing is a separate,
  * deliberate tap.
  *
+ * The preview is the real voice, fetched from the server. Auditioning five
+ * archetypes in the device's own speech would play the same voice five times
+ * with the pitch nudged, which is worse than offering no preview at all — it
+ * would actively misrepresent the thing being chosen. Device speech remains the
+ * fallback when the server has no key, via `playClip`.
+ *
  * A choice takes effect tomorrow, which the row says plainly. Today's audio is
  * already rendered against the current voice, so switching now would discard it
  * and pay to render it again.
@@ -26,11 +34,26 @@ const SAMPLE_KEY = "voices.sample";
 const VoicePicker = ({ active, pending, onChoose }) => {
   const { t } = useT();
   const { theme } = useAppTheme();
+  const { client } = useAuth();
 
-  const preview = (voice) => {
+  const [loading, setLoading] = useState(null);
+
+  const preview = async (voice) => {
     Haptics.selectionAsync().catch(() => {});
     stopSpeaking();
-    speakLine(t(SAMPLE_KEY), voice.speech);
+    setLoading(voice.key);
+
+    let url = null;
+    try {
+      const res = await client.voicePreview(voice.key);
+      url = clipUrl(res?.clipId);
+    } catch {
+      // Offline, or no key on the server. playClip reads the sample with the
+      // device instead, which at least confirms the control works.
+    }
+
+    setLoading(null);
+    playClip(url, { text: t(SAMPLE_KEY), ...voice.speech });
   };
 
   return (
@@ -55,7 +78,11 @@ const VoicePicker = ({ active, pending, onChoose }) => {
               style={styles.play}
               testID={`voice-preview-${voice.key}`}
             >
-              <Ionicons name="volume-medium-outline" size={20} color={theme.accent} />
+              {loading === voice.key ? (
+                <ActivityIndicator size="small" color={theme.accent} />
+              ) : (
+                <Ionicons name="volume-medium-outline" size={20} color={theme.accent} />
+              )}
             </Pressable>
 
             <View style={styles.text}>

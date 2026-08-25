@@ -12,6 +12,10 @@ export const voiceRouter = Router();
  */
 voiceRouter.get("/clip/:id", ctrl.clip);
 
+// Same reasoning as clips: a preview belongs to a voice, not to a person, and
+// the five of them are shared by everyone.
+voiceRouter.get("/preview/:key", ctrl.preview);
+
 voiceRouter.use(requireAuth);
 voiceRouter.get("/preference", ctrl.getVoice);
 voiceRouter.put("/preference", ctrl.setVoice);
