@@ -26,8 +26,23 @@ const loadFresh = ({ speech, audio } = {}) => {
     jest.doMock("expo-audio", () => audio);
   }
 
-  return require("../../lib/voice.js");
+  loaded = require("../../lib/voice.js");
+  return loaded;
 };
+
+/**
+ * The module most recently loaded, so its watchdogs can be cancelled.
+ *
+ * A player that never finishes leaves a 4s and a 30s timer running, and jest
+ * tears the environment down long before those fire — the failure then reads
+ * as an unrelated "import after teardown" from whichever test ran last.
+ */
+let loaded = null;
+
+afterEach(() => {
+  loaded?.stopSpeaking();
+  loaded = null;
+});
 
 const fakeSpeech = () => ({ speak: jest.fn(), stop: jest.fn() });
 
@@ -39,6 +54,8 @@ const fakePlayer = () => {
     addListener: jest.fn((event, fn) => {
       listeners[event] = fn;
     }),
+    /** Test seam: push a status update through, as the native side would. */
+    emit: (status) => listeners.playbackStatusUpdate?.(status),
     /** Test seam: pretend the clip reached its end. */
     finish: () => listeners.playbackStatusUpdate?.({ didJustFinish: true }),
   };
@@ -165,6 +182,91 @@ describe("playClip", () => {
 
     // The session already moved on; tearing down here would silence line two.
     expect(second.remove).not.toHaveBeenCalled();
+  });
+});
+
+describe("the watchdogs", () => {
+  beforeEach(() => jest.useFakeTimers());
+  afterEach(() => jest.useRealTimers());
+
+  it("reads the line with the device when the clip never loads", () => {
+    // The exact shape of a build whose native audio module is missing: it
+    // hands back a player object that plays nothing and reports nothing. With
+    // only `didJustFinish` to go on, the session stops dead on that line and
+    // nothing on screen says why. This is that bug, pinned.
+    const player = fakePlayer();
+    const speech = fakeSpeech();
+    const { playClip } = loadFresh({ speech, audio: fakeAudio(player) });
+
+    const onDone = jest.fn();
+    playClip("file:///clip.mp3", { text: "a line", onDone });
+
+    expect(speech.speak).not.toHaveBeenCalled();
+    jest.advanceTimersByTime(4000);
+
+    expect(speech.speak).toHaveBeenCalledWith("a line", expect.anything());
+    expect(player.remove).toHaveBeenCalled();
+  });
+
+  it("does not give up on a clip that is actually playing", () => {
+    const player = fakePlayer();
+    const speech = fakeSpeech();
+    const { playClip } = loadFresh({ speech, audio: fakeAudio(player) });
+
+    playClip("file:///clip.mp3", { text: "a line", onDone: jest.fn() });
+    player.emit({ isLoaded: true, playing: true });
+    jest.advanceTimersByTime(4000);
+
+    // A slow line is not a broken one.
+    expect(speech.speak).not.toHaveBeenCalled();
+  });
+
+  it("moves on from a clip that plays but never reports finishing", () => {
+    const player = fakePlayer();
+    const { playClip } = loadFresh({ speech: fakeSpeech(), audio: fakeAudio(player) });
+
+    const onDone = jest.fn();
+    playClip("file:///clip.mp3", { text: "a line", onDone });
+    player.emit({ isLoaded: true, playing: true });
+
+    jest.advanceTimersByTime(30000);
+
+    // Silence forever is worse than one line cut short.
+    expect(onDone).toHaveBeenCalledTimes(1);
+  });
+
+  it("cancels the watchdogs once the clip finishes normally", () => {
+    const player = fakePlayer();
+    const speech = fakeSpeech();
+    const { playClip } = loadFresh({ speech, audio: fakeAudio(player) });
+
+    const onDone = jest.fn();
+    playClip("file:///clip.mp3", { text: "a line", onDone });
+    player.finish();
+
+    jest.advanceTimersByTime(60000);
+
+    // A stale watchdog would speak over the line that came after it.
+    expect(onDone).toHaveBeenCalledTimes(1);
+    expect(speech.speak).not.toHaveBeenCalled();
+  });
+
+  it("cancels them when the session moves on early", () => {
+    const first = fakePlayer();
+    const second = fakePlayer();
+    const audio = { createAudioPlayer: jest.fn() };
+    audio.createAudioPlayer.mockReturnValueOnce(first).mockReturnValueOnce(second);
+    const speech = fakeSpeech();
+    const { playClip } = loadFresh({ speech, audio });
+
+    playClip("file:///one.mp3", { text: "one", onDone: jest.fn() });
+    playClip("file:///two.mp3", { text: "two", onDone: jest.fn() });
+    second.emit({ isLoaded: true, playing: true });
+
+    jest.advanceTimersByTime(60000);
+
+    // The first line's watchdog must not read "one" over the top of line two.
+    expect(speech.speak).not.toHaveBeenCalledWith("one", expect.anything());
   });
 });
 

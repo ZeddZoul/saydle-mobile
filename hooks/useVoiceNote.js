@@ -1,13 +1,47 @@
 import { useCallback, useEffect, useState } from "react";
-import {
-  RecordingPresets,
-  requestRecordingPermissionsAsync,
-  setAudioModeAsync,
-  useAudioPlayer,
-  useAudioRecorder,
-  useAudioRecorderState,
-} from "expo-audio";
 import { useAuth } from "../contexts/AuthContext.jsx";
+
+/**
+ * expo-audio, or a set of stubs shaped like it.
+ *
+ * This has to be a lazy require in a try/catch like every other native
+ * boundary — a top-level `import` of a module that is not in the binary throws
+ * at import time and takes the whole Practice screen down, which is exactly
+ * what it did. The stack said `useVoiceNote.js (2:1)`, an import line, and no
+ * amount of guarding further down would have helped.
+ *
+ * The awkward part is that three of these are React hooks, so they cannot be
+ * required inside the component. Resolving the module once at module scope and
+ * substituting inert hooks keeps the call order identical on every render,
+ * which is what the rules of hooks actually require — the module either exists
+ * for the life of the process or it does not, so the choice never changes.
+ */
+const Audio = (() => {
+  try {
+    return require("expo-audio");
+  } catch {
+    return null;
+  }
+})();
+
+const RecordingPresets = Audio?.RecordingPresets ?? { HIGH_QUALITY: {} };
+const requestRecordingPermissionsAsync =
+  Audio?.requestRecordingPermissionsAsync ?? (async () => ({ granted: false }));
+const setAudioModeAsync = Audio?.setAudioModeAsync ?? (async () => {});
+const useAudioPlayer =
+  Audio?.useAudioPlayer ?? (() => ({ play() {}, seekTo() {}, remove() {} }));
+const useAudioRecorder =
+  Audio?.useAudioRecorder ??
+  (() => ({
+    prepareToRecordAsync: async () => {},
+    record() {},
+    stop: async () => {},
+    uri: null,
+  }));
+const useAudioRecorderState = Audio?.useAudioRecorderState ?? (() => ({ isRecording: false }));
+
+/** False on a build without the native module — the UI hides recording. */
+export const voiceNotesAvailable = () => Boolean(Audio?.useAudioRecorder);
 
 /**
  * One recording per affirmation, in your own voice, kept on this device.
