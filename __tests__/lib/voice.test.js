@@ -46,9 +46,12 @@ afterEach(() => {
 
 const fakeSpeech = () => ({ speak: jest.fn(), stop: jest.fn() });
 
-const fakePlayer = () => {
+const fakePlayer = ({ loaded = true } = {}) => {
   const listeners = {};
   return {
+    // The real player exposes this, and it is what decides whether play() will
+    // actually do anything.
+    isLoaded: loaded,
     play: jest.fn(),
     remove: jest.fn(),
     addListener: jest.fn((event, fn) => {
@@ -58,10 +61,18 @@ const fakePlayer = () => {
     emit: (status) => listeners.playbackStatusUpdate?.(status),
     /** Test seam: pretend the clip reached its end. */
     finish: () => listeners.playbackStatusUpdate?.({ didJustFinish: true }),
+    /** Test seam: the clip finished loading, later than the first attempt. */
+    load() {
+      this.isLoaded = true;
+      listeners.playbackStatusUpdate?.({ isLoaded: true });
+    },
   };
 };
 
-const fakeAudio = (player) => ({ createAudioPlayer: jest.fn(() => player) });
+const fakeAudio = (player) => ({
+  createAudioPlayer: jest.fn(() => player),
+  setAudioModeAsync: jest.fn(async () => {}),
+});
 
 describe("availability", () => {
   it("reports device speech separately from clip playback", () => {
@@ -267,6 +278,59 @@ describe("the watchdogs", () => {
 
     // The first line's watchdog must not read "one" over the top of line two.
     expect(speech.speak).not.toHaveBeenCalledWith("one", expect.anything());
+  });
+});
+
+describe("waiting for the clip to be ready", () => {
+  it("does not start a player that has not loaded", () => {
+    const player = fakePlayer({ loaded: false });
+    const { playClip } = loadFresh({ speech: fakeSpeech(), audio: fakeAudio(player) });
+
+    playClip("file:///clip.mp3", { text: "a line", onDone: jest.fn() });
+
+    // play() before the item is ready is a no-op: the clip downloads, buffers,
+    // and never sounds. That is the bug this whole path exists to avoid, and it
+    // is invisible — the watchdog then reads the line with the device instead,
+    // so a voice is heard and nothing reports it was the wrong one.
+    expect(player.play).not.toHaveBeenCalled();
+  });
+
+  it("starts it the moment it reports loaded", () => {
+    const player = fakePlayer({ loaded: false });
+    const { playClip } = loadFresh({ speech: fakeSpeech(), audio: fakeAudio(player) });
+
+    playClip("file:///clip.mp3", { text: "a line", onDone: jest.fn() });
+    expect(player.play).not.toHaveBeenCalled();
+
+    player.load();
+
+    expect(player.play).toHaveBeenCalledTimes(1);
+  });
+
+  it("starts it only once, however many updates arrive", () => {
+    const player = fakePlayer();
+    const { playClip } = loadFresh({ speech: fakeSpeech(), audio: fakeAudio(player) });
+
+    playClip("file:///clip.mp3", { text: "a line", onDone: jest.fn() });
+    player.load();
+    player.load();
+
+    expect(player.play).toHaveBeenCalledTimes(1);
+  });
+
+  it("tells iOS this app plays audio", () => {
+    const audio = fakeAudio(fakePlayer());
+    const { playClip } = loadFresh({ speech: fakeSpeech(), audio });
+
+    playClip("file:///clip.mp3", { text: "a line", onDone: jest.fn() });
+
+    // Without this the session category is silenced by the hardware mute
+    // switch — the clip plays and the reader hears nothing. expo-speech is
+    // unaffected, which is exactly why the fallback stayed audible while the
+    // real voice did not.
+    expect(audio.setAudioModeAsync).toHaveBeenCalledWith(
+      expect.objectContaining({ playsInSilentMode: true }),
+    );
   });
 });
 
