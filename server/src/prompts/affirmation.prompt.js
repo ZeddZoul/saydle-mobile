@@ -225,7 +225,24 @@ export function buildUserPrompt({
   if (tone) lines.push(`Preferred tone: ${tone}.`);
 
   if (displayName) {
-    lines.push(`The reader's first name is "${sanitize(displayName)}". Use it at most once.`);
+    // The name is deliberately withheld from the line itself.
+    //
+    // Every affirmation may be read aloud, and a synthetic voice mispronounces
+    // most names that are not Anglo — Chisom, Oluwaseun, Adaeze. It is the one
+    // word a reader would catch instantly, and nothing anywhere would report
+    // that we got it wrong.
+    //
+    // It also costs money. A line carrying a name is unique to one person, so
+    // it can never be shared between readers; without one, two readers given
+    // the same sentence share a rendered clip. Voice is 10-20x what generation
+    // costs, so that sharing is worth more than the personal touch of a name
+    // inside a sentence.
+    //
+    // The name has a better home anyway: Today greets them by it, in text that
+    // is never spoken.
+    lines.push(
+      `Do not use the reader's name in any affirmation. Address them as "you" or write in the first person, never by name.`,
+    );
   }
 
   const profileLines = describeProfile(profile);
@@ -315,4 +332,4 @@ export const RESPONSE_SCHEMA = {
 // prompt produced them and an explicit cache can be keyed per version.
 // v2: permission-first voice (permission / specific / honest).
 // v3: marks seven lines with practiceRank for the listening session.
-export const PROMPT_VERSION = 3;
+export const PROMPT_VERSION = 4;

@@ -1,6 +1,7 @@
 import { act, renderHook, waitFor } from "@testing-library/react-native";
 import { AuthProvider } from "../../contexts/AuthContext.jsx";
 import { useVoicePreference } from "../../hooks/useVoicePreference.js";
+import { todayLocal } from "../../lib/dates.js";
 
 /**
  * Which voice reads, and when a change to it lands.
@@ -40,6 +41,12 @@ const makeCache = (saved = null) => {
   };
 };
 
+// Derived from the clock, never written as a literal. A hardcoded date here
+// passes right up until the day it names arrives and then fails — the worst
+// kind of test, because it breaks in CI on a change that had nothing to do
+// with it. This one did exactly that.
+const TOMORROW = todayLocal(new Date(Date.now() + 24 * 60 * 60 * 1000));
+
 const makeClient = (over = {}) => ({
   me: jest.fn(async () => ({ user: USER })),
   voicePreference: jest.fn(async () => ({
@@ -50,7 +57,7 @@ const makeClient = (over = {}) => ({
   setVoicePreference: jest.fn(async (voice) => ({
     active: "mother",
     pending: voice === "mother" ? null : voice,
-    pendingFrom: voice === "mother" ? null : "2026-08-25",
+    pendingFrom: voice === "mother" ? null : TOMORROW,
   })),
   ...over,
 });

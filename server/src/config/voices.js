@@ -11,11 +11,11 @@
  * key still gets audio because the server resolves it.
  */
 export const VOICE_IDS = {
-  father: "scOwDtmlUjD3prqpp97I", // Sam - Support Agent
-  mentor: "BIvP0GN1cAtSRTxNHnWS", // Ellen - Serious, Direct and Confident
-  peer: "1SM7GgM6IMuvQlz2BwM3", // Mark - Casual, Relaxed and Light
-  mother: "exsUS4vynmxd379XN4yO", // Blondie - Conversational
-  grandfather: "NOpBlnGInO9m6vDvFkFC", // Spuds Oxley - Wise and Approachable
+  father: "LruHrtVF6PSyGItzMNHS", // Benjamin - Deep, Warm, Calming
+  mentor: "KHCvMklQZZo0O30ERnVn", // Sara Martin - Gentle and Layered
+  peer: "BpjGufoPiobT79j2vtj4", // Priyanka - Calm, Neutral and Relaxed
+  mother: "DODLEQrClDo8wCz460ld", // Lauren - Friendly, Comforting and Soft
+  grandfather: "NOpBlnGInO9m6vDvFkFC", // Grandpa Spuds Oxley
 };
 
 export const DEFAULT_VOICE = "mother";

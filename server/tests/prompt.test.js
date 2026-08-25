@@ -41,8 +41,18 @@ describe("buildUserPrompt", () => {
     expect(prompt).toContain("Write 5 affirmations");
     expect(prompt).toContain("calm, focus");
     expect(prompt).toContain("gentle");
-    expect(prompt).toContain("Ada");
     expect(prompt).toContain("being patient");
+  });
+
+  it("keeps the reader's name out of the affirmations entirely", () => {
+    const prompt = buildUserPrompt({ count: 5, displayName: "Chisom" });
+
+    // Every line may be read aloud, and a synthetic voice mispronounces most
+    // names that are not Anglo — it is the one word a reader would catch, and
+    // nothing would report that we got it wrong. It is also what makes a line
+    // shareable: one carrying a name can never be rendered once for two people.
+    expect(prompt).not.toContain("Chisom");
+    expect(prompt).toContain("Do not use the reader's name");
   });
 
   it("omits optional sections cleanly", () => {
