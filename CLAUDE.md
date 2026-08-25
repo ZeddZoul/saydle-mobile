@@ -194,6 +194,35 @@ it is the only line that scales with engagement, which is why the cache is keyed
 **Enrol in the Apple Small Business Program before listing.** Under $1M/year it drops the
 store cut from 30% to 15%, worth more than every cost optimisation in this file combined.
 
+## Shipping a build
+
+`eas.json` defines three profiles. `development` is the dev client (needs Metro).
+**`preview` is the one for testing like a customer**: a release build, JS bundled in, an
+**APK** rather than an AAB so it can be handed to someone directly.
+
+```bash
+pnpm build:apk      # cloud build, returns a download link
+pnpm build:local    # same profile, built on this machine
+pnpm build:aab      # production app bundle, for the Play Console
+```
+
+EAS generates and holds the Android keystore on first build, so there is nothing to
+configure — but it also means **that keystore is the app's identity forever**. Losing the
+Expo account means never updating the listing. Run `eas credentials` and keep a backup
+once there is a real listing.
+
+**The trap that makes a standalone build useless: `EXPO_PUBLIC_*` is inlined at build
+time.** A release APK built against `EXPO_PUBLIC_API_URL=http://localhost:4000` reaches
+nothing — `localhost` on a phone is the phone, and there is no `adb reverse` for someone
+else's device. The `preview` and `production` profiles therefore set it explicitly in
+`eas.json` rather than inheriting `.env`. Point it at a deployed API, or at `pnpm tunnel`
+for a throwaway test — and remember a quick tunnel takes a new hostname every start.
+
+Two things behave differently in a release build, both deliberately:
+`usableKey()` withholds a RevenueCat `test_` key when `__DEV__` is false, so the paywall
+degrades rather than crashing (see Gotchas), and there is no Metro — a white screen means
+the bundle failed, not that the server is down.
+
 ## Gotchas
 
 - **A RevenueCat `test_` key must never reach a release build.** That prefix is the Test Store —

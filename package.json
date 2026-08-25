@@ -20,7 +20,10 @@
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "tunnel": "bash scripts/tunnel.sh",
-    "android:reverse": "\"${ANDROID_HOME:-$HOME/Library/Android/sdk}/platform-tools/adb\" reverse tcp:4000 tcp:4000"
+    "android:reverse": "\"${ANDROID_HOME:-$HOME/Library/Android/sdk}/platform-tools/adb\" reverse tcp:4000 tcp:4000",
+    "build:apk": "eas build --platform android --profile preview",
+    "build:aab": "eas build --platform android --profile production",
+    "build:local": "eas build --platform android --profile preview --local"
   },
   "dependencies": {
     "@bittingz/expo-native-fonts": "^3.1.0",
