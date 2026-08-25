@@ -22,7 +22,7 @@ soon" are true and equally postable.
 
 | #   | Post                                          | Status                     |
 | --- | --------------------------------------------- | -------------------------- |
-| 1   | The home-screen widget, both platforms        | **drafted 2026-08-24**     |
+| 1   | The home-screen widget, both platforms        | **posted 2026-08-25**      |
 | 2   | Why the Android widget is drawn, not laid out | next                       |
 | 3   | 20.2s first load against a 15s timeout        |                            |
 | 4   | Token economics of one 240-line call          |                            |
@@ -34,6 +34,7 @@ soon" are true and equally postable.
 | 10  | The video export engine, with a real mp4      |                            |
 | 11  | The seven-selection eval                      |                            |
 | 12  | The ElevenLabs voice test                     | blocked — needs the voices |
+| 13  | The bug the fallback hid                      | thread, ready to write     |
 
 ---
 
@@ -255,3 +256,58 @@ The rule that ships with it and is worth a line: **changing your voice takes
 effect tomorrow, never today.** Today's audio is already rendered and cached per
 `(text, voiceId)`, so an immediate switch would throw that away and pay to render
 the same seven lines again.
+
+---
+
+## 13 — The bug the fallback hid · ready to write
+
+**Format:** thread of 4. It earns it: a symptom, two wrong answers, the line in
+the log that settled it, and the cause.
+
+**The hook, and the whole post in two sentences:** my audio played perfectly in
+curl and made no sound on the device. Nothing logged an error, because the
+fallback was working.
+
+**The chain, in order:**
+
+1. Practice reads seven affirmations aloud in a real voice, with device
+   text-to-speech as the fallback when a clip is missing.
+2. On device, every line came out in the robot voice. `curl` fetched the same
+   mp3 fine and it played fine on a laptop.
+3. Two plausible fixes, both real bugs, neither the cause: `play()` on an
+   `expo-audio` player that has not finished loading is a **no-op**, and the
+   status events that would announce readiness only fire _while playing_ —
+   circular. And iOS needs `setAudioModeAsync({ playsInSilentMode: true })` or
+   the hardware mute switch silences playback.
+4. The device log had it all along:
+
+   ```
+   15:50:14  FigStreamPlayer ... StreamBufferFull   ← downloaded, buffered
+   15:50:18  AudioQueueObject ... play              ← exactly 4s later
+   ```
+
+   Four seconds was my fallback timeout. Loaded, never played, gave up.
+
+5. **The cause: AVPlayer probes a progressive HTTP source with
+   `Range: bytes=0-1` before it will commit.** The server answered `200` with
+   the whole body instead of `206 Partial Content`. The item never reached
+   `readyToPlay`.
+
+**The numbers, same session before and after:**
+
+|                          | before | after |
+| ------------------------ | ------ | ----- |
+| `play()` fired           | 0      | 7     |
+| `playing: true` updates  | 0      | 54    |
+| fell back to robot voice | 7      | 0     |
+
+**The point worth making, and the reason this is a post rather than a
+changelog:** a graceful fallback turned a hard failure into a soft one. Nothing
+crashed, nothing logged, and the app looked like it worked — it just sounded
+wrong. Degradation is the right design and it cost me three attempts, because
+the thing that keeps users unblocked is the same thing that keeps you from
+noticing.
+
+**Bonus trap, same handler:** Express's `res.set` runs `mime.charsets.lookup`
+and appends `; charset=utf-8` to anything it does not recognise — so binary
+audio went out mislabelled. `res.setHeader` avoids it.
