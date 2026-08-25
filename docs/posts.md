@@ -22,7 +22,7 @@ soon" are true and equally postable.
 
 | #   | Post                                          | Status                     |
 | --- | --------------------------------------------- | -------------------------- |
-| 1   | The home-screen widget, both platforms        | **posted 2026-08-25**      |
+| 1   | The home-screen widget, both platforms        | **drafted 2026-08-24**     |
 | 2   | Why the Android widget is drawn, not laid out | next                       |
 | 3   | 20.2s first load against a 15s timeout        |                            |
 | 4   | Token economics of one 240-line call          |                            |
