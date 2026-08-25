@@ -190,7 +190,7 @@ describe("POST /api/voice/session", () => {
 });
 
 describe("GET /api/voice/clip/:id", () => {
-  it("streams the audio, cached forever", async () => {
+  const clipFor = async () => {
     const me = await registerUser(app);
     const user = await User.findById(me.user.id);
     const lines = await makeLines(user, ["I can begin again."]);
@@ -200,17 +200,107 @@ describe("GET /api/voice/clip/:id", () => {
       .set("Authorization", me.auth)
       .send({ affirmationIds: [String(lines[0]._id)], today: "2026-08-24" });
 
-    const res = await request(app).get(`/api/voice/clip/${session.body.lines[0].clipId}`);
+    return session.body.lines[0].clipId;
+  };
+
+  it("streams the audio, cached forever", async () => {
+    const res = await request(app).get(`/api/voice/clip/${await clipFor()}`);
 
     expect(res.status).toBe(200);
-    expect(res.headers["content-type"]).toContain("audio/mpeg");
+    // No charset. Express's res.set runs mime.charsets.lookup and appends
+    // "; charset=utf-8" to anything it does not recognise, which is meaningless
+    // on binary audio and rejected by some players.
+    expect(res.headers["content-type"]).toBe("audio/mpeg");
     // A clip's id is derived from its text and voice, so it can never go stale.
     expect(res.headers["cache-control"]).toContain("immutable");
+  });
+
+  it("answers a range request with 206, which is what makes it play at all", async () => {
+    const res = await request(app)
+      .get(`/api/voice/clip/${await clipFor()}`)
+      .set("Range", "bytes=0-1");
+
+    // AVPlayer probes a progressive HTTP source with exactly this before it
+    // will commit. Answer 200 with the whole body and the item never reaches
+    // readyToPlay: the clip downloads, buffers, and silently never sounds.
+    expect(res.status).toBe(206);
+    expect(res.headers["content-range"]).toMatch(/^bytes 0-1\/\d+$/);
+    expect(res.headers["content-length"]).toBe("2");
+  });
+
+  it("advertises range support even on a full response", async () => {
+    const res = await request(app).get(`/api/voice/clip/${await clipFor()}`);
+    expect(res.headers["accept-ranges"]).toBe("bytes");
+  });
+
+  it("serves an open-ended range to the end", async () => {
+    const id = await clipFor();
+    const full = await request(app).get(`/api/voice/clip/${id}`);
+    const total = Number(full.headers["content-length"]);
+
+    const res = await request(app).get(`/api/voice/clip/${id}`).set("Range", "bytes=1-");
+
+    expect(res.status).toBe(206);
+    expect(res.headers["content-range"]).toBe(`bytes 1-${total - 1}/${total}`);
+  });
+
+  it("serves a suffix range, which is how a player reads trailing metadata", async () => {
+    const id = await clipFor();
+    const total = Number(
+      (await request(app).get(`/api/voice/clip/${id}`)).headers["content-length"],
+    );
+
+    const res = await request(app).get(`/api/voice/clip/${id}`).set("Range", "bytes=-4");
+
+    expect(res.status).toBe(206);
+    expect(res.headers["content-range"]).toBe(`bytes ${total - 4}-${total - 1}/${total}`);
+  });
+
+  it("416s a range past the end rather than serving nothing", async () => {
+    const res = await request(app)
+      .get(`/api/voice/clip/${await clipFor()}`)
+      .set("Range", "bytes=999999999-");
+
+    expect(res.status).toBe(416);
+    expect(res.headers["content-range"]).toMatch(/^bytes \*\/\d+$/);
   });
 
   it("404s for a clip that does not exist", async () => {
     const res = await request(app).get("/api/voice/clip/64b7f3d2c1a4e50012345678");
     expect(res.status).toBe(404);
+  });
+});
+
+describe("GET /api/voice/preview/:key", () => {
+  it("renders the sample in that voice", async () => {
+    const res = await request(app).get("/api/voice/preview/grandfather");
+
+    expect(res.status).toBe(200);
+    expect(res.body.voice).toBe("grandfather");
+    expect(res.body.clipId).toBeTruthy();
+    expect(fetchMock.mock.calls[0][0]).toContain(VOICE_IDS.grandfather);
+  });
+
+  it("renders each sample once, ever, for everybody", async () => {
+    await request(app).get("/api/voice/preview/mother");
+    await request(app).get("/api/voice/preview/mother");
+
+    // The sample is the same sentence for every reader, so five clips cover
+    // auditioning across the entire user base, permanently.
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+
+  it("needs no session — a preview belongs to a voice, not a person", async () => {
+    // The audio player fetches this directly and carries no token.
+    const res = await request(app).get("/api/voice/preview/peer");
+    expect(res.status).toBe(200);
+  });
+
+  it("404s for a voice we do not ship", async () => {
+    const res = await request(app).get("/api/voice/preview/morgan-freeman");
+
+    expect(res.status).toBe(404);
+    expect(fetchMock).not.toHaveBeenCalled();
   });
 });
 
@@ -239,7 +329,8 @@ describe("the voice preference", () => {
       .set("Authorization", me.auth)
       .send({ voice: "grandfather", today: "2026-08-24" });
 
-    // Today's clips are already paid for. Switching now would bin them.
+    // Today's clips are already rendered and paid for. Switching now would bin
+    // them and bill us to make the same seven sentences again.
     expect(res.body.active).toBe(before.body.active);
     expect(res.body.pending).toBe("grandfather");
     expect(res.body.pendingFrom).toBe("2026-08-25");
@@ -261,7 +352,6 @@ describe("the voice preference", () => {
       .send({ affirmationIds: [String(lines[0]._id)], today: "2026-08-25" });
 
     expect(res.body.voice).toBe("grandfather");
-    // Rendered against the new voice's id, not the old one.
     expect(fetchMock.mock.calls[0][0]).toContain(VOICE_IDS.grandfather);
   });
 
@@ -273,7 +363,7 @@ describe("the voice preference", () => {
       .send({ voice: "father", today: "2026-12-31" });
 
     const user = await User.findById(me.user.id);
-    // Naive date arithmetic rolls this to 2026-12-32 or back a month.
+    // Naive date arithmetic gives 2026-12-32, or rolls back a month.
     expect(user.preferences.voice.pendingFrom).toBe("2027-01-01");
   });
 
@@ -321,39 +411,6 @@ describe("without an API key", () => {
 
     vi.doUnmock("../src/config/env.js");
     vi.resetModules();
-  });
-});
-
-describe("GET /api/voice/preview/:key", () => {
-  it("renders the sample in that voice", async () => {
-    const res = await request(app).get("/api/voice/preview/grandfather");
-
-    expect(res.status).toBe(200);
-    expect(res.body.voice).toBe("grandfather");
-    expect(res.body.clipId).toBeTruthy();
-    expect(fetchMock.mock.calls[0][0]).toContain(VOICE_IDS.grandfather);
-  });
-
-  it("renders each sample once, ever, for everybody", async () => {
-    await request(app).get("/api/voice/preview/mother");
-    await request(app).get("/api/voice/preview/mother");
-
-    // The sample is the same sentence for every reader, so five clips cover
-    // auditioning across the entire user base, permanently.
-    expect(fetchMock).toHaveBeenCalledTimes(1);
-  });
-
-  it("needs no session — a preview belongs to a voice, not a person", async () => {
-    // The audio player fetches this directly and carries no token.
-    const res = await request(app).get("/api/voice/preview/peer");
-    expect(res.status).toBe(200);
-  });
-
-  it("404s for a voice we do not ship", async () => {
-    const res = await request(app).get("/api/voice/preview/morgan-freeman");
-
-    expect(res.status).toBe(404);
-    expect(fetchMock).not.toHaveBeenCalled();
   });
 });
 

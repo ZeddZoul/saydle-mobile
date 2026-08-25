@@ -274,6 +274,20 @@ not found`**. The `android` script sets both itself, `${VAR:-default}` so a real
   card — gradient, glow, wordmark, quote, affirmation — into one bitmap with Canvas, which is the
   only surface where our `Typeface` is unambiguously ours, and keeps plain TextViews as a hidden
   fallback for when the bitmap cannot be built. Do not "simplify" it back to XML.
+- **Audio served over HTTP must answer byte ranges, or it silently never plays.** AVPlayer probes a
+  progressive source with `Range: bytes=0-1` before it will commit; answer `200` with the whole
+  body and the item never reaches `readyToPlay`. The clip downloads, buffers, and makes no sound —
+  and because `playClip` falls back to device speech, what you hear is a working app in the wrong
+  voice, with nothing logged anywhere. `/api/voice/clip/:id` returns `206` with `Content-Range`.
+  Two related traps in the same handler: Express's `res.set` runs `mime.charsets.lookup` and
+  appends `charset=utf-8` to anything it does not recognise, which is meaningless on binary audio
+  (use `res.setHeader`); and `expo-audio`'s `play()` is a **no-op before the item has loaded**,
+  while `playbackStatusUpdate` only fires _while playing_ — so waiting for an event to announce
+  readiness is circular. `lib/voice.js` polls the player's `isLoaded` property instead.
+- **iOS needs `setAudioModeAsync({ playsInSilentMode: true })` before any playback.** Without it the
+  session category is whatever the OS defaults to, which the hardware mute switch silences.
+  `expo-speech` is unaffected — which is exactly how a silent clip hides behind an audible
+  fallback.
 - **Never point Saydle at `gcloud auth application-default login`.** ADC is one global file
   (`~/.config/gcloud/application_default_credentials.json`) shared by every project on the
   machine, and `gcloud config configurations` do _not_ isolate it — only the CLI's account and
@@ -318,7 +332,7 @@ match jest-expo 57; do not bump it to v30.
 
 ## Current state
 
-Full vertical slice, end to end, with tests on both halves (**891 total**: 334 API + 557 mobile).
+Full vertical slice, end to end, with tests on both halves (**925 total**: 358 API + 567 mobile).
 Verified on a native iOS dev build, not just in Expo Go — including the home-screen widget
 rendering real data in the active theme, at both small and medium sizes.
 

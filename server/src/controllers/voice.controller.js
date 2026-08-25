@@ -71,18 +71,72 @@ export async function session(req, res, next) {
 /**
  * Streams one rendered line.
  *
- * Cached hard at the edge: a clip is immutable by construction — its id is
- * derived from the text and the voice — so it can never go stale.
+ * Range-capable, and that is not an optimisation — it is the difference between
+ * the audio playing and not. AVPlayer probes a progressive HTTP source with
+ * `Range: bytes=0-1` before it will commit, and a server that answers 200 with
+ * the whole body never lets the item reach `readyToPlay`. The clip downloads,
+ * buffers, and silently never sounds.
+ *
+ * Headers go out through `res.setHeader` rather than Express's `res.set`,
+ * because the latter runs `mime.charsets.lookup` and appends `charset=utf-8` to
+ * anything it does not recognise. A charset on binary audio is meaningless at
+ * best and rejected at worst.
+ *
+ * Cached hard: a clip is immutable by construction — its id is derived from the
+ * text and the voice — so it can never go stale.
  */
 export async function clip(req, res, next) {
   try {
     const found = await VoiceClip.findById(req.params.id).lean();
     if (!found) throw AppError.notFound("That clip is not here.");
 
-    res.set("Content-Type", found.mimeType);
-    res.set("Content-Length", String(found.bytes));
-    res.set("Cache-Control", "public, max-age=31536000, immutable");
-    res.send(found.audio);
+    // `.lean()` hands back the raw driver value, which may be a Binary rather
+    // than a Buffer depending on how it was written.
+    const audio = Buffer.isBuffer(found.audio)
+      ? found.audio
+      : Buffer.from(found.audio.buffer ?? found.audio);
+    const total = audio.length;
+
+    res.setHeader("Content-Type", found.mimeType);
+    res.setHeader("Cache-Control", "public, max-age=31536000, immutable");
+    // Advertised even on a full response: without it the player may not bother
+    // asking for a range at all, and some clients then refuse to seek.
+    res.setHeader("Accept-Ranges", "bytes");
+
+    const range = req.headers.range;
+    if (!range) {
+      res.setHeader("Content-Length", String(total));
+      return res.status(200).end(audio);
+    }
+
+    const match = /^bytes=(\d*)-(\d*)$/.exec(range.trim());
+    if (!match || (!match[1] && !match[2])) {
+      res.setHeader("Content-Range", `bytes */${total}`);
+      return res.status(416).end();
+    }
+
+    let start;
+    let end;
+
+    if (match[1]) {
+      start = Number(match[1]);
+      end = match[2] ? Math.min(Number(match[2]), total - 1) : total - 1;
+    } else {
+      // A suffix range — "the last N bytes" — which is how some players read
+      // an mp3's trailing metadata.
+      start = Math.max(0, total - Number(match[2]));
+      end = total - 1;
+    }
+
+    if (!Number.isFinite(start) || !Number.isFinite(end) || start > end || start >= total) {
+      res.setHeader("Content-Range", `bytes */${total}`);
+      return res.status(416).end();
+    }
+
+    const chunk = audio.subarray(start, end + 1);
+    res.setHeader("Content-Range", `bytes ${start}-${end}/${total}`);
+    res.setHeader("Content-Length", String(chunk.length));
+    return res.status(206).end(chunk);
   } catch (err) {
     next(err);
   }
@@ -104,10 +158,10 @@ export async function preview(req, res, next) {
     const key = String(req.params.key ?? "");
     if (!isVoiceKey(key)) throw AppError.notFound("No such voice.");
 
-    const clip = await clipFor(PREVIEW_LINE, VOICE_IDS[key]);
-    if (!clip) return res.json({ voice: key, clipId: null, available: voiceAvailable() });
+    const clipDoc = await clipFor(PREVIEW_LINE, VOICE_IDS[key]);
+    if (!clipDoc) return res.json({ voice: key, clipId: null, available: voiceAvailable() });
 
-    res.json({ voice: key, clipId: String(clip._id), available: true });
+    res.json({ voice: key, clipId: String(clipDoc._id), available: true });
   } catch (err) {
     next(err);
   }
