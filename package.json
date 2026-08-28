@@ -23,7 +23,8 @@
     "android:reverse": "\"${ANDROID_HOME:-$HOME/Library/Android/sdk}/platform-tools/adb\" reverse tcp:4000 tcp:4000",
     "build:apk": "eas build --platform android --profile preview",
     "build:aab": "eas build --platform android --profile production",
-    "build:local": "eas build --platform android --profile preview --local"
+    "build:local": "eas build --platform android --profile preview --local",
+    "eas": "eas"
   },
   "dependencies": {
     "@bittingz/expo-native-fonts": "^3.1.0",
@@ -64,6 +65,7 @@
   "devDependencies": {
     "@testing-library/react-native": "^14.0.1",
     "deepl-node": "^1.27.0",
+    "eas-cli": "^22.4.0",
     "eslint": "^9.39.5",
     "eslint-config-expo": "~10.0.0",
     "eslint-config-prettier": "^10.1.8",
