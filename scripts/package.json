@@ -1,0 +1,4 @@
+{
+  "//": "Scoped to scripts/ only: these are Node build-time tools written as ES modules. The app itself stays CommonJS — see the root package.json.",
+  "type": "module"
+}

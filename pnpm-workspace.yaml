@@ -1,1 +1,7 @@
+packages:
+  - server
+
 nodeLinker: hoisted
+
+patchedDependencies:
+  "@bittingz/expo-widgets": patches/@bittingz__expo-widgets.patch

@@ -1,0 +1,7 @@
+{
+  "name": "video-export",
+  "version": "1.0.0",
+  "description": "Stills plus a voice track into one shareable mp4, using the OS encoder.",
+  "main": "index.js",
+  "private": true
+}

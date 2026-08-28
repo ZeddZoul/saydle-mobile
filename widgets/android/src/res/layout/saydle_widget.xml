@@ -1,0 +1,78 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Deliberately plain markup: RemoteViews supports only a small set of views, and
+  a widget that fails to inflate simply never appears — there is no error to see.
+
+  The card you actually see is the ImageView: gradient, glow, wordmark, quote and
+  affirmation are all drawn in SaydleWidgetProvider, because a custom typeface
+  cannot be got into a widget any other way. `android:fontFamily="@font/…"` here
+  compiles and renders Roboto; a TypefaceSpan loses its Typeface in the parcel.
+  Both were tried on a device. Do not "helpfully" reintroduce either — read the
+  provider's comment first.
+
+  Everything under saydle_widget_fallback is the off-brand-but-readable version,
+  shown only when the bitmap could not be built. It is hidden on the happy path.
+-->
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/saydle_widget_root"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@drawable/saydle_widget_background">
+
+    <ImageView
+        android:id="@+id/saydle_widget_bg"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:scaleType="fitXY"
+        android:contentDescription="@null" />
+
+    <LinearLayout
+        android:id="@+id/saydle_widget_fallback"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:orientation="vertical"
+        android:visibility="gone"
+        android:padding="16dp">
+
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical">
+
+            <ImageView
+                android:id="@+id/saydle_widget_dot"
+                android:layout_width="5dp"
+                android:layout_height="5dp"
+                android:layout_marginEnd="5dp"
+                android:src="@drawable/saydle_widget_dot"
+                android:contentDescription="@null" />
+
+            <TextView
+                android:id="@+id/saydle_widget_wordmark"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="SAYDLE"
+                android:textSize="10sp"
+                android:letterSpacing="0.22"
+                android:textColor="#FF6F61" />
+        </LinearLayout>
+
+        <TextView
+            android:id="@+id/saydle_widget_text"
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="1"
+            android:layout_marginTop="12dp"
+            android:textSize="17sp"
+            android:lineSpacingExtra="5sp"
+            android:includeFontPadding="false"
+            android:textColor="#38223A"
+            android:gravity="center_vertical"
+            android:maxLines="6"
+            android:ellipsize="end"
+            android:text="I am allowed to start small." />
+
+    </LinearLayout>
+
+</FrameLayout>

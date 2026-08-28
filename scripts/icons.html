@@ -1,0 +1,70 @@
+<!doctype html>
+<meta charset="utf-8" />
+<style>
+  @font-face {
+    font-family: "Fraunces";
+    src: url("FONT_URL");
+    font-weight: 700;
+  }
+  html,
+  body {
+    margin: 0;
+    padding: 0;
+    width: 1024px;
+    height: 1024px;
+    background: transparent;
+  }
+  .plate {
+    width: 1024px;
+    height: 1024px;
+    display: grid;
+    place-items: center;
+    position: relative;
+    overflow: hidden;
+  }
+  /* Full-bleed variant: the theme's own gradient, so the icon on the home
+     screen is the same field the app opens into. */
+  .plate.bleed {
+    background: linear-gradient(135deg, GRADIENT_START 0%, GRADIENT_END 100%);
+  }
+  .plate.bleed::before {
+    /* The same warm upper-trailing glow the app, widget and share card carry. */
+    content: "";
+    position: absolute;
+    width: 1500px;
+    height: 1500px;
+    border-radius: 50%;
+    top: -640px;
+    right: -560px;
+    background: radial-gradient(circle, GLOW 0%, GLOW_FADE 70%);
+  }
+  .word {
+    position: relative;
+    z-index: 1;
+    font-family: "Fraunces";
+    font-weight: 700;
+    color: INK;
+    line-height: 1;
+    white-space: nowrap;
+    /* Optical, not metric: Fraunces' descender on the 'y' makes a metrically
+       centred wordmark sit low in the frame. */
+    transform: translateY(-2.2%);
+  }
+  /* Sized so the mark clears Android's mask.
+     The adaptive canvas is 108dp; only the central 72dp is ever shown, and only
+     a 66dp circle is guaranteed on every launcher shape. A wide wordmark has to
+     fit that circle by its DIAGONAL, not its width — measured against the guide
+     circle, anything above this crops the S and the e on a round launcher. */
+  .safe .word {
+    font-size: 176px;
+  }
+  .full .word {
+    font-size: 236px;
+  }
+  .mono .word {
+    color: #000;
+  }
+</style>
+<body>
+  <div class="plate BODY_CLASS"><div class="word">Saydle</div></div>
+</body>

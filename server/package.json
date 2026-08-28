@@ -1,0 +1,39 @@
+{
+  "name": "@saydle/server",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "main": "src/index.js",
+  "engines": {
+    "node": ">=24"
+  },
+  "scripts": {
+    "dev": "node --watch --env-file=.env src/index.js",
+    "start": "node src/index.js",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "migrate": "node --env-file=.env migrations/run.js",
+    "seed": "node --env-file=.env migrations/seed.js",
+    "purge": "node --env-file=.env scripts/purge.mjs",
+    "import-bank": "node --env-file=.env scripts/import-bank.mjs"
+  },
+  "dependencies": {
+    "@google/genai": "^2.15.0",
+    "@node-rs/argon2": "^2.0.2",
+    "cors": "^2.8.5",
+    "express": "^5.1.0",
+    "express-rate-limit": "^7.5.0",
+    "helmet": "^8.1.0",
+    "jsonwebtoken": "^9.0.2",
+    "mongoose": "^8.13.0",
+    "pino": "^9.6.0",
+    "pino-http": "^10.4.0",
+    "zod": "^3.24.2"
+  },
+  "devDependencies": {
+    "mongodb-memory-server": "^10.1.4",
+    "pino-pretty": "^13.0.0",
+    "supertest": "^7.1.0",
+    "vitest": "^3.1.1"
+  }
+}

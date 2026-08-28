@@ -1,39 +1,39 @@
 import { StyleSheet } from "react-native";
 
 export const Styles = StyleSheet.create({
+  // `color` and `textAlign` used to be set here; React Native ignores both on a
+  // View, so they were doing nothing. Text colour belongs on the Text element.
   container: {
-    color: "red",
-    flex:1
+    flex: 1,
   },
   title: {
     fontWeight: "bold",
     fontSize: 24,
-    marginBottom: 20
-  },
-  main: {
-    justifyContent: "center",
-    alignItems: "center",
+    marginBottom: 24,
+    textAlign: "center",
   },
   input: {
-    height: 40,
+    height: 46,
     minWidth: "80%",
     borderWidth: 1,
-    padding: 10,
-    marginVertical: 12,
+    paddingHorizontal: 12,
+    marginVertical: 4,
     borderColor: "#C49EBB",
-    borderRadius: 4
+    borderRadius: 8,
   },
   btn: {
     backgroundColor: "#FF6F61",
     padding: 12,
-    borderRadius: 4,
+    borderRadius: 8,
     alignItems: "center",
-    marginTop: 12
+    marginTop: 12,
   },
   btnText: {
     color: "#FFFFFF",
     fontWeight: "600",
-    fontSize: 16
-  }
-  
-})
+    fontSize: 16,
+  },
+  link: {
+    color: "#FF6F61",
+  },
+});

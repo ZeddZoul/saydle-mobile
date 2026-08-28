@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  The card shape. The colour is overridden at runtime from the reader's theme
+  (see SaydleWidgetProvider), so what is set here only shows for the split
+  second before the first bind, and in the launcher's own preview.
+-->
+<shape xmlns:android="http://schemas.android.com/apk/res/android"
+    android:shape="rectangle">
+    <solid android:color="#F7CAC5" />
+    <corners android:radius="24dp" />
+</shape>

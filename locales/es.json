@@ -1,0 +1,501 @@
+{
+  "common": {
+    "continue": "Continuar",
+    "skip": "Omitir",
+    "back": "Atrás",
+    "tryAgain": "Reintentar",
+    "saveFailed": "No se pudo guardar. Inténtalo otra vez.",
+    "somethingWrong": "Algo salió mal. Inténtalo otra vez."
+  },
+  "onboarding": {
+    "howMany": "Cuántos",
+    "remindersPerDay": "Recordatorios al día",
+    "startAt": "Desde",
+    "endAt": "Hasta",
+    "streakCaption": "Crea una racha, un día a la vez",
+    "notificationPreview": "Saydle · ahora"
+  },
+  "landing": {
+    "tagline": "Afirmaciones diarias, hechas para ti.",
+    "proof": "Con el cariño de nuestros primeros usuarios",
+    "rating": "Cinco estrellas",
+    "getStarted": "Empezar",
+    "haveAccount": "Ya tengo una cuenta",
+    "testimonials": [
+      "La parte más amable de mi mañana.",
+      "Por fin suena como yo.",
+      "Recordatorios pequeños que de verdad llegan.",
+      "Más en calma antes del primer café."
+    ]
+  },
+  "auth": {
+    "welcomeBack": "Hola de nuevo",
+    "welcomeSubtitle": "Seguimos justo donde lo dejaste.",
+    "email": "Correo",
+    "emailPlaceholder": "tu@ejemplo.com",
+    "password": "Contraseña",
+    "passwordPlaceholder": "Tu contraseña",
+    "logIn": "Entrar",
+    "noAccount": "¿Aún no tienes cuenta?",
+    "createOne": " Crear una",
+    "forgotLink": "¿Olvidaste la contraseña?",
+    "forgotTitle": "Restablecer la contraseña",
+    "forgotSubtitle": "Te enviaremos un código de seis dígitos.",
+    "forgotSend": "Enviar código",
+    "resetTitle": "Escribe el código",
+    "resetSubtitle": "Enviamos un código de seis dígitos a {{email}}. Caduca en 15 minutos.",
+    "code": "Código",
+    "codePlaceholder": "123456",
+    "newPassword": "Contraseña nueva",
+    "newPasswordPlaceholder": "Mínimo 8 caracteres",
+    "resetSubmit": "Guardar contraseña",
+    "resetDone": "Contraseña cambiada. Entra con la nueva.",
+    "backToLogin": "Volver a entrar"
+  },
+  "validation": {
+    "emailRequired": "El correo es obligatorio.",
+    "emailInvalid": "Escribe un correo válido.",
+    "passwordRequired": "La contraseña es obligatoria.",
+    "passwordShort": "La contraseña debe tener al menos {{min}} caracteres.",
+    "codeRequired": "Escribe el código de seis dígitos.",
+    "codeInvalid": "Ese código debe tener seis dígitos."
+  },
+  "today": {
+    "greeting": "Hola, {{name}}",
+    "greetingAnonymous": "Hola",
+    "empty": "Todavía no hay nada para hoy. Desliza hacia abajo para actualizar.",
+    "share": "Compartir esta afirmación",
+    "save": "Guardar en favoritos",
+    "unsave": "Quitar de favoritos"
+  },
+  "favorites": {
+    "title": "Favoritos",
+    "empty": "Aún no has guardado nada. Toca el corazón de una afirmación para tenerla aquí.",
+    "remove": "Quitar «{{text}}» de favoritos"
+  },
+  "streak": {
+    "start": "Empieza hoy tu racha",
+    "dayOne": "día seguido",
+    "days": "días seguidos",
+    "complete": "{{day}}, hecho"
+  },
+  "profile": {
+    "tone": "Tono",
+    "toneGentle": "Suave",
+    "toneGrounded": "Sereno",
+    "toneEnergetic": "Con energía",
+    "categories": "Categorías",
+    "categoriesOffline": "Las categorías se cargarán cuando vuelvas a tener conexión.",
+    "categoriesLoading": "Cargando categorías…",
+    "categoriesHint": "Cambiar esto rehace los días siguientes. Hoy se queda igual.",
+    "reminders": "Recordatorios",
+    "remindersOn": "Recordatorios activados",
+    "remindersOff": "Recordatorios desactivados",
+    "remindersDenied": "Activa las notificaciones de Saydle en los ajustes del dispositivo.",
+    "remindersIdle": "Un aviso amable con la afirmación del día, a las horas que elijas.",
+    "remindersSummary": "{{count}} al día entre las {{start}} y las {{end}}, incluso sin conexión.",
+    "signOut": "Cerrar sesión",
+    "deleteAccount": "Eliminar cuenta",
+    "deleteTitle": "Eliminar cuenta",
+    "deleteBody": "Tu cuenta se programará para eliminarse en {{days}} días. No se borra nada antes de esa fecha: vuelve a iniciar sesión cuando quieras para cancelar.",
+    "deleteBillingNotice": "Esto no cancela una suscripción de pago. Gestiónala en la App Store o en Play Store.",
+    "deletePasswordLabel": "Tu contraseña",
+    "deleteConfirmLabel": "Escribe {{email}} para confirmar",
+    "deleteSubmit": "Programar eliminación",
+    "deleteScheduled": "Tu cuenta se eliminará el {{date}}.",
+    "cancel": "Cancelar",
+    "delete": "Eliminar",
+    "preferencesSaved": "Preferencias guardadas",
+    "theme": "Tema",
+    "themeHint": "El fondo sobre el que lees tu afirmación.",
+    "personalization": "Personalización",
+    "personalizationValue": "{{percent}} % personalizado",
+    "personalizationHint": "Saydle pregunta una cosa más de vez en cuando. Cuanto más sabe, más suenan tus afirmaciones a algo escrito para ti.",
+    "language": "Idioma",
+    "languageHint": "Cambia el idioma de la app y de tus próximas afirmaciones. Las de hoy se quedan como están.",
+    "yourStuff": "Lo tuyo",
+    "personalizationLocked": "A estas alturas Saydle te conoce bastante bien: en qué estás trabajando, el tono que te va, cómo has estado.",
+    "personalizationLockedGap": "Nada de eso llega todavía a tus afirmaciones.",
+    "personalizationCta": "Deja que Saydle escriba las tuyas",
+    "personalizationUnlocked": "Saydle usa todo esto. Cada afirmación que lees está escrita a partir de ello."
+  },
+  "offline": {
+    "banner": "Sin conexión: mostrando tus afirmaciones guardadas"
+  },
+  "errors": {
+    "network": "No se pudo conectar con Saydle. Revisa tu conexión.",
+    "sessionExpired": "Tu sesión ha caducado. Vuelve a entrar.",
+    "emailTaken": "Ese correo ya está registrado. Prueba con otro."
+  },
+  "paywall": {
+    "title": "Saydle ha creado un espacio seguro para ti",
+    "subtitle": "Hecho a partir de todo lo que compartiste.",
+    "perk1": "Afirmaciones personalizadas, escritas para tu momento",
+    "perk2": "Recordatorios amables, justo cuando hacen falta",
+    "perk3": "Tus favoritos siempre a mano, incluso sin conexión",
+    "price": "Cancela cuando quieras.",
+    "subscribe": "Suscribirme",
+    "creating": "Creando afirmaciones solo para ti…",
+    "perMonth": "Son {{price}} al mes."
+  },
+  "nudge": {
+    "eyebrow": "Hazlo más tuyo",
+    "save": "Guardar",
+    "notNow": "Ahora no",
+    "thanks": "Gracias: lo de mañana encajará un poco mejor.",
+    "placeholder": "Todo lo que quieras contar, o muy poco"
+  },
+  "categories": {
+    "self-worth": "Autoestima",
+    "calm": "Calma",
+    "confidence": "Confianza",
+    "gratitude": "Gratitud",
+    "resilience": "Resiliencia",
+    "focus": "Enfoque",
+    "relationships": "Relaciones",
+    "morning": "Mañana",
+    "rest": "Descanso",
+    "growth": "Crecimiento"
+  },
+  "questions": {
+    "callName": {
+      "title": "¿Cómo quieres que te llamemos?",
+      "subtitle": "Tu nombre aparecerá en tus afirmaciones."
+    },
+    "ageBand": {
+      "title": "¿Cuántos años tienes?",
+      "subtitle": "Tu edad nos ayuda a dar con el tono justo.",
+      "options": {
+        "13-17": "De 13 a 17",
+        "18-24": "De 18 a 24",
+        "25-34": "De 25 a 34",
+        "35-44": "De 35 a 44",
+        "45-54": "De 45 a 54",
+        "55+": "55 o más"
+      }
+    },
+    "recentMood": {
+      "title": "¿Cómo te has sentido últimamente?",
+      "subtitle": "Como haya sido, está bien.",
+      "options": {
+        "awesome": "Genial",
+        "good": "Bien",
+        "okay": "Regular",
+        "low": "Bajo de ánimo",
+        "struggling": "Me está costando mucho"
+      }
+    },
+    "feelingCauses": {
+      "title": "¿Qué está influyendo en cómo te sientes?",
+      "subtitle": "Elige lo que tengas en la cabeza.",
+      "options": {
+        "family": "La familia",
+        "friends": "Las amistades",
+        "work": "El trabajo",
+        "health": "La salud",
+        "love": "El amor",
+        "other": "Otra cosa"
+      }
+    },
+    "feelingCausesOther": {
+      "title": "¿Quieres contarme?",
+      "subtitle": "Qué más influye en cómo te sientes, en tus palabras.",
+      "placeholder": "Todo lo que quieras contar, o muy poco"
+    },
+    "relationshipStatus": {
+      "title": "¿Qué describe mejor tu vida amorosa?",
+      "subtitle": "Para que las afirmaciones encajen con tu momento.",
+      "options": {
+        "happy": "En una relación feliz",
+        "complicated": "Es complicado",
+        "happily-single": "Soltero y a gusto",
+        "open-to-connection": "Soltero y abierto a conocer a alguien",
+        "breakup": "Pasando por una ruptura",
+        "not-interested": "Prefiero no hablar de esto"
+      }
+    },
+    "employmentStatus": {
+      "title": "¿A qué dedicas la mayor parte del día?",
+      "subtitle": "Elige lo más parecido.",
+      "options": {
+        "studying": "A estudiar",
+        "job-seeking": "A buscar trabajo",
+        "working": "A trabajar",
+        "retired": "Estoy jubilado",
+        "stay-at-home-parent": "A cuidar de mi familia en casa",
+        "other": "Otra cosa"
+      }
+    },
+    "employmentStatusOther": {
+      "title": "¿Quieres contarme?",
+      "subtitle": "¿Cómo son tus días?",
+      "placeholder": "Todo lo que quieras contar, o muy poco"
+    },
+    "supportAreas": {
+      "title": "¿Dónde te vendría mejor un apoyo?",
+      "subtitle": "Elige las partes de tu vida que tengas presentes.",
+      "options": {
+        "work": "El trabajo",
+        "relationships": "Las relaciones",
+        "self-worth": "La autoestima",
+        "health": "La salud",
+        "money": "El dinero",
+        "parenting": "La crianza",
+        "purpose": "El sentido",
+        "studies": "Los estudios"
+      }
+    },
+    "values": {
+      "title": "¿Qué es lo que más te importa ahora mismo?",
+      "subtitle": "Elige todo lo que sientas verdadero.",
+      "options": {
+        "family": "La familia",
+        "growth": "Crecer",
+        "peace": "La paz",
+        "freedom": "La libertad",
+        "security": "La seguridad",
+        "connection": "El vínculo con los demás",
+        "achievement": "Los logros",
+        "faith": "La fe",
+        "health": "La salud",
+        "creativity": "La creatividad"
+      }
+    },
+    "motivation": {
+      "title": "¿Qué te ha traído hasta aquí?",
+      "subtitle": "Puedes elegir más de una.",
+      "options": {
+        "quiet-anxiety": "Calmar mi ansiedad",
+        "believe": "Creer en mí",
+        "heal": "Sanar de algo",
+        "reach-goal": "Llegar a una meta",
+        "less-alone": "Sentirme menos solo",
+        "calm-routine": "Tener una rutina más tranquila"
+      }
+    },
+    "innerCritic": {
+      "title": "Cuando algo sale mal, ¿cómo es la voz de tu cabeza?",
+      "subtitle": "No hay respuesta incorrecta: esto nos ayuda a acompañarte mejor.",
+      "options": {
+        "harsh": "Dura y crítica",
+        "anxious": "Inquieta y preocupada",
+        "dismissive": "Se quita valor a sí misma",
+        "fair": "Justa pero firme",
+        "kind": "Bastante amable ya"
+      }
+    },
+    "limitingBelief": {
+      "title": "¿Qué creencia sobre ti reescribirías?",
+      "subtitle": "Es la que trabajaremos contigo, con calma.",
+      "placeholder": "Me encantaría dejar de creer que…"
+    },
+    "aspiration": {
+      "title": "Cuando te imaginas la persona en la que te estás convirtiendo, ¿qué cambia?",
+      "subtitle": "Con una frase o dos basta.",
+      "placeholder": "Me estoy convirtiendo en alguien que…"
+    },
+    "religion": {
+      "title": "¿La fe o la espiritualidad marcan tu forma de ver la vida?",
+      "subtitle": "Adaptamos el lenguaje, nunca damos nada por hecho."
+    },
+    "goal": {
+      "title": "¿Hacia qué estás caminando ahora mismo?",
+      "subtitle": "Grande o pequeño, lo que tengas en mente.",
+      "placeholder": "Estoy trabajando para…"
+    },
+    "weighing": {
+      "title": "¿Hay algo que te pese estos días?",
+      "subtitle": "No hace falta contarlo todo.",
+      "placeholder": "Todo lo que quieras contar, o muy poco"
+    }
+  },
+  "verify": {
+    "eyebrow": "Confirma tu correo",
+    "title": "¿Es correcto {{email}}?",
+    "titleAnonymous": "¿Es correcto tu correo?",
+    "body": "Enviamos un código de seis dígitos a {{email}}. Confirmarlo es lo que nos permite ayudarte a entrar si olvidas la contraseña.",
+    "bodyAnonymous": "Te enviamos un código de seis dígitos. Confirmarlo es lo que nos permite ayudarte a volver a entrar si olvidas tu contraseña.",
+    "resent": "Va en camino un código nuevo a {{email}}.",
+    "code": "Código de confirmación",
+    "codePlaceholder": "123456",
+    "submit": "Confirmar",
+    "resend": "Reenviar",
+    "later": "Más tarde",
+    "done": "Correo confirmado. Gracias."
+  },
+  "practice": {
+    "eyebrow": "{{count}} de {{target}}",
+    "doneEyebrow": "Práctica completa",
+    "instruction": "Dítelo en voz baja y luego toca.",
+    "tapLabel": "Práctica, {{count}} de {{target}} dichas",
+    "tapHint": "Toca una vez cada vez que lo digas",
+    "done": "Ya está. Llévatelo contigo.",
+    "doneNamed": "Ya está, {{name}}. Llévatelo contigo.",
+    "streak": "{{count}} días de práctica seguidos",
+    "again": "Una vez más",
+    "loading": "Buscando la afirmación de hoy…",
+    "nothing": "Todavía no hay nada que practicar. Abre Hoy primero.",
+    "guided": "Guíame",
+    "guidedStop": "Parar",
+    "guidedHint": "Sigue el círculo. Cada vuelta cuenta una.",
+    "breatheIn": "Inhala",
+    "sayIt": "Dilo",
+    "letGo": "Suelta",
+    "next": "Otra frase",
+    "source": {
+      "today": "Hoy",
+      "saved": "Guardadas",
+      "mine": "Mías"
+    },
+    "voiceRecord": "Mi voz",
+    "voiceRedo": "Repetir",
+    "voicePlay": "Escuchar",
+    "voiceStop": "Detener grabación",
+    "voiceDiscardHint": "Mantén pulsado para borrar esta grabación",
+    "voiceDenied": "El micrófono está desactivado. Actívalo en Ajustes para grabar tu voz.",
+    "listen": "Escucha tus siete de hoy",
+    "shareSession": "Compartir las siete"
+  },
+  "tabs": {
+    "today": "Hoy",
+    "practice": "Práctica",
+    "favorites": "Favoritos",
+    "profile": "Perfil"
+  },
+  "chrome": {
+    "themes": "Temas"
+  },
+  "stream": {
+    "today": "Hoy",
+    "close": "Cerrar",
+    "open": "Abrir la vista completa"
+  },
+  "myWords": {
+    "title": "Mis palabras",
+    "prompt": "Escribe algo que te gustaría oír, con tus propias palabras.",
+    "placeholder": "Puedo…",
+    "label": "Tu afirmación",
+    "save": "Guardar",
+    "saved": "Guardada. Volverá en los próximos días.",
+    "empty": "Todavía no has escrito nada. Lo que añadas aquí se une a tus afirmaciones diarias.",
+    "delete": "Eliminar «{{text}}»",
+    "deleteTitle": "¿Eliminar esta?",
+    "lockedTitle": "Escribe las tuyas",
+    "lockedBody": "Añadir afirmaciones con tus propias palabras es parte de Saydle premium. Todo lo demás sigue funcionando igual."
+  },
+  "library": {
+    "title": "Biblioteca",
+    "save": "Guardar para después",
+    "saved": "Guardados",
+    "writing": "Escribiendo tu próxima colección…",
+    "empty": "Tu biblioteca se está preparando.",
+    "lockedTitle": "Tu biblioteca de afirmaciones",
+    "lockedBody": "Cientos de afirmaciones escritas para ti, para leer cuando una sola frase no basta. Parte de Saydle premium.",
+    "yourWords": "Tus palabras"
+  },
+  "share": {
+    "title": "Comparte esta frase",
+    "close": "Cerrar",
+    "shape": "Formato",
+    "square": "Cuadrado",
+    "story": "Historia",
+    "look": "Estilo",
+    "send": "Compartir",
+    "format": "Enviar como",
+    "asImage": "Imagen",
+    "asVideo": "Vídeo",
+    "sendVideo": "Compartir vídeo",
+    "videoTitle": "Comparte tu sesión",
+    "videoNote": "Las {{count}} frases, con tiempo para leerlas."
+  },
+  "billing": {
+    "title": "Suscripción",
+    "statusFree": "Gratis",
+    "statusActive": "Suscrito",
+    "statusExpired": "Caducada",
+    "renews": "Se renueva el {{date}}.",
+    "ended": "Finalizó el {{date}}.",
+    "noExpiry": "Es tuyo — sin fecha de renovación.",
+    "freeHint": "Estás en el plan gratuito.",
+    "purchasedVia": "Comprado en",
+    "sourceTrial": "Prueba gratuita",
+    "sourceAppStore": "App Store",
+    "sourcePlayStore": "Google Play",
+    "confirmed": "Confirmado con la tienda",
+    "notVerified": "Todavía no",
+    "purchaseFailed": "No se completó: no se te ha cobrado nada. Inténtalo de nuevo en un momento.",
+    "upgrade": "Escritas para ti, no para todos",
+    "purchased": "Ya estás suscrito. Gracias.",
+    "purchaseSyncing": "Pago recibido: tu suscripción aparecerá aquí en breve.",
+    "storeUnavailable": "Las compras aún no están disponibles en este dispositivo.",
+    "manage": "Gestionar o cancelar",
+    "manageHint": "Tu suscripción pertenece a tu cuenta de la tienda, así que los cambios y las cancelaciones se hacen allí.",
+    "requestRefund": "Solicitar un reembolso",
+    "accountName": "Nombre",
+    "accountEmail": "Correo electrónico",
+    "openStore": "Abrir ajustes de la tienda",
+    "restore": "Restaurar compras",
+    "restored": "Compras restauradas.",
+    "storeFailed": "No se pudo abrir la tienda.",
+    "stepInstalled": "Instalar la app",
+    "stepInstalledHint": "Configurada según lo que nos contaste.",
+    "stepToday": "Hoy: acceso completo",
+    "stepTodayHint": "Todo desbloqueado, gratis durante {{days}} días.",
+    "stepRemind": "{{date}} — Aviso de la prueba",
+    "stepRemindHint": "Para que el final no te pille por sorpresa.",
+    "stepCharge": "{{date}} — Hazte miembro",
+    "stepChargeHint": "Tu prueba termina salvo que canceles antes.",
+    "restoreNothing": "No hay ninguna compra anterior en esta cuenta de la tienda. Si pagaste con otra, inicia sesión con esa e inténtalo de nuevo.",
+    "restoreUnavailable": "Las compras aún no están configuradas en esta versión.",
+    "restoreSyncing": "Compra encontrada — aparecerá aquí en un momento.",
+    "restoreFailed": "No se pudo contactar con la tienda. Inténtalo de nuevo.",
+    "upgradeBody": "Las afirmaciones que lees están escritas para que le sirvan a cualquiera. Saydle Premium escribe las tuyas.",
+    "upgradeKicker": "No una biblioteca más grande. Otra autoría.",
+    "sampleEyebrow": "Esta la escribió Saydle para ti",
+    "sampleFooter": "Así es cada día a partir de aquí.",
+    "compareFree": "Gratis",
+    "comparePremium": "Premium",
+    "compareRow1": "Afirmaciones escritas a partir de tus respuestas",
+    "compareRow2": "Una voz que te las lee",
+    "compareRow3": "Tus propias palabras, guardadas",
+    "compareRow4": "Guardar frases para volver a ellas"
+  },
+  "themes": {
+    "preview": "Así se verá tu afirmación."
+  },
+  "voices": {
+    "sample": "Puedes estar en calma con esto, sin tener certeza.",
+    "readingToday": "Te lee hoy",
+    "fromTomorrow": "Desde mañana",
+    "title": "Voz",
+    "hint": "Toca una voz para escucharla. El cambio se aplica mañana, así que la sesión de hoy no cambia.",
+    "father": {
+      "name": "Paterna",
+      "desc": "Serena y grave. Segura por ti.",
+      "preview": "Escuchar la voz paterna"
+    },
+    "mentor": {
+      "name": "Mentora",
+      "desc": "Cálida, con algo de carácter.",
+      "preview": "Escuchar la voz mentora"
+    },
+    "peer": {
+      "name": "A tu lado",
+      "desc": "Alguien contigo, no por encima.",
+      "preview": "Escuchar la voz a tu lado"
+    },
+    "mother": {
+      "name": "Materna",
+      "desc": "Suave, y lo bastante lenta.",
+      "preview": "Escuchar la voz materna"
+    },
+    "change": "Cambiar la voz",
+    "activeRow": "Voz {{name}}",
+    "pendingRow": "{{name}} desde mañana",
+    "grandfather": {
+      "name": "Del abuelo",
+      "desc": "Sin prisa. Alguien con tiempo.",
+      "preview": "Escuchar la voz del abuelo"
+    }
+  }
+}

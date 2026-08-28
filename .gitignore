@@ -31,7 +31,9 @@ yarn-error.*
 *.pem
 
 # local env files
+.env
 .env*.local
+!.env.example
 
 # typescript
 *.tsbuildinfo
@@ -39,3 +41,14 @@ yarn-error.*
 # generated native folders
 /ios
 /android
+
+# server env
+server/.env
+
+# Google service-account keys. Belt and braces: the key is meant to live OUTSIDE
+# the repo entirely (see server/.env.example), and this only exists so a copy
+# dropped in here by accident cannot be committed. A leaked key can spend
+# against the project until it is revoked.
+*-sa.json
+*service-account*.json
+saydle-api*.json
