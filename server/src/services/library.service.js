@@ -131,6 +131,23 @@ function needsRefill(user, remaining) {
   return drift >= PROFILE_DRIFT_PERCENT;
 }
 
+/**
+ * The onboarding warm-up. Same decision as a scroll reaching the end of the
+ * batch: refill only when there is a reason to. Before this checked, the
+ * endpoint was a button wired straight to the model — every tap a fresh
+ * 240-line batch, retiring the one before it.
+ */
+export async function warmLibrary(user) {
+  if (!isEntitled(user)) return { started: false };
+
+  const total = await Affirmation.countDocuments(batchQuery(user));
+  const remaining = Math.max(0, total - (user.library?.cursor ?? 0));
+  if (!needsRefill(user, remaining)) return { started: false };
+
+  scheduleRefill(user);
+  return { started: true };
+}
+
 /** Fire-and-forget. Never awaited by a request; returns the promise for tests. */
 export function scheduleRefill(user, options) {
   // Same rule as scheduleReplenish, for the same reason: this is where the

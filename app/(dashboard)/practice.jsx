@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Animated, Easing, Pressable, StyleSheet, Text, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
+import { useRouter } from "expo-router";
 import GradientBackground from "../../components/GradientBackground.jsx";
 import FloatingHeader, { FLOATING_HEADER_INSET } from "../../components/FloatingHeader.jsx";
 import DisplayText from "../../components/DisplayText.jsx";
@@ -42,10 +43,13 @@ import { radius, spacing, type } from "../../theme/tokens.js";
  * Still no timer, and still no way to go past the target: a ritual with an end,
  * not a score to maximise.
  */
-const SOURCES = ["today", "saved", "mine"];
+// "favorites", not "saved": the second chip reads the hearts, and "Saved" is
+// the word the (withheld) bookmark shelf will own.
+const SOURCES = ["today", "favorites", "mine"];
 
 const Practice = () => {
   const { t } = useT();
+  const router = useRouter();
   const listenSession = usePracticeSession();
   const [listening, setListening] = useState(false);
   const [pickingVoice, setPickingVoice] = useState(false);
@@ -72,7 +76,7 @@ const Practice = () => {
     const extras = libraryLines.filter((a) => a.id !== todayEntry?.affirmation?.id);
     return {
       today: [...daily, ...extras],
-      saved: favorites.map((f) => f.affirmation),
+      favorites: favorites.map((f) => f.affirmation),
       mine: mine ?? [],
     };
   }, [todayEntry, favorites, mine, libraryLines]);
@@ -227,6 +231,17 @@ const Practice = () => {
                       name: t(`voices.${voicePref.active}.name`),
                     })}
               </Text>
+              {/* The quiet nudge, and the only one: the server said the real
+                  voice is premium, so the row says so in one word rather than
+                  the session failing with a toast. */}
+              {listenSession.voiceLocked || voicePref.locked ? (
+                <Text
+                  style={[styles.premiumTag, { color: theme.accent }]}
+                  testID="voice-premium"
+                >
+                  {t("voices.premium")}
+                </Text>
+              ) : null}
             </Pressable>
 
             {/* The seven are the shareable object, not one line pulled out of
@@ -428,6 +443,11 @@ const Practice = () => {
           active={voicePref.active}
           pending={voicePref.pending}
           onChoose={voicePref.choose}
+          locked={listenSession.voiceLocked || voicePref.locked}
+          onUpgrade={() => {
+            setPickingVoice(false);
+            router.push("/billing");
+          }}
           onClose={() => setPickingVoice(false)}
         />
       </View>
@@ -446,6 +466,7 @@ const styles = StyleSheet.create({
     marginTop: spacing.sm,
   },
   voiceLabel: { ...type.body, fontSize: 13 },
+  premiumTag: { fontSize: 11, fontWeight: "700", letterSpacing: 0.4, marginLeft: spacing.xs },
   listen: { marginBottom: spacing.lg },
   centered: { alignItems: "center", justifyContent: "center", padding: spacing.xl },
   surface: {

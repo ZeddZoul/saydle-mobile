@@ -1,3 +1,5 @@
+import { env } from "./env.js";
+
 /**
  * Account deletion policy.
  *
@@ -8,7 +10,9 @@
  *
  * The numbers here are the policy. They are deliberately in one file so the
  * question "how long do we keep X" has exactly one answer, and so changing it
- * is a visible commit rather than an edit buried in a service.
+ * is a visible commit rather than an edit buried in a service. Each is
+ * overridable by env var, and parsed in config/env.js so that a typo there is
+ * a boot failure rather than an Invalid Date on the day of a purge.
  */
 
 /**
@@ -18,13 +22,13 @@
  * recovered. Blocking sign-in during the grace period turns "you can cancel"
  * into a promise the app cannot keep.
  */
-export const GRACE_DAYS = Number(process.env.DELETION_GRACE_DAYS ?? 30);
+export const GRACE_DAYS = env.DELETION_GRACE_DAYS;
 
 /**
  * When we nudge them, a few days out. Late enough that it isn't nagging, early
  * enough to still be a warning rather than a receipt.
  */
-export const REMINDER_DAYS_BEFORE = Number(process.env.DELETION_REMINDER_DAYS ?? 5);
+export const REMINDER_DAYS_BEFORE = env.DELETION_REMINDER_DAYS;
 
 /**
  * How long the billing tombstone outlives the account.
@@ -36,7 +40,7 @@ export const REMINDER_DAYS_BEFORE = Number(process.env.DELETION_REMINDER_DAYS ??
  * Not legal advice, and not a number to change on a hunch: it is the reason we
  * are allowed to keep anything at all after someone asks to be forgotten.
  */
-export const BILLING_RETENTION_YEARS = Number(process.env.BILLING_RETENTION_YEARS ?? 6);
+export const BILLING_RETENTION_YEARS = env.BILLING_RETENTION_YEARS;
 
 /** Pending accounts stop costing us model time — the curated bank covers them. */
 export const PAUSE_GENERATION_WHEN_PENDING = true;

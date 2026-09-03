@@ -75,8 +75,15 @@ else turns these endpoints into an account-enumeration oracle. A successful rese
 refresh token**: if the reset happened because someone else was in the account, leaving their session
 alive would defeat the point.
 
-Email goes through `services/mailer.service.js`. Set `RESEND_API_KEY` to send; leave it unset and
-codes are logged instead, so the flow is testable without a provider account.
+Email goes through `services/mailer.service.js`. Set `RESEND_API_KEY` to send — it is **required in
+production**, and the server refuses to boot without it. Leave it unset locally and mail is simply not
+sent: the log notes the skipped message (subject and a fingerprint of the address, never the body,
+because the body is the code). Read the code from the `passwordresettokens` collection if you need to
+finish the flow without a provider account.
+
+`POST /forgot-password` answers 204 _before_ it looks the address up. A known address costs a code
+write and a mail call, an unknown one a single query, and that gap was a timing oracle; the work now
+runs after the response. `flushPasswordResets()` awaits it in tests.
 
 ## Streaks
 
@@ -150,8 +157,61 @@ predecessor as rotated. Presenting an already-rotated token means a replay or a 
 can't tell which — so the entire family is revoked and the user has to sign in again. That behaviour
 is covered by a test; don't "fix" it into a silent re-issue.
 
+A family also has an absolute lifetime (`REFRESH_FAMILY_MAX_DAYS`, default 180), counted from the
+sign-in it descends from and carried on every successor as `familyIssuedAt`. Past it the family is
+revoked and the user signs in again — otherwise a stolen session that keeps refreshing never has to.
+
 `requireAuth` re-reads the user on every request instead of trusting the token body, so a deleted
-account stops working immediately rather than at token expiry.
+account stops working immediately rather than at token expiry. `jwt.verify` is pinned to HS256.
+
+## Subscriptions
+
+Entitlement is server truth, written only by the RevenueCat webhook (`POST /api/subscription/webhook`,
+authenticated by `REVENUECAT_WEBHOOK_SECRET`). `isEntitled` reads **dates**, not the stored status:
+
+- `CANCELLATION` and `BILLING_ISSUE` keep `status: "active"` and only move `expiresAt` (a refund is a
+  cancellation whose expiry is already past; a billing issue uses the store's grace period when there
+  is one). Only `EXPIRATION` and `SUBSCRIPTION_PAUSED` set `"expired"`.
+- `TRANSFER` revokes `transferred_from` and grants `transferred_to`, inheriting the donor's expiry;
+  with no known donor and no expiry on the event nothing is granted.
+- `store` maps to `app_store` / `play_store` / `other`.
+- Every applied event stamps `subscription.lastEventId` / `lastEventAt`. A redelivered id, or an event
+  older than the last one applied, is acknowledged (204) and dropped.
+- The account is resolved by `app_user_id`, then each of `aliases`, then `original_app_user_id`.
+
+## Voice
+
+Practice-with-voice is premium. `POST /api/voice/session` and `PUT /api/voice/preference` return the
+library's 403 for a free account; `GET /api/voice/preference` and the public clip/preview routes are
+open. The reader's day is derived from their stored timezone — the `today` the app sends is accepted
+and ignored.
+
+Clips of a reader's own "My words" lines are keyed on the owner and served only under a signed URL
+(`clipUrl` in the session response: `/api/voice/clip/:id?sig=&exp=`, HMAC-SHA256 with
+`CLIP_SIGNING_SECRET`, one hour). Shared clips are unsigned and immutable. Renders are budgeted per
+account per rolling day (`VOICE_DAILY_CHAR_BUDGET`); past it the session comes back `throttled: true`
+with the remaining lines clip-less for the device to read.
+
+## Environment
+
+| Variable                                                                     | Required   | Default / notes                                              |
+| ---------------------------------------------------------------------------- | ---------- | ------------------------------------------------------------ |
+| `MONGODB_URI`                                                                | always     |                                                              |
+| `JWT_ACCESS_SECRET` / `JWT_REFRESH_SECRET`                                   | always     | ≥32 chars, must differ                                       |
+| `RESEND_API_KEY`                                                             | production | unset locally = mail skipped, body never logged              |
+| `TOMBSTONE_HMAC_KEY`                                                         | production | falls back to `JWT_REFRESH_SECRET` elsewhere, with a warning |
+| `CLIP_SIGNING_SECRET`                                                        | production | falls back to `JWT_ACCESS_SECRET` elsewhere, with a warning  |
+| `REVENUECAT_WEBHOOK_SECRET`                                                  | —          | unset = webhook fails closed; production warns at boot       |
+| `REVENUECAT_ENTITLEMENT_ID`                                                  | —          | `premium`                                                    |
+| `REFRESH_TOKEN_TTL_DAYS`                                                     | —          | 30                                                           |
+| `REFRESH_FAMILY_MAX_DAYS`                                                    | —          | 180                                                          |
+| `ELEVENLABS_API_KEY`                                                         | —          | unset = device voice                                         |
+| `VOICE_DAILY_CHAR_BUDGET`                                                    | —          | 5000                                                         |
+| `LIBRARY_*`                                                                  | —          | see `.env.example`; positive integers                        |
+| `DELETION_GRACE_DAYS` / `DELETION_REMINDER_DAYS` / `BILLING_RETENTION_YEARS` | —          | 30 / 5 / 6                                                   |
+
+Every tunable is parsed by the zod schema in `config/env.js`, so `DELETION_GRACE_DAYS=abc` is a boot
+failure that names the variable rather than an Invalid Date on the day of a purge.
 
 ## Conventions
 
@@ -162,7 +222,14 @@ account stops working immediately rather than at token expiry.
 - Never add a secret-bearing field without adding it to the `redact` list in `src/lib/logger.js`.
 - Mongoose has no migrations, so schema and index changes go in `migrations/NNN-name.js` exporting
   `async up(db)`. Write them idempotently — an interrupted run leaves work done but unrecorded.
-- `autoIndex` is off in production; indexes are created by migrations only.
+- `autoIndex` is off in production; indexes are created by migrations only. `003-sync-model-indexes.js`
+  calls `syncIndexes()` on every model, so a new schema index reaches production without a hand-written
+  migration — but it also **drops** what a schema no longer declares, which is why `tests/migrations.test.js`
+  asserts the diff is empty. The Docker image runs `migrations/run.js` before starting the server.
+- Request logs carry `{ id, method, url }` and `{ statusCode }` only — no headers, no addresses. Log an
+  email only as `emailFingerprint(email)` (`lib/pii.js`).
+- Routes that cost money (`/voice/session`, `/library/warm`, the writes that regenerate the feed) are
+  rate limited per account via `middleware/rateLimit.js`, disabled under test like the auth limiters.
 
 ## Layout
 

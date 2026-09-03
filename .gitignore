@@ -52,3 +52,9 @@ server/.env
 *-sa.json
 *service-account*.json
 saydle-api*.json
+
+# Gradle / Kotlin output inside local Expo modules. `/android` above only
+# covers the generated app project; a module's own build/ was slipping through.
+**/build/
+!**/plugin/build/
+.gradle/

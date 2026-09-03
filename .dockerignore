@@ -1,0 +1,21 @@
+# Docker build context ignores .gitignore, so the guards there do not apply
+# here. `COPY server ./server` would otherwise bake a local server/.env — and
+# any service-account key dropped in by accident — into the image.
+**/.env
+**/.env.*
+!**/.env.example
+**/*service-account*.json
+**/*-sa.json
+**/saydle-api*.json
+**/node_modules
+**/build
+.git
+.github
+.expo
+ios
+android
+__tests__
+server/tests
+coverage
+*.md
+!server/README.md

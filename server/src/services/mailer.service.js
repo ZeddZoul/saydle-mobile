@@ -1,5 +1,6 @@
 import { env, isProduction, isTest } from "../config/env.js";
 import { logger } from "../lib/logger.js";
+import { emailFingerprint } from "../lib/pii.js";
 
 /**
  * Outbound email.
@@ -15,9 +16,10 @@ import { logger } from "../lib/logger.js";
  */
 async function deliver({ to, subject, text }) {
   if (!env.RESEND_API_KEY) {
-    // The one place a reset code is legible. Fine locally, and impossible in
-    // production because a missing key there is a boot-time failure.
-    logger.warn({ to, subject, text }, "email not configured — logging instead");
+    // Never the body: it carries a reset or verification code, and a code in
+    // a log line is a code in whatever keeps the logs. Production refuses to
+    // boot without a key, so this only ever runs on a laptop.
+    logger.warn({ to: emailFingerprint(to), subject }, "email not configured — not sent");
     return { delivered: false, reason: "not_configured" };
   }
 
@@ -44,7 +46,7 @@ export async function sendMail(message) {
   try {
     return await deliver(message);
   } catch (err) {
-    logger.error({ err, to: message.to }, "email delivery failed");
+    logger.error({ err, to: emailFingerprint(message.to) }, "email delivery failed");
     return { delivered: false, reason: "error" };
   }
 }

@@ -2,7 +2,8 @@ import { useEffect, useMemo, useState } from "react";
 import { useLibrary } from "./useLibrary.js";
 import { useAuth } from "../contexts/AuthContext.jsx";
 import { todayLocal } from "../lib/dates.js";
-import { clipUrl } from "../lib/voices.js";
+import { ApiError } from "../lib/errors.js";
+import { lineClipUrl } from "../lib/voices.js";
 
 /** Seven, and fixed for the day. */
 export const SESSION_SIZE = 7;
@@ -33,11 +34,16 @@ export const SESSION_SIZE = 7;
  * session opens on device speech and upgrades to real audio when the clips
  * arrive, because a reader who taps Listen should not watch a spinner while
  * seven sentences are rendered.
+ *
+ * The real voice is premium. A 403 from the session endpoint is the paywall
+ * answering, not a failure: the session still plays, in device speech, and
+ * `voiceLocked` tells the screen to say so quietly rather than with an error.
  */
 export function usePracticeSession() {
   const library = useLibrary();
   const { client, user } = useAuth();
   const [clips, setClips] = useState(null);
+  const [voiceLocked, setVoiceLocked] = useState(false);
 
   const lines = useMemo(() => {
     return (
@@ -66,13 +72,21 @@ export function usePracticeSession() {
       )
       .then((res) => {
         if (cancelled) return;
+        setVoiceLocked(false);
         // Keyed by id rather than by position: the server returns only the
         // lines it could find, so index alignment is not guaranteed.
-        setClips(new Map((res.lines ?? []).map((l) => [l.id, l.clipId])));
+        setClips(new Map((res.lines ?? []).map((l) => [l.id, lineClipUrl(l)])));
       })
-      // Offline, or no key configured. Device speech reads the session, which
-      // is what it did before any of this existed.
-      .catch(() => {});
+      .catch((err) => {
+        if (cancelled) return;
+        // Not premium. Device speech reads the session — the same thing it
+        // does offline or with no key on the server — and the screen may
+        // mention what a subscription adds. Never an error toast: they did
+        // nothing wrong.
+        if (err instanceof ApiError && err.status === 403) setVoiceLocked(true);
+        // Offline, or no key configured. Device speech reads the session,
+        // which is what it did before any of this existed.
+      });
 
     return () => {
       cancelled = true;
@@ -82,7 +96,7 @@ export function usePracticeSession() {
 
   // The lines the session actually plays, each carrying its clip if one exists.
   const voiced = useMemo(
-    () => lines.map((line) => ({ ...line, clipUrl: clipUrl(clips?.get(line.id)) })),
+    () => lines.map((line) => ({ ...line, clipUrl: clips?.get(line.id) ?? null })),
     [lines, clips],
   );
 
@@ -92,5 +106,7 @@ export function usePracticeSession() {
     locked: library.locked,
     offline: library.offline,
     ready: lines.length > 0,
+    /** True once the server has said the real voice is premium. */
+    voiceLocked,
   };
 }

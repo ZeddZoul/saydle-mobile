@@ -1,3 +1,5 @@
+import { env } from "./env.js";
+
 /**
  * The scrollable library.
  *
@@ -18,7 +20,7 @@
  * per call rather than once per forty lines. It takes 44-68s, which is why this
  * only ever runs in the background.
  */
-export const BATCH_SIZE = Number(process.env.LIBRARY_BATCH_SIZE ?? 240);
+export const BATCH_SIZE = env.LIBRARY_BATCH_SIZE;
 
 /**
  * Refill when fewer than this many remain unread.
@@ -28,7 +30,7 @@ export const BATCH_SIZE = Number(process.env.LIBRARY_BATCH_SIZE ?? 240);
  * a fresh one in two days. Neither of them ever sees the end of the list, which
  * is the only thing the number has to guarantee.
  */
-export const REFILL_BELOW = Number(process.env.LIBRARY_REFILL_BELOW ?? 40);
+export const REFILL_BELOW = env.LIBRARY_REFILL_BELOW;
 
 /**
  * A batch older than this is stale even if it was never finished.
@@ -36,17 +38,17 @@ export const REFILL_BELOW = Number(process.env.LIBRARY_REFILL_BELOW ?? 40);
  * Lines written against a profile from six days ago stop sounding like the
  * person who has since answered four more onboarding questions.
  */
-export const STALE_AFTER_DAYS = Number(process.env.LIBRARY_STALE_DAYS ?? 6);
+export const STALE_AFTER_DAYS = env.LIBRARY_STALE_DAYS;
 
 /**
  * How much of the profile has to change before the rest of the batch is worth
  * rewriting. Half is deliberately coarse: rewriting on every answer would throw
  * away lines they have already paid for and not yet read.
  */
-export const PROFILE_DRIFT_PERCENT = Number(process.env.LIBRARY_DRIFT_PERCENT ?? 50);
+export const PROFILE_DRIFT_PERCENT = env.LIBRARY_DRIFT_PERCENT;
 
 /** Page size for the scroll. Big enough that the list never visibly stalls. */
-export const PAGE_SIZE = Number(process.env.LIBRARY_PAGE_SIZE ?? 40);
+export const PAGE_SIZE = env.LIBRARY_PAGE_SIZE;
 
 /**
  * Premium from day one.

@@ -13,6 +13,7 @@ import GradientBackground from "../../components/GradientBackground.jsx";
 import FloatingHeader, { FLOATING_HEADER_INSET } from "../../components/FloatingHeader.jsx";
 import DisplayText from "../../components/DisplayText.jsx";
 import Button from "../../components/Button";
+import SubscriptionDisclosure from "../../components/SubscriptionDisclosure.jsx";
 import { useAppTheme } from "../../contexts/ThemeContext.jsx";
 import { useToast } from "../../contexts/ToastContext.jsx";
 import { useAuth } from "../../contexts/AuthContext.jsx";
@@ -75,17 +76,17 @@ const formatDate = (value) => {
 /**
  * The store, in words rather than in ours.
  *
- * `subscription.source` is a stored enum — `trial`, `app_store`, `play_store` —
- * and it was being rendered straight into the card, so the screen read
- * "Purchased via app_store". Falls back to the raw value rather than showing
- * nothing, so a source we add server-side later degrades to ugly instead of
- * blank.
+ * `subscription.source` is a stored enum — `app_store`, `play_store`,
+ * `promotional` (see server/src/models/User.js) — and it was being rendered
+ * straight into the card, so the screen read "Purchased via app_store". Falls
+ * back to the raw value rather than showing nothing, so a source we add
+ * server-side later degrades to ugly instead of blank.
  */
 const sourceLabel = (t, source) => {
   const key = {
-    trial: "billing.sourceTrial",
     app_store: "billing.sourceAppStore",
     play_store: "billing.sourcePlayStore",
+    promotional: "billing.sourcePromotional",
   }[source];
 
   return key ? t(key) : source;
@@ -236,8 +237,9 @@ const Billing = () => {
                   theme={theme}
                 />
               ) : null}
-              {/* An unverified entitlement is one no store has confirmed — a
-                  trial we granted ourselves. Worth saying, not worth alarm. */}
+              {/* An unverified entitlement is one no store has confirmed yet —
+                  the webhook is still on its way, or the grant was ours
+                  (promotional). Worth saying, not worth alarm. */}
               {entitled && subscription?.verified === false ? (
                 <Row
                   label={t("billing.confirmed")}
@@ -263,9 +265,9 @@ const Billing = () => {
               ) : null}
             </View>
 
-            {/* Only a paying member has nothing to buy here. There is no trial
-                any more: a free reader scrolls the curated bank, and this is
-                the one way to the affirmations written for them. */}
+            {/* Only a paying member has nothing to buy here. There is no
+                trial: a free reader scrolls the curated bank, and this is the
+                one way to the affirmations written for them. */}
             {!entitled && (
               <View style={[styles.card, { backgroundColor: theme.surface }]}>
                 <DisplayText style={[styles.sectionTitle, { color: theme.ink }]}>
@@ -316,9 +318,17 @@ const Billing = () => {
                   </View>
                 )}
 
-                {/* The price sits under the button, not above it: it is what
-                    you check before committing, not a headline. */}
-                <Text style={[styles.price, { color: theme.sub }]}>{t("paywall.price")}</Text>
+                {/* The terms sit under the button, not above it: they are
+                    what you check before committing, not a headline. Period,
+                    price per period, renewal, and where to cancel — all read
+                    from the offering, and required by both stores. */}
+                <SubscriptionDisclosure
+                  packages={canPurchase ? packages : []}
+                  color={theme.sub}
+                  linkColor={theme.accent}
+                  style={styles.disclosure}
+                  onLinkError={() => toast.error(t("legal.openFailed"))}
+                />
 
                 {!canPurchase && (
                   <Text style={[styles.hint, { color: theme.sub }]}>
@@ -412,7 +422,7 @@ const styles = StyleSheet.create({
     marginBottom: spacing.lg,
   },
   sectionTitle: { ...type.sectionTitle, marginBottom: spacing.sm },
-  price: { ...type.body, fontSize: 12, textAlign: "center", marginTop: spacing.md },
+  disclosure: { marginTop: spacing.md },
   hint: { ...type.body, fontSize: 13, marginTop: spacing.xs },
   row: {
     flexDirection: "row",

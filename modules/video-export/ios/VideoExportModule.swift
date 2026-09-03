@@ -85,7 +85,10 @@ private enum VideoExporter {
       return silent.path
     }
 
-    return try await mux(video: silent, audio: URL(fileURLWithPath: audioPath)).path
+    let muxed = try await mux(video: silent, audio: URL(fileURLWithPath: audioPath))
+    // The silent intermediate is only an input to the mux; keep tmp/ tidy.
+    try? FileManager.default.removeItem(at: silent)
+    return muxed.path
   }
 
   private static func tempURL(_ ext: String) -> URL {
@@ -122,7 +125,16 @@ private enum VideoExporter {
 
     guard writer.canAdd(input) else { throw ExportError.writerFailed("cannot add video input") }
     writer.add(input)
-    writer.startWriting()
+
+    // `startWriting()` returns false rather than throwing when the writer
+    // cannot start (unwritable tmp, unsupported settings, a Simulator with no
+    // H.264 encoder). Calling `startSession` after a failed start raises an
+    // Objective-C exception that Swift cannot catch — so check the Bool, or the
+    // app dies instead of the caller getting `{ error }`.
+    guard writer.startWriting() else {
+      try? FileManager.default.removeItem(at: out)
+      throw ExportError.writerFailed(writer.error?.localizedDescription ?? "startWriting failed")
+    }
     writer.startSession(atSourceTime: .zero)
 
     // 30fps is plenty for stills; the frames are identical within a page.
@@ -133,11 +145,13 @@ private enum VideoExporter {
     for path in imagePaths {
       guard let image = UIImage(contentsOfFile: path) else {
         writer.cancelWriting()
+        try? FileManager.default.removeItem(at: out)
         throw ExportError.badImage(path)
       }
 
       guard let buffer = pixelBuffer(from: image, size: size, pool: adaptor.pixelBufferPool) else {
         writer.cancelWriting()
+        try? FileManager.default.removeItem(at: out)
         throw ExportError.badImage(path)
       }
 
@@ -148,7 +162,13 @@ private enum VideoExporter {
           try await Task.sleep(nanoseconds: 5_000_000)
         }
 
-        adaptor.append(buffer, withPresentationTime: CMTime(value: frame, timescale: fps))
+        // `append` also reports failure as a Bool. A dropped frame here would
+        // otherwise surface only as a video shorter than its audio.
+        guard adaptor.append(buffer, withPresentationTime: CMTime(value: frame, timescale: fps)) else {
+          writer.cancelWriting()
+          try? FileManager.default.removeItem(at: out)
+          throw ExportError.writerFailed(writer.error?.localizedDescription ?? "append failed")
+        }
         frame += 1
       }
     }
@@ -157,6 +177,7 @@ private enum VideoExporter {
     await writer.finishWriting()
 
     if writer.status != .completed {
+      try? FileManager.default.removeItem(at: out)
       throw ExportError.writerFailed(writer.error?.localizedDescription ?? "unknown")
     }
 

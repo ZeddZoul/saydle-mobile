@@ -1,24 +1,34 @@
-import { ScrollView, StyleSheet, Text, View } from "react-native";
+import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { SafeAreaView } from "react-native-safe-area-context";
 import GradientBackground from "../GradientBackground.jsx";
 import DisplayText from "../DisplayText.jsx";
 import Button from "../Button.jsx";
 import Spacer from "../Spacer.jsx";
+import SubscriptionDisclosure from "../SubscriptionDisclosure.jsx";
 import { colors, spacing, type } from "../../theme/tokens.js";
 import { useT } from "../../lib/i18n.js";
 
 /**
- * The end-of-flow paywall. This is where the account gets created — either path
- * (`` / `onSubscribe`) triggers sign-up in the controller.
+ * The end-of-flow paywall. This is where the account gets created — every path
+ * off this screen (`onSubscribe`, `onContinueFree`) triggers sign-up in the
+ * controller.
  *
- * There is no trial: premium is the only way to affirmations written for you,
- * and the buttons appear only when RevenueCat is configured — see
- * lib/purchases.js.
+ * There is no trial and the free plan is not hidden: the curated bank is a real
+ * product, and "Continue with the free plan" is always on screen, because a
+ * paywall someone cannot decline is the one App Review rejects and the one a
+ * reader resents. Premium is the only way to affirmations written for you, to a
+ * real voice in Practice, and to keeping your own words.
  *
- * Every price here comes from the offering's own localized string. The store is
- * the authority on what something costs in a given country, so nothing about
- * money is written into this file.
+ * The plan buttons appear only when RevenueCat is configured — see
+ * lib/purchases.js. Every price here comes from the offering's own localized
+ * string. The store is the authority on what something costs in a given
+ * country, so nothing about money is written into this file.
+ *
+ * "Restore purchases" cannot restore anything yet: there is no account to attach
+ * a purchase to until one of the two buttons creates it. So it is the honest
+ * version — it sends someone who already paid to sign in, where the billing
+ * screen's restore can find their purchase.
  */
 
 /** Per-month equivalent, so the two terms can actually be compared. */
@@ -33,14 +43,42 @@ const monthlyEquivalent = (pkg) => {
 };
 const PERK_KEYS = ["paywall.perk1", "paywall.perk2", "paywall.perk3"];
 
-const Paywall = ({ onSubscribe, canPurchase = false, packages = [] }) => {
+const Paywall = ({
+  onSubscribe,
+  onContinueFree,
+  onBack,
+  onRestore,
+  onRetry,
+  canPurchase = false,
+  packages = [],
+  plansLoading = false,
+  busy = false,
+}) => {
   const { t } = useT();
+
+  const hasPlans = canPurchase && packages.length > 0;
+  // The store answered with nothing, or never answered. Distinct from "no
+  // store configured", which simply shows no plans and no complaint.
+  const plansFailed = canPurchase && !plansLoading && packages.length === 0;
 
   return (
     <GradientBackground>
       <SafeAreaView style={styles.safe}>
+        <View style={styles.header}>
+          <Pressable
+            onPress={onBack}
+            hitSlop={10}
+            accessibilityRole="button"
+            accessibilityLabel={t("common.back")}
+            style={styles.headerButton}
+            testID="paywall-back"
+          >
+            <Ionicons name="chevron-back" size={26} color={colors.mauveDeep} />
+          </Pressable>
+        </View>
+
         <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
-          <View style={styles.header}>
+          <View style={styles.intro}>
             <DisplayText weight="bold" style={styles.title}>
               {t("paywall.title")}
             </DisplayText>
@@ -61,7 +99,7 @@ const Paywall = ({ onSubscribe, canPurchase = false, packages = [] }) => {
           {/* Hidden until there is something to actually buy: an unset
               RevenueCat key means these could never complete, and a button that
               silently does nothing is worse than no button. */}
-          {canPurchase && packages.length > 0 ? (
+          {hasPlans ? (
             <>
               {packages.map((pkg) => {
                 const annual = pkg.packageType === "ANNUAL";
@@ -75,6 +113,8 @@ const Paywall = ({ onSubscribe, canPurchase = false, packages = [] }) => {
                       }`}
                       variant={annual ? "primary" : "secondary"}
                       onPress={() => onSubscribe(pkg)}
+                      disabled={busy}
+                      testID={`paywall-plan-${pkg.identifier}`}
                     />
                     {/* The per-month figure is the whole argument for annual,
                         and it is arithmetic on the store's own number rather
@@ -87,11 +127,37 @@ const Paywall = ({ onSubscribe, canPurchase = false, packages = [] }) => {
                   </View>
                 );
               })}
+              <SubscriptionDisclosure packages={packages} style={styles.disclosure} />
               <Spacer height={spacing.sm} />
             </>
           ) : null}
 
-          <Text style={styles.price}>{t("paywall.price")}</Text>
+          {plansFailed ? (
+            <View style={styles.plansFailed} testID="paywall-plans-failed">
+              <Text style={styles.plansFailedText}>{t("paywall.plansFailed")}</Text>
+              <Pressable onPress={onRetry} hitSlop={8} accessibilityRole="button">
+                <Text style={styles.link}>{t("common.tryAgain")}</Text>
+              </Pressable>
+            </View>
+          ) : null}
+
+          <Button
+            title={t("paywall.continueFree")}
+            variant={hasPlans ? "secondary" : "primary"}
+            onPress={onContinueFree}
+            disabled={busy}
+            testID="paywall-free"
+          />
+
+          <Pressable
+            onPress={onRestore}
+            hitSlop={8}
+            accessibilityRole="button"
+            style={styles.restore}
+            testID="paywall-restore"
+          >
+            <Text style={styles.link}>{t("billing.restore")}</Text>
+          </Pressable>
         </View>
       </SafeAreaView>
     </GradientBackground>
@@ -109,14 +175,27 @@ const styles = StyleSheet.create({
     marginTop: spacing.xs,
     color: colors.mauveDeep,
   },
+  disclosure: { marginTop: spacing.sm },
   safe: { flex: 1 },
+  header: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: spacing.lg,
+    paddingTop: spacing.sm,
+    minHeight: 40,
+  },
+  headerButton: {
+    minWidth: 44,
+    minHeight: 26,
+    justifyContent: "center",
+  },
   scroll: {
     flexGrow: 1,
     justifyContent: "center",
     paddingHorizontal: spacing.xl,
-    paddingVertical: spacing.xxl,
+    paddingVertical: spacing.xl,
   },
-  header: {
+  intro: {
     alignItems: "center",
     marginBottom: spacing.xxl,
   },
@@ -153,9 +232,23 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.xl,
     paddingBottom: spacing.lg,
   },
-  price: {
+  plansFailed: {
+    alignItems: "center",
+    gap: spacing.xs,
+    marginBottom: spacing.md,
+  },
+  plansFailedText: {
     ...type.subtitle,
     textAlign: "center",
-    marginBottom: spacing.md,
+  },
+  restore: {
+    alignItems: "center",
+    paddingVertical: spacing.md,
+  },
+  link: {
+    fontSize: 14,
+    fontWeight: "600",
+    color: colors.mauveDeep,
+    textDecorationLine: "underline",
   },
 });

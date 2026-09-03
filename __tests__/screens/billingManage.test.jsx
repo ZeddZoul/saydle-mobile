@@ -209,7 +209,9 @@ describe("managing a subscription", () => {
     });
 
     expect(await findByText(/Ended /i)).toBeTruthy();
-    expect(queryByText(/Renews /i)).toBeNull();
+    // The status line, not the disclosure's "Renews automatically…", which
+    // describes the plan on offer rather than the account.
+    expect(queryByText(/Renews (?!automatically)/i)).toBeNull();
   });
 
   it("does not claim a purchase on an account that has none", async () => {
@@ -285,6 +287,87 @@ describe("managing a subscription", () => {
       timeout: 15000,
     });
   }, 20000);
+
+  /**
+   * What the stores require next to a buy button: the length of each term,
+   * the price per term, that it renews, and where to cancel — plus the two
+   * documents. All of it derived from the offering, none of it typed here.
+   */
+  it("discloses the term, the renewal and the documents under the plans", async () => {
+    mockPurchases.getOffering.mockResolvedValue({
+      available: true,
+      packages: [
+        {
+          identifier: "annual",
+          packageType: "ANNUAL",
+          product: {
+            title: "Saydle Premium Yearly",
+            priceString: "$49.99",
+            subscriptionPeriod: "P1Y",
+          },
+        },
+        {
+          identifier: "monthly",
+          packageType: "MONTHLY",
+          product: {
+            title: "Saydle Premium Monthly",
+            priceString: "$9.99",
+            subscriptionPeriod: "P1M",
+          },
+        },
+      ],
+    });
+
+    const { findByTestId, findByText } = await renderBilling(FREE);
+
+    await findByTestId("subscription-disclosure");
+    expect(await findByText(/Saydle Premium Yearly · 1 year · \$49\.99 per year/)).toBeTruthy();
+    expect(
+      await findByText(/Saydle Premium Monthly · 1 month · \$9\.99 per month/),
+    ).toBeTruthy();
+    expect(
+      await findByText(/Renews automatically at the same price until cancelled/),
+    ).toBeTruthy();
+    expect(await findByTestId("legal-terms")).toBeTruthy();
+    expect(await findByTestId("legal-privacy")).toBeTruthy();
+  });
+
+  it("opens the documents from the disclosure", async () => {
+    const openURL = jest.spyOn(Linking, "openURL").mockResolvedValue(true);
+    mockPurchases.getOffering.mockResolvedValue({
+      available: true,
+      packages: [
+        { identifier: "monthly", packageType: "MONTHLY", product: { priceString: "$9.99" } },
+      ],
+    });
+
+    const { findByTestId } = await renderBilling(FREE);
+    await fireEvent.press(await findByTestId("legal-privacy"));
+
+    await waitFor(() => expect(openURL).toHaveBeenCalledWith(expect.stringMatching(/privacy/)));
+    openURL.mockRestore();
+  });
+
+  it("has no disclosure to make when there is nothing to buy", async () => {
+    mockPurchases.getOffering.mockResolvedValue({ available: true, packages: [] });
+    const { findByText, queryByTestId } = await renderBilling(FREE);
+
+    await findByText(/Written for you, not for everyone/i);
+    expect(queryByTestId("subscription-disclosure")).toBeNull();
+  });
+
+  it("names a promotional grant rather than calling it a trial", async () => {
+    const { findByText } = await renderBilling({
+      status: "active",
+      entitled: true,
+      verified: true,
+      source: "promotional",
+      expiresAt: new Date(Date.now() + 30 * 86400000).toISOString(),
+    });
+
+    await findByText(/Purchased via/i);
+    expect(await findByText("Promotional")).toBeTruthy();
+  });
 
   it("tells someone what to try when there is nothing to restore", async () => {
     mockPurchases.restorePurchases.mockResolvedValue({ available: true, entitled: false });

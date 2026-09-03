@@ -20,6 +20,7 @@ import {
 } from "../services/deletion.service.js";
 import { sendDeletionScheduled } from "../services/deletionMail.service.js";
 import { AppError } from "../utils/AppError.js";
+import { emailFingerprint } from "../lib/pii.js";
 import {
   signAccessToken,
   issueRefreshToken,
@@ -60,9 +61,7 @@ export async function register(req, res, next) {
       locale: resolveLocale(locale),
     });
 
-    const refreshToken = await issueRefreshToken(user._id, {
-      userAgent: req.get("user-agent"),
-    });
+    const refreshToken = await issueRefreshToken(user._id);
 
     // Best effort, and deliberately not awaited into the response contract: a
     // mail outage must not fail a registration. The app can always ask for
@@ -115,9 +114,7 @@ export async function login(req, res, next) {
       throw AppError.unauthorized("Email or password is incorrect.");
     }
 
-    const refreshToken = await issueRefreshToken(user._id, {
-      userAgent: req.get("user-agent"),
-    });
+    const refreshToken = await issueRefreshToken(user._id);
 
     res.json({
       user: user.toJSON(),
@@ -131,9 +128,7 @@ export async function login(req, res, next) {
 
 export async function refresh(req, res, next) {
   try {
-    const { userId, refreshToken } = await rotateRefreshToken(req.body.refreshToken, {
-      userAgent: req.get("user-agent"),
-    });
+    const { userId, refreshToken } = await rotateRefreshToken(req.body.refreshToken);
 
     const user = await User.findById(userId);
     if (!user) {
@@ -314,35 +309,58 @@ export async function restoreMe(req, res, next) {
   }
 }
 
+// Reset work still running after its response went out. Tests await it;
+// nothing else should.
+const resetsInFlight = new Set();
+
+/** Awaits every reset request that has answered but not yet finished. */
+export function flushPasswordResets() {
+  return Promise.all([...resetsInFlight]);
+}
+
 /**
  * Start a password reset.
  *
  * Always answers 204, whether or not the address exists. Anything else — a
  * different status, a different message, a noticeably different response time —
  * turns this into a way to discover who has an account.
+ *
+ * The response goes out *before* the lookup. A known address costs a code
+ * write and a mail call; an unknown one costs a single query, and the gap
+ * between those was measurable from outside. Now both answer in the time it
+ * takes to send 204, and the work happens after, off the response path.
  */
 export async function forgotPassword(req, res, next) {
   try {
     const { email } = req.body;
-    const user = await User.findOne({ email });
-
-    if (user) {
-      const code = await issueResetCode(user._id);
-      await sendPasswordResetCode({
-        to: user.email,
-        firstName: user.firstName,
-        code,
-      });
-      req.log?.info({ userId: user.id }, "password reset requested");
-    } else {
-      // Log for rate-limit forensics, but tell the client nothing.
-      req.log?.info({ email }, "password reset requested for unknown address");
-    }
-
     res.status(204).end();
+
+    const log = req.log;
+    const task = new Promise((resolve) => setImmediate(resolve))
+      .then(() => startReset(email, log))
+      .catch((err) => log?.error({ err }, "password reset request failed"))
+      .finally(() => resetsInFlight.delete(task));
+    resetsInFlight.add(task);
   } catch (err) {
     next(err);
   }
+}
+
+async function startReset(email, log) {
+  const user = await User.findOne({ email });
+
+  if (!user) {
+    // For rate-limit forensics: the same address again, not which address.
+    log?.info(
+      { email: emailFingerprint(email) },
+      "password reset requested for unknown address",
+    );
+    return;
+  }
+
+  const code = await issueResetCode(user._id);
+  await sendPasswordResetCode({ to: user.email, firstName: user.firstName, code });
+  log?.info({ userId: user.id }, "password reset requested");
 }
 
 /**

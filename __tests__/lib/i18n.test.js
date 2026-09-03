@@ -9,6 +9,7 @@ import {
 } from "../../lib/i18n.js";
 import en from "../../locales/en.json";
 import es from "../../locales/es.json";
+import { ONBOARDING_QUESTIONS } from "../../lib/onboardingQuestions.js";
 import { SUPPORTED_LOCALES as SERVER_LOCALES } from "../../server/src/config/locales.js";
 
 afterEach(() => setLocale(DEFAULT_LOCALE));
@@ -91,18 +92,46 @@ describe("translation", () => {
     expect(t("favorites.remove", { text: "I don't have to earn it" })).toContain("don't");
   });
 
-  it("returns the testimonial list rather than its key", () => {
-    expect(Array.isArray(t("landing.testimonials"))).toBe(true);
-  });
-
   it("falls back to English for a key a translation hasn't caught up with", () => {
     setLocale("es");
-    // Real key, deliberately absent from es.json's questions block.
-    expect(tf("questions.zodiac.title", "What's your sign?")).toBe("What's your sign?");
+    // A key no locale has, standing in for a question added before its
+    // translation — the config's English is what the reader sees meanwhile.
+    expect(tf("questions.notYetAsked.title", "What's your sign?")).toBe("What's your sign?");
   });
 
   it("prefers a translation over the config fallback when it has one", () => {
     setLocale("es");
     expect(tf("questions.ageBand.title", "How old are you?")).toBe("¿Cuántos años tienes?");
+  });
+});
+
+/**
+ * The onboarding copy lives in lib/onboardingQuestions.js in English and is
+ * overridden per question under `questions.*`. Spanish is a shipped language,
+ * so every step has to be there — a half-translated funnel switches language
+ * mid-conversation, which reads as a bug rather than a gap.
+ */
+describe("Spanish onboarding", () => {
+  it("translates every question, including each option", () => {
+    const gaps = [];
+
+    for (const q of ONBOARDING_QUESTIONS) {
+      const es_q = es.questions[q.key];
+      if (!es_q?.title) gaps.push(`${q.key}.title`);
+      if (q.subtitle && !es_q?.subtitle) gaps.push(`${q.key}.subtitle`);
+      if (q.placeholder && !es_q?.placeholder) gaps.push(`${q.key}.placeholder`);
+      if (q.cta && !es_q?.cta) gaps.push(`${q.key}.cta`);
+      for (const opt of q.options ?? []) {
+        if (!es_q?.options?.[String(opt.value)]) gaps.push(`${q.key}.options.${opt.value}`);
+      }
+    }
+
+    expect(gaps).toEqual([]);
+  });
+
+  it("does not carry a translation for a question that no longer exists", () => {
+    const keys = new Set(ONBOARDING_QUESTIONS.map((q) => q.key));
+    const orphans = Object.keys(es.questions).filter((key) => !keys.has(key));
+    expect(orphans).toEqual([]);
   });
 });

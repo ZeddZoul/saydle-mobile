@@ -1,13 +1,11 @@
 import { useCallback, useMemo, useState } from "react";
 import { useAuth } from "../contexts/AuthContext.jsx";
 import { requestPermission, syncReminders } from "../lib/notifications.js";
-import { DEFAULT_WINDOW } from "../lib/reminders.js";
+import { DEFAULT_REMINDER_WINDOW } from "../lib/reminders.js";
 
 export const DEFAULT_REMINDERS = {
   enabled: false,
-  count: 3,
-  start: DEFAULT_WINDOW.start,
-  end: DEFAULT_WINDOW.end,
+  ...DEFAULT_REMINDER_WINDOW,
 };
 
 /**

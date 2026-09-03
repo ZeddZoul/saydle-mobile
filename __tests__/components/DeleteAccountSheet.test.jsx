@@ -87,10 +87,13 @@ describe("DeleteAccountSheet", () => {
     expect(await findByText(/App Store or Play Store/i)).toBeTruthy();
   });
 
-  it("promises the grace period rather than permanence", async () => {
+  it("promises the grace period, and says what actually cancels", async () => {
     const { findByText } = await renderSheet();
 
     expect(await findByText(/30 days/)).toBeTruthy();
-    expect(await findByText(/sign back in any time to cancel/i)).toBeTruthy();
+    // Signing in only makes the cancel reachable; the card on Today is the
+    // cancel. Copy that said "sign back in to cancel" promised something
+    // signing in does not do.
+    expect(await findByText(/sign in and tap Keep my account/i)).toBeTruthy();
   });
 });

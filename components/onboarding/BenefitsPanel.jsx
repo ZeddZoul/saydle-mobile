@@ -3,6 +3,7 @@ import { Ionicons } from "@expo/vector-icons";
 import FadeInView from "../FadeInView.jsx";
 import Sparkles from "../Sparkles.jsx";
 import { colors, radius, shadow, spacing } from "../../theme/tokens.js";
+import { useT } from "../../lib/i18n.js";
 
 /**
  * What a daily practice actually does for you.
@@ -12,36 +13,40 @@ import { colors, radius, shadow, spacing } from "../../theme/tokens.js";
  * before the paywall, so overclaiming here would be a promise we can't keep.
  */
 const BENEFITS = [
-  { icon: "compass-outline", text: "Stay focused on what you're working toward" },
-  { icon: "swap-horizontal-outline", text: "Catch a harsh thought and turn it around" },
-  { icon: "leaf-outline", text: "Be a little gentler with yourself each day" },
+  { icon: "compass-outline", key: "onboarding.benefitFocus" },
+  { icon: "swap-horizontal-outline", key: "onboarding.benefitReframe" },
+  { icon: "leaf-outline", key: "onboarding.benefitGentle" },
 ];
 
-const BenefitsPanel = () => (
-  <View style={styles.wrap}>
-    <View style={styles.hero}>
-      <Sparkles />
-      <FadeInView delay={80}>
-        <View style={styles.badge}>
-          <Ionicons name="book-outline" size={54} color={colors.coral} />
-        </View>
-      </FadeInView>
-    </View>
+const BenefitsPanel = () => {
+  const { t } = useT();
 
-    <View style={styles.list}>
-      {BENEFITS.map((benefit, index) => (
-        <FadeInView key={benefit.icon} delay={260 + index * 120}>
-          <View style={styles.row}>
-            <View style={styles.iconWrap}>
-              <Ionicons name={benefit.icon} size={20} color={colors.coral} />
-            </View>
-            <Text style={styles.text}>{benefit.text}</Text>
+  return (
+    <View style={styles.wrap}>
+      <View style={styles.hero}>
+        <Sparkles />
+        <FadeInView delay={80}>
+          <View style={styles.badge}>
+            <Ionicons name="book-outline" size={54} color={colors.coral} />
           </View>
         </FadeInView>
-      ))}
+      </View>
+
+      <View style={styles.list}>
+        {BENEFITS.map((benefit, index) => (
+          <FadeInView key={benefit.icon} delay={260 + index * 120}>
+            <View style={styles.row}>
+              <View style={styles.iconWrap}>
+                <Ionicons name={benefit.icon} size={20} color={colors.coral} />
+              </View>
+              <Text style={styles.text}>{t(benefit.key)}</Text>
+            </View>
+          </FadeInView>
+        ))}
+      </View>
     </View>
-  </View>
-);
+  );
+};
 
 export default BenefitsPanel;
 
