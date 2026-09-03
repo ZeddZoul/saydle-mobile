@@ -100,19 +100,16 @@ describe("buildSignupPayload", () => {
     expect(payload.preferences.reminders).toBeUndefined();
   });
 
-  it("falls back to the older timing answers when no window was set", () => {
-    const payload = buildSignupPayload({
-      email: "a@b.co",
-      password: "x",
-      reminderTiming: ["evening", "first-thing"],
-    });
-
-    expect(payload.reminderWindow).toMatchObject({ count: 2, start: "07:30", end: "18:30" });
-  });
-
-  it("returns no reminder window when nothing was chosen", () => {
+  it("returns no reminder window when the step was skipped", () => {
+    // Skipping is the only way to leave without a window now — completing
+    // the step always records one (see OnboardingStep). The old
+    // `reminderTiming` fallback went with the question that set it.
     const payload = buildSignupPayload({ email: "a@b.co", password: "x" });
     expect(payload.reminderWindow).toBeNull();
+    expect(
+      buildSignupPayload({ email: "a@b.co", password: "x", reminderTiming: ["evening"] })
+        .reminderWindow,
+    ).toBeNull();
   });
 
   it("caps the composed focus text", () => {

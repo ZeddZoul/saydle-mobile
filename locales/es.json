@@ -13,20 +13,17 @@
     "startAt": "Desde",
     "endAt": "Hasta",
     "streakCaption": "Crea una racha, un día a la vez",
-    "notificationPreview": "Saydle · ahora"
+    "notificationPreview": "Saydle · ahora",
+    "benefitFocus": "Mantener el rumbo hacia lo que estás construyendo",
+    "benefitReframe": "Atrapar un pensamiento duro y darle la vuelta",
+    "benefitGentle": "Ser un poco más amable contigo cada día",
+    "sampleLine": "Puedo empezar aunque aún no me sienta a punto."
   },
   "landing": {
     "tagline": "Afirmaciones diarias, hechas para ti.",
-    "proof": "Con el cariño de nuestros primeros usuarios",
-    "rating": "Cinco estrellas",
     "getStarted": "Empezar",
     "haveAccount": "Ya tengo una cuenta",
-    "testimonials": [
-      "La parte más amable de mi mañana.",
-      "Por fin suena como yo.",
-      "Recordatorios pequeños que de verdad llegan.",
-      "Más en calma antes del primer café."
-    ]
+    "blurb": "Una afirmación al día, gratis. Premium escribe las tuyas a partir de lo que nos cuentas y te las lee en voz alta."
   },
   "auth": {
     "welcomeBack": "Hola de nuevo",
@@ -50,7 +47,8 @@
     "newPasswordPlaceholder": "Mínimo 8 caracteres",
     "resetSubmit": "Guardar contraseña",
     "resetDone": "Contraseña cambiada. Entra con la nueva.",
-    "backToLogin": "Volver a entrar"
+    "backToLogin": "Volver a entrar",
+    "restoreHint": "Primero inicia sesión. Después abre Perfil → Suscripción y toca Restaurar compras."
   },
   "validation": {
     "emailRequired": "El correo es obligatorio.",
@@ -63,10 +61,11 @@
   "today": {
     "greeting": "Hola, {{name}}",
     "greetingAnonymous": "Hola",
-    "empty": "Todavía no hay nada para hoy. Desliza hacia abajo para actualizar.",
+    "empty": "Todavía no hay nada para hoy. Vuelve en un momento.",
     "share": "Compartir esta afirmación",
     "save": "Guardar en favoritos",
-    "unsave": "Quitar de favoritos"
+    "unsave": "Quitar de favoritos",
+    "favorite": "Marcar esta afirmación como favorita"
   },
   "favorites": {
     "title": "Favoritos",
@@ -97,7 +96,7 @@
     "signOut": "Cerrar sesión",
     "deleteAccount": "Eliminar cuenta",
     "deleteTitle": "Eliminar cuenta",
-    "deleteBody": "Tu cuenta se programará para eliminarse en {{days}} días. No se borra nada antes de esa fecha: vuelve a iniciar sesión cuando quieras para cancelar.",
+    "deleteBody": "Tu cuenta se programará para eliminarse en {{days}} días. No se borra nada antes de esa fecha: para cancelar, inicia sesión y toca Conservar mi cuenta.",
     "deleteBillingNotice": "Esto no cancela una suscripción de pago. Gestiónala en la App Store o en Play Store.",
     "deletePasswordLabel": "Tu contraseña",
     "deleteConfirmLabel": "Escribe {{email}} para confirmar",
@@ -130,13 +129,14 @@
   "paywall": {
     "title": "Saydle ha creado un espacio seguro para ti",
     "subtitle": "Hecho a partir de todo lo que compartiste.",
-    "perk1": "Afirmaciones personalizadas, escritas para tu momento",
-    "perk2": "Recordatorios amables, justo cuando hacen falta",
-    "perk3": "Tus favoritos siempre a mano, incluso sin conexión",
-    "price": "Cancela cuando quieras.",
+    "perk1": "Afirmaciones escritas a partir de tus respuestas",
+    "perk2": "La práctica leída en voz alta con una voz real",
+    "perk3": "Tus propias palabras, guardadas",
     "subscribe": "Suscribirme",
     "creating": "Creando afirmaciones solo para ti…",
-    "perMonth": "Son {{price}} al mes."
+    "perMonth": "Son {{price}} al mes.",
+    "continueFree": "Continuar con el plan gratuito",
+    "plansFailed": "No se pudieron cargar los planes."
   },
   "nudge": {
     "eyebrow": "Hazlo más tuyo",
@@ -160,7 +160,8 @@
   "questions": {
     "callName": {
       "title": "¿Cómo quieres que te llamemos?",
-      "subtitle": "Tu nombre aparecerá en tus afirmaciones."
+      "subtitle": "Tu nombre aparecerá en tus afirmaciones.",
+      "placeholder": "Tu nombre"
     },
     "ageBand": {
       "title": "¿Cuántos años tienes?",
@@ -296,7 +297,12 @@
     },
     "religion": {
       "title": "¿La fe o la espiritualidad marcan tu forma de ver la vida?",
-      "subtitle": "Adaptamos el lenguaje, nunca damos nada por hecho."
+      "subtitle": "Adaptamos el lenguaje, nunca damos nada por hecho.",
+      "options": {
+        "yes": "Sí",
+        "spiritual": "Espiritual, no religioso",
+        "no": "No"
+      }
     },
     "goal": {
       "title": "¿Hacia qué estás caminando ahora mismo?",
@@ -307,6 +313,149 @@
       "title": "¿Hay algo que te pese estos días?",
       "subtitle": "No hace falta contarlo todo.",
       "placeholder": "Todo lo que quieras contar, o muy poco"
+    },
+    "beliefs": {
+      "title": "¿Cuál de estas se acerca más a tus creencias?",
+      "subtitle": "Solo para ajustar el lenguaje; puedes omitirlo.",
+      "options": {
+        "christianity": "Cristianismo",
+        "judaism": "Judaísmo",
+        "islam": "Islam",
+        "hinduism": "Hinduismo",
+        "buddhism": "Budismo",
+        "other": "Otra cosa"
+      }
+    },
+    "beliefsOther": {
+      "title": "¿Quieres contarme?",
+      "subtitle": "Como tú describirías tus creencias, solo si te apetece.",
+      "placeholder": "Todo lo que quieras contar, o muy poco"
+    },
+    "zodiac": {
+      "title": "¿Cuál es tu signo?",
+      "subtitle": "Un toque más de color para tus afirmaciones.",
+      "options": {
+        "aries": "Aries",
+        "taurus": "Tauro",
+        "gemini": "Géminis",
+        "cancer": "Cáncer",
+        "leo": "Leo",
+        "virgo": "Virgo",
+        "libra": "Libra",
+        "scorpio": "Escorpio",
+        "sagittarius": "Sagitario",
+        "capricorn": "Capricornio",
+        "aquarius": "Acuario",
+        "pisces": "Piscis"
+      }
+    },
+    "info_what": {
+      "title": "Las afirmaciones son frases cortas que te dices a ti mismo",
+      "subtitle": "Lee unas cuantas cada día y, con el tiempo, esa voz más amable empieza a sentirse tuya."
+    },
+    "affirmationFamiliarity": {
+      "title": "¿Qué tan familiarizado estás con las afirmaciones?",
+      "subtitle": "Ajustaremos la experiencia a tu nivel.",
+      "options": {
+        "new": "Es nuevo para mí",
+        "occasional": "Las he usado alguna vez",
+        "regular": "Las uso con regularidad"
+      }
+    },
+    "tone": {
+      "title": "¿Cómo te gusta que te hablen?",
+      "subtitle": "Esto define la voz de tus afirmaciones.",
+      "options": {
+        "gentle": "Con suavidad y calma",
+        "grounded": "Con calidez y los pies en la tierra",
+        "energetic": "Directo y motivador"
+      }
+    },
+    "targetFeelings": {
+      "title": "¿De qué quieres sentir más?",
+      "subtitle": "Elige los sentimientos que buscas.",
+      "options": {
+        "calm": "Calma",
+        "confident": "Confianza",
+        "grateful": "Gratitud",
+        "hopeful": "Esperanza",
+        "strong": "Fuerza",
+        "worthy": "Valía",
+        "focused": "Enfoque",
+        "at-peace": "Paz"
+      }
+    },
+    "mentalHealthPractices": {
+      "title": "¿Qué ya te ayuda a cuidar tu bienestar?",
+      "subtitle": "Para que las afirmaciones acompañen, no sustituyan.",
+      "options": {
+        "support": "El apoyo de otras personas",
+        "exercise": "Ejercicio y alimentación",
+        "therapy": "Terapia",
+        "journaling": "Escribir un diario",
+        "nature": "Pasar tiempo en la naturaleza",
+        "meditation": "Meditación"
+      }
+    },
+    "selfCareBarriers": {
+      "title": "¿Qué suele interponerse en tu autocuidado?",
+      "subtitle": "Ponerle nombre nos ayuda a ayudarte a sortearlo.",
+      "options": {
+        "lose-momentum": "Pierdo el impulso o se me olvida",
+        "no-immediate-effect": "No veo un efecto inmediato",
+        "none": "Nada: lo hago cada día",
+        "havent-found": "No he encontrado lo que me funciona",
+        "dont-know-start": "No sé por dónde empezar",
+        "overwhelmed": "Me agobio y lo dejo"
+      }
+    },
+    "habitHelpers": {
+      "title": "¿Qué te ayudaría a convertirlo en un hábito diario?",
+      "subtitle": "Puedes elegir más de una.",
+      "options": {
+        "reminders": "Recibir recordatorios",
+        "progress": "Ver mi progreso",
+        "widget": "Un widget en la pantalla de inicio",
+        "guided-practice": "Una práctica guiada",
+        "unsure": "Aún no lo sé"
+      }
+    },
+    "dailyGoalMinutes": {
+      "title": "¿Cuánto tiempo le vas a dedicar?",
+      "subtitle": "Puedes cambiarlo más adelante.",
+      "options": {
+        "1": "1 minuto al día",
+        "3": "3 minutos al día",
+        "10": "10 minutos al día"
+      }
+    },
+    "benefits": {
+      "title": "Lo que hace una práctica diaria",
+      "subtitle": "Unos minutos, casi todos los días, bastan para cambiar cómo te hablas.",
+      "cta": "Entendido"
+    },
+    "reminders": {
+      "title": "Recibe un impulso a lo largo del día",
+      "subtitle": "Tu afirmación llega sin hacer ruido, incluso sin conexión.",
+      "cta": "Permitir y guardar"
+    },
+    "theme": {
+      "title": "Elige un estilo para empezar",
+      "subtitle": "Puedes cambiarlo cuando quieras."
+    },
+    "streakIntro": {
+      "title": "Crea un hábito que se mantenga",
+      "subtitle": "Lee una al día y mira crecer tu racha."
+    },
+    "email": {
+      "title": "¿Dónde guardamos todo esto?",
+      "subtitle": "Tu correo mantiene a salvo tus afirmaciones y tu progreso.",
+      "placeholder": "tu@ejemplo.com"
+    },
+    "password": {
+      "title": "Crea una contraseña",
+      "subtitle": "Mínimo 8 caracteres.",
+      "placeholder": "Mínimo 8 caracteres"
     }
   },
   "verify": {
@@ -344,7 +493,7 @@
     "next": "Otra frase",
     "source": {
       "today": "Hoy",
-      "saved": "Guardadas",
+      "favorites": "Favoritos",
       "mine": "Mías"
     },
     "voiceRecord": "Mi voz",
@@ -418,7 +567,6 @@
     "noExpiry": "Es tuyo — sin fecha de renovación.",
     "freeHint": "Estás en el plan gratuito.",
     "purchasedVia": "Comprado en",
-    "sourceTrial": "Prueba gratuita",
     "sourceAppStore": "App Store",
     "sourcePlayStore": "Google Play",
     "confirmed": "Confirmado con la tienda",
@@ -437,14 +585,6 @@
     "restore": "Restaurar compras",
     "restored": "Compras restauradas.",
     "storeFailed": "No se pudo abrir la tienda.",
-    "stepInstalled": "Instalar la app",
-    "stepInstalledHint": "Configurada según lo que nos contaste.",
-    "stepToday": "Hoy: acceso completo",
-    "stepTodayHint": "Todo desbloqueado, gratis durante {{days}} días.",
-    "stepRemind": "{{date}} — Aviso de la prueba",
-    "stepRemindHint": "Para que el final no te pille por sorpresa.",
-    "stepCharge": "{{date}} — Hazte miembro",
-    "stepChargeHint": "Tu prueba termina salvo que canceles antes.",
     "restoreNothing": "No hay ninguna compra anterior en esta cuenta de la tienda. Si pagaste con otra, inicia sesión con esa e inténtalo de nuevo.",
     "restoreUnavailable": "Las compras aún no están configuradas en esta versión.",
     "restoreSyncing": "Compra encontrada — aparecerá aquí en un momento.",
@@ -453,12 +593,31 @@
     "upgradeKicker": "No una biblioteca más grande. Otra autoría.",
     "sampleEyebrow": "Esta la escribió Saydle para ti",
     "sampleFooter": "Así es cada día a partir de aquí.",
-    "compareFree": "Gratis",
-    "comparePremium": "Premium",
-    "compareRow1": "Afirmaciones escritas a partir de tus respuestas",
-    "compareRow2": "Una voz que te las lee",
-    "compareRow3": "Tus propias palabras, guardadas",
-    "compareRow4": "Guardar frases para volver a ellas"
+    "sourcePromotional": "Promocional",
+    "period": {
+      "day": "{{count}} día",
+      "days": "{{count}} días",
+      "week": "{{count}} semana",
+      "weeks": "{{count}} semanas",
+      "month": "{{count}} mes",
+      "months": "{{count}} meses",
+      "year": "{{count}} año",
+      "years": "{{count}} años"
+    },
+    "per": {
+      "day": "al día",
+      "days": "cada {{count}} días",
+      "week": "a la semana",
+      "weeks": "cada {{count}} semanas",
+      "month": "al mes",
+      "months": "cada {{count}} meses",
+      "year": "al año",
+      "years": "cada {{count}} años"
+    },
+    "planTerm": "{{price}} {{per}}",
+    "planTermOnce": "{{price}} una sola vez",
+    "renewalTermsIos": "Se renueva automáticamente al mismo precio hasta que la canceles al menos 24 horas antes de que termine el periodo. Gestiónala o cancélala en los ajustes del App Store.",
+    "renewalTermsAndroid": "Se renueva automáticamente al mismo precio hasta que la canceles al menos 24 horas antes de que termine el periodo. Gestiónala o cancélala en los ajustes de Google Play."
   },
   "themes": {
     "preview": "Así se verá tu afirmación."
@@ -496,6 +655,26 @@
       "name": "Del abuelo",
       "desc": "Sin prisa. Alguien con tiempo.",
       "preview": "Escuchar la voz del abuelo"
-    }
+    },
+    "premium": "Premium",
+    "premiumHint": "Elegir una voz es parte de Saydle premium",
+    "lockedHint": "Toca una voz para escucharla. Elegir la que lea tu sesión es parte de Saydle premium; hasta entonces, la lee tu teléfono."
+  },
+  "legal": {
+    "title": "Legal",
+    "terms": "Términos de uso",
+    "privacy": "Política de privacidad",
+    "contact": "Contactar con soporte",
+    "supportSubject": "Soporte de Saydle",
+    "openFailed": "No se pudo abrir el enlace."
+  },
+  "deletion": {
+    "eyebrow": "Eliminación programada",
+    "scheduled": "Tu cuenta se eliminará el {{date}}.",
+    "scheduledSoon": "Tu cuenta está programada para eliminarse.",
+    "body": "Iniciar sesión no lo ha cancelado. Toca Conservar mi cuenta y no se borrará nada.",
+    "keep": "Conservar mi cuenta",
+    "notNow": "Ahora no",
+    "kept": "Tu cuenta se queda. No se eliminará nada."
   }
 }

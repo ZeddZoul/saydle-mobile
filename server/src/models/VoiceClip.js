@@ -14,6 +14,12 @@ import mongoose from "mongoose";
  * the benefit on the free bank; and a line that is edited is a different clip
  * rather than a stale one served under the old id.
  *
+ * The exception is someone's own words. A "My words" line is private by
+ * definition, so its clip is keyed on the owner as well and is served only to
+ * them, under a signed URL — see controllers/voice.controller.js. Those rows
+ * carry `user`; shared rows have `user: null`, and the purge removes the
+ * former along with everything else that belongs to a person.
+ *
  * The audio lives in the document. A short affirmation at 32kbps is ~20KB
  * against Mongo's 16MB ceiling, so there is a lot of headroom, and it buys
  * durability the filesystem cannot: on an ephemeral host every restart would
@@ -21,15 +27,23 @@ import mongoose from "mongoose";
  */
 const voiceClipSchema = new mongoose.Schema(
   {
-    // sha256 of `${voiceId}:${text}` — the cache key, and the only thing ever
-    // looked up. Hashed rather than stored raw so the index stays a fixed
-    // width regardless of how long a line is.
+    // sha256 of `${voiceId}:${text}` (plus the owner for a private clip) — the
+    // cache key, and the only thing ever looked up. Hashed rather than stored
+    // raw so the index stays a fixed width regardless of how long a line is.
     key: { type: String, required: true, unique: true, index: true },
 
     voiceId: { type: String, required: true },
     // Kept for debugging and for cache-wide invalidation if a voice is ever
     // withdrawn; never used to find a clip.
     text: { type: String, required: true },
+
+    // Null for a shared clip. Set for a reader's own words, which nobody else
+    // may play.
+    user: { type: mongoose.Schema.Types.ObjectId, ref: "User", default: null, index: true },
+
+    // Whoever's session paid for the render. This is what the daily character
+    // budget counts against: cache hits cost nothing and are not recorded.
+    renderedFor: { type: mongoose.Schema.Types.ObjectId, ref: "User", default: null },
 
     audio: { type: Buffer, required: true },
     mimeType: { type: String, default: "audio/mpeg" },
@@ -46,9 +60,20 @@ const voiceClipSchema = new mongoose.Schema(
   { timestamps: true },
 );
 
-/** The cache key. Stable across processes, which an in-memory map would not be. */
-export function clipKey(text, voiceId) {
-  return crypto.createHash("sha256").update(`${voiceId}:${text}`).digest("hex");
+// The budget query: "how much did this reader have rendered since yesterday".
+voiceClipSchema.index({ renderedFor: 1, createdAt: -1 });
+
+/**
+ * The cache key. Stable across processes, which an in-memory map would not be.
+ *
+ * A shared clip's key is unchanged from before owners existed, so nothing
+ * already rendered is orphaned. An owned clip folds the owner in, which is
+ * what makes "the same sentence, written by two people" two clips rather than
+ * one that either could play.
+ */
+export function clipKey(text, voiceId, ownerId = null) {
+  const scope = ownerId ? `${voiceId}:${text}:owner:${String(ownerId)}` : `${voiceId}:${text}`;
+  return crypto.createHash("sha256").update(scope).digest("hex");
 }
 
 export const VoiceClip =

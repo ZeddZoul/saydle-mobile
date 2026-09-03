@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { useAuth } from "../contexts/AuthContext.jsx";
 import { todayLocal } from "../lib/dates.js";
+import { ApiError } from "../lib/errors.js";
 import { DEFAULT_VOICE, suggestedVoice, voiceByKey } from "../lib/voices.js";
 
 const KEY = "voicePreference";
@@ -24,6 +25,11 @@ const KEY = "voicePreference";
  * reconciled. It is simply refused, with `saving` false and the old voice
  * still showing, because the alternative is a picker that claims a voice the
  * renderer knows nothing about.
+ *
+ * Choosing is premium: the server answers a free reader's PUT with a 403, and
+ * `locked` is how the picker learns to show "Premium" on the choose control
+ * instead of a tap that did nothing. Nothing else changes — the device voice
+ * still reads, and the fallback voice is still suggested from their tone.
  */
 export function useVoicePreference() {
   const { user, cache, client } = useAuth();
@@ -32,6 +38,7 @@ export function useVoicePreference() {
 
   const [state, setState] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [locked, setLocked] = useState(false);
 
   useEffect(() => {
     if (!userId) return;
@@ -68,9 +75,11 @@ export function useVoicePreference() {
         setState(next);
         return cache.saveJson?.(userId, KEY, next);
       })
-      // Offline. The cached answer stands, which is the right one until they
-      // change it — and changing it needs the server anyway.
-      .catch(() => {});
+      // Offline, or the paywall. The cached answer stands, which is the right
+      // one until they change it — and changing it needs the server anyway.
+      .catch((err) => {
+        if (!cancelled && err instanceof ApiError && err.status === 403) setLocked(true);
+      });
 
     return () => {
       cancelled = true;
@@ -109,10 +118,14 @@ export function useVoicePreference() {
           pending: res.pending ?? "",
           pendingFrom: res.pendingFrom ?? "",
         };
+        setLocked(false);
         setState(next);
         await cache.saveJson?.(userId, KEY, next);
-      } catch {
-        // Offline or refused. The voice they had is the voice they keep.
+      } catch (err) {
+        // Offline or refused. The voice they had is the voice they keep. A 403
+        // is the one refusal worth remembering: it means the choice is
+        // premium, and the picker should say so rather than shrug.
+        if (err instanceof ApiError && err.status === 403) setLocked(true);
       } finally {
         setSaving(false);
       }
@@ -129,5 +142,7 @@ export function useVoicePreference() {
     pending,
     voice: voiceByKey(active),
     choose,
+    /** The server has said choosing a voice is premium. */
+    locked,
   };
 }

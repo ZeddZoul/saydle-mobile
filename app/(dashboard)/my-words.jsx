@@ -43,7 +43,7 @@ const MyWords = () => {
     useCustomAffirmations();
 
   // Tab screens stay mounted once visited, so without this the gate would keep
-  // showing the paywall after a trial or subscription started elsewhere.
+  // showing the paywall after a subscription started elsewhere.
   useFocusEffect(
     useCallback(() => {
       refresh();

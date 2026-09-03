@@ -5,6 +5,7 @@ import OnboardingStep from "../../components/onboarding/OnboardingStep.jsx";
 import StreakPreview from "../../components/onboarding/StreakPreview.jsx";
 import BenefitsPanel from "../../components/onboarding/BenefitsPanel.jsx";
 import { ONBOARDING_QUESTIONS } from "../../lib/onboardingQuestions.js";
+import { DEFAULT_REMINDER_WINDOW } from "../../lib/reminders.js";
 
 const metrics = {
   frame: { x: 0, y: 0, width: 390, height: 844 },
@@ -70,6 +71,31 @@ describe("the reminders step", () => {
 
     expect(Notifications.getPermissionsAsync).toHaveBeenCalled();
     expect(onNext).toHaveBeenCalled();
+  });
+
+  it("saves the window it showed, even if the slider was never touched", async () => {
+    const onChange = jest.fn();
+    const view = await renderStep({ question, value: undefined, onChange });
+
+    await fireEvent.press(await view.findByText("Allow and save"));
+
+    // The screen said "3× between 09:00 and 22:00"; accepting that is choosing
+    // it. It used to persist nothing, so a reader who tapped Allow got no
+    // reminders at all.
+    expect(onChange).toHaveBeenCalledWith(DEFAULT_REMINDER_WINDOW);
+  });
+
+  it("leaves a window the reader set alone", async () => {
+    const onChange = jest.fn();
+    const view = await renderStep({
+      question,
+      value: { count: 5, start: "08:00", end: "20:00" },
+      onChange,
+    });
+
+    await fireEvent.press(await view.findByText("Allow and save"));
+
+    expect(onChange).not.toHaveBeenCalled();
   });
 });
 
@@ -148,5 +174,38 @@ describe("the flow", () => {
   it("keeps email and password as the last two steps", () => {
     const keys = ONBOARDING_QUESTIONS.map((q) => q.key);
     expect(keys.slice(-2)).toEqual(["email", "password"]);
+  });
+
+  it("never makes anyone disclose something personal to get in", () => {
+    // Name, mood and its causes, why they came, the inner critic, what
+    // supports their wellbeing — a therapist or a breakup is nobody's price
+    // of admission to an affirmation.
+    const personal = [
+      "callName",
+      "ageBand",
+      "recentMood",
+      "feelingCauses",
+      "relationshipStatus",
+      "motivation",
+      "innerCritic",
+      "religion",
+      "mentalHealthPractices",
+      "weighing",
+    ];
+    const mandatory = ONBOARDING_QUESTIONS.filter(
+      (q) => personal.includes(q.key) && !q.skippable,
+    ).map((q) => q.key);
+
+    expect(mandatory).toEqual([]);
+  });
+
+  it("marks every sensitive question skippable", () => {
+    const stuck = ONBOARDING_QUESTIONS.filter((q) => q.sensitive && !q.skippable);
+    expect(stuck.map((q) => q.key)).toEqual([]);
+  });
+
+  it("still requires the account fields", () => {
+    const account = ONBOARDING_QUESTIONS.filter((q) => ["email", "password"].includes(q.key));
+    expect(account.every((q) => !q.skippable)).toBe(true);
   });
 });

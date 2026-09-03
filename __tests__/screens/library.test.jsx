@@ -67,21 +67,25 @@ describe("Library screen", () => {
     expect(await findByText("Line 0")).toBeTruthy();
   });
 
-  it("offers a heart and a bookmark, separately", async () => {
-    const { findAllByTestId } = await renderScreen();
+  it("offers a heart, and withholds the bookmark until there is a shelf", async () => {
+    const { findAllByTestId, queryAllByTestId } = await renderScreen();
 
     expect((await findAllByTestId("library-favorite")).length).toBeGreaterThan(0);
-    expect((await findAllByTestId("library-save")).length).toBeGreaterThan(0);
+    // The server, api.saved() and hooks/useSaved.js are all ready, but nothing
+    // in the app lists what was saved. A control whose result can never be
+    // seen is the one thing in the product that does nothing — so it is gone
+    // until the Saved shelf exists.
+    expect(queryAllByTestId("library-save")).toHaveLength(0);
   });
 
-  it("bookmarking does not silently favourite", async () => {
+  it("the heart favourites, and nothing is bookmarked by accident", async () => {
     const client = makeClient();
     const { findAllByTestId } = await renderScreen(client);
 
-    await fireEvent.press((await findAllByTestId("library-save"))[0]);
+    await fireEvent.press((await findAllByTestId("library-favorite"))[0]);
 
-    await waitFor(() => expect(client.addSaved).toHaveBeenCalledWith("a0"));
-    expect(client.addFavorite).not.toHaveBeenCalled();
+    await waitFor(() => expect(client.addFavorite).toHaveBeenCalledWith("a0"));
+    expect(client.addSaved).not.toHaveBeenCalled();
   });
 
   it("explains the paywall rather than showing an empty screen", async () => {

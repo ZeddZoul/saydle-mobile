@@ -1,7 +1,7 @@
 import { Affirmation } from "../models/Affirmation.js";
 import { Saved } from "../models/Saved.js";
 import { isEntitled } from "../services/subscription.service.js";
-import { getLibrary, advanceCursor, scheduleRefill } from "../services/library.service.js";
+import { getLibrary, advanceCursor, warmLibrary } from "../services/library.service.js";
 import { REQUIRES_PREMIUM, PAGE_SIZE } from "../config/library.js";
 import { AppError } from "../utils/AppError.js";
 
@@ -102,11 +102,15 @@ export async function unsave(req, res, next) {
   }
 }
 
-/** Used by the onboarding screen that covers the first batch's latency. */
+/**
+ * Used by the onboarding screen that covers the first batch's latency.
+ *
+ * 202 either way — the app is not waiting on the answer — but `started` is
+ * honest: a batch that is still fresh is not written again.
+ */
 export async function warm(req, res, next) {
   try {
-    scheduleRefill(req.user);
-    res.status(202).json({ started: true });
+    res.status(202).json(await warmLibrary(req.user));
   } catch (err) {
     next(err);
   }

@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
-import { Pressable, ScrollView, StyleSheet, Switch, Text, View } from "react-native";
+import { Linking, Pressable, ScrollView, StyleSheet, Switch, Text, View } from "react-native";
 import * as Haptics from "expo-haptics";
+import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import GradientBackground from "../../components/GradientBackground.jsx";
 import FloatingHeader, { FLOATING_HEADER_INSET } from "../../components/FloatingHeader.jsx";
@@ -21,6 +22,7 @@ import { useSubscription } from "../../hooks/useSubscription.js";
 import { useProfileNudge } from "../../hooks/useProfileNudge.js";
 import { useLocale } from "../../hooks/useLocale.js";
 import { DELETION_GRACE_DAYS } from "../../lib/config.js";
+import { PRIVACY_URL, TERMS_URL, supportMailto } from "../../lib/legal.js";
 import { messageFor, NetworkError } from "../../lib/errors.js";
 import { t as tNow, useT } from "../../lib/i18n.js";
 import { colors, radius, shadow, spacing, type } from "../../theme/tokens.js";
@@ -38,6 +40,7 @@ const Chip = ({ label, active, disabled, onPress, theme }) => (
   <Pressable
     onPress={onPress}
     disabled={disabled}
+    accessibilityRole="button"
     accessibilityState={{ selected: active, disabled }}
     style={[
       styles.chip,
@@ -155,6 +158,25 @@ const Profile = () => {
   // A system Alert cannot take two fields, and it cannot say the thing this
   // screen most needs to say — that nothing is destroyed today.
   const confirmDelete = () => setDeleting(true);
+
+  const openLink = (url) =>
+    Linking.openURL(url).catch(() => toast.error(t("legal.openFailed")));
+
+  const LEGAL_ROWS = [
+    {
+      key: "privacy",
+      icon: "shield-checkmark-outline",
+      label: t("legal.privacy"),
+      url: PRIVACY_URL,
+    },
+    { key: "terms", icon: "document-text-outline", label: t("legal.terms"), url: TERMS_URL },
+    {
+      key: "support",
+      icon: "mail-outline",
+      label: t("legal.contact"),
+      url: supportMailto(t("legal.supportSubject")),
+    },
+  ];
 
   return (
     <GradientBackground>
@@ -360,6 +382,28 @@ const Profile = () => {
           />
         </View>
 
+        {/* The documents and the door to a human. App Review looks for both;
+            so does anyone deciding whether to trust an app with how they have
+            been feeling. */}
+        <View style={[styles.card, { backgroundColor: theme.surface }]}>
+          <DisplayText style={[styles.sectionTitle, { color: theme.ink }]}>
+            {t("legal.title")}
+          </DisplayText>
+          {LEGAL_ROWS.map((row) => (
+            <Pressable
+              key={row.key}
+              onPress={() => openLink(row.url)}
+              accessibilityRole="link"
+              style={styles.legalRow}
+              testID={`legal-${row.key}`}
+            >
+              <Ionicons name={row.icon} size={18} color={theme.accent} />
+              <Text style={[styles.legalText, { color: theme.ink }]}>{row.label}</Text>
+              <Ionicons name="chevron-forward" size={16} color={theme.sub} />
+            </Pressable>
+          ))}
+        </View>
+
         <Spacer height={spacing.xl} />
 
         <Button title={t("profile.signOut")} onPress={signOut} variant="secondary" />
@@ -450,6 +494,13 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   gridTitle: { marginTop: spacing.md, marginBottom: spacing.sm },
+  legalRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.md,
+    minHeight: 44,
+  },
+  legalText: { flex: 1, fontSize: 15 },
   grid: { flexDirection: "row", gap: spacing.md, marginBottom: spacing.md },
   linkTitle: {
     marginBottom: 2,

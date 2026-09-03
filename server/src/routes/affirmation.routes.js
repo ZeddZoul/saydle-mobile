@@ -1,6 +1,7 @@
 import { Router } from "express";
 import { requireAuth } from "../middleware/auth.js";
 import { validate } from "../middleware/validate.js";
+import { perUserLimiter } from "../middleware/rateLimit.js";
 import {
   feedQuerySchema,
   historyQuerySchema,
@@ -23,7 +24,13 @@ affirmationRouter.post("/feed/:date/seen", validate(dateParamSchema, "params"), 
 
 // Declared before "/:id/favorite" so "custom" is never read as an id.
 affirmationRouter.get("/custom", custom.listCustom);
-affirmationRouter.post("/custom", validate(customAffirmationSchema), custom.createCustom);
+// Writing a line rebuilds the days ahead; limited so that cannot be looped.
+affirmationRouter.post(
+  "/custom",
+  perUserLimiter({ max: 20 }),
+  validate(customAffirmationSchema),
+  custom.createCustom,
+);
 affirmationRouter.delete("/custom/:id", validate(idParamSchema, "params"), custom.deleteCustom);
 
 affirmationRouter.get("/favorites", ctrl.listFavorites);
@@ -40,4 +47,11 @@ categoryRouter.get("/", requireAuth, ctrl.listCategories);
 export const preferencesRouter = Router();
 preferencesRouter.use(requireAuth);
 preferencesRouter.get("/", ctrl.getPreferences);
-preferencesRouter.patch("/", validate(preferencesSchema), ctrl.updatePreferences);
+// A preference change can regenerate the feed, so the write is limited even
+// though the read is not.
+preferencesRouter.patch(
+  "/",
+  perUserLimiter({ max: 20 }),
+  validate(preferencesSchema),
+  ctrl.updatePreferences,
+);

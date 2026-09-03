@@ -1,4 +1,5 @@
 import crypto from "node:crypto";
+import mongoose from "mongoose";
 import { User } from "../models/User.js";
 import { Tombstone } from "../models/Tombstone.js";
 import { Affirmation } from "../models/Affirmation.js";
@@ -8,7 +9,8 @@ import { Saved } from "../models/Saved.js";
 import { RefreshToken } from "../models/RefreshToken.js";
 import { EmailVerificationToken } from "../models/EmailVerificationToken.js";
 import { PasswordResetToken } from "../models/PasswordResetToken.js";
-import { env } from "../config/env.js";
+import { VoiceClip } from "../models/VoiceClip.js";
+import { tombstoneKey } from "../config/env.js";
 import { logger } from "../lib/logger.js";
 import { tombstoneExpiryFrom } from "../config/deletion.js";
 
@@ -37,20 +39,34 @@ const OWNED = [
   { model: RefreshToken, field: "user" },
   { model: EmailVerificationToken, field: "user" },
   { model: PasswordResetToken, field: "user" },
+  // Only their own words are keyed on a person; shared clips have `user: null`
+  // and belong to nobody, so this removes exactly the private ones.
+  { model: VoiceClip, field: "user" },
 ];
+
+/**
+ * Rows created this close to the sweep are not orphans yet.
+ *
+ * The sweep takes a snapshot of who exists and then walks each collection. An
+ * account registered between the two has rows the snapshot has never heard
+ * of, and without this window their first refresh token and feed would be
+ * swept as belonging to nobody. Five minutes is far longer than either step.
+ */
+export const ORPHAN_GRACE_MS = 5 * 60 * 1000;
 
 /**
  * One-way hash of an address.
  *
  * Keyed, not a bare digest: email addresses come from a small enough space that
- * an unkeyed SHA of one is recoverable from a wordlist in seconds. The refresh
- * secret is reused as key material rather than adding another required env var —
- * it already exists, it is already secret, and a deployment that rotates it
- * loses only the ability to match old tombstones, which nothing depends on.
+ * an unkeyed SHA of one is recoverable from a wordlist in seconds. The key is
+ * TOMBSTONE_HMAC_KEY, dedicated to this: it used to borrow the refresh secret,
+ * which meant rotating a leaked auth secret silently broke matching every
+ * tombstone written before it. Outside production it still falls back to that
+ * secret so a laptop needs no extra setup — see config/env.js.
  */
 export function hashEmail(email) {
   return crypto
-    .createHmac("sha256", env.JWT_REFRESH_SECRET)
+    .createHmac("sha256", tombstoneKey)
     .update(String(email).trim().toLowerCase())
     .digest("hex");
 }
@@ -96,6 +112,10 @@ export async function purgeAccount(user, { now = new Date() } = {}) {
     const { deletedCount } = await model.deleteMany({ [field]: id });
     removed[model.modelName] = deletedCount;
   }
+
+  // Shared clips they happened to be the first to play stay — they belong to
+  // the line, not to them — but the record of who paid for the render goes.
+  await VoiceClip.updateMany({ renderedFor: id }, { $set: { renderedFor: null } });
 
   await User.deleteOne({ _id: id });
 
@@ -153,13 +173,19 @@ export async function purgeDueAccounts({ now = new Date(), limit = 100 } = {}) {
  * else, so every account deleted before this existed left its feed, favourites
  * and generated affirmations behind. Runs off the same script.
  */
-export async function purgeOrphans({ limit = 5000 } = {}) {
+export async function purgeOrphans({ now = new Date(), limit = 5000 } = {}) {
   const live = new Set((await User.find({}, { _id: 1 }).lean()).map((u) => String(u._id)));
   const removed = {};
 
+  // An ObjectId carries its creation second, so "older than the cutoff" is a
+  // range on _id rather than a field every collection would have to carry.
+  const cutoff = mongoose.Types.ObjectId.createFromTime(
+    Math.floor((now.getTime() - ORPHAN_GRACE_MS) / 1000),
+  );
+
   for (const { model, field } of OWNED) {
     const rows = await model
-      .find({ [field]: { $ne: null } }, { [field]: 1 })
+      .find({ [field]: { $ne: null }, _id: { $lt: cutoff } }, { [field]: 1 })
       .limit(limit)
       .lean();
 

@@ -1,5 +1,6 @@
 import { Affirmation } from "../models/Affirmation.js";
 import { FeedEntry } from "../models/FeedEntry.js";
+import { Category } from "../models/Category.js";
 import { AppError } from "../utils/AppError.js";
 import { isEntitled } from "../services/subscription.service.js";
 import { focusNeedsCare } from "../services/moderation.service.js";
@@ -54,6 +55,18 @@ export async function createCustom(req, res, next) {
       );
     }
 
+    // A slug the app did not get from /api/categories is a typo or a probe.
+    // Either way it must not become a value the feed later groups on.
+    const categorySlug = req.body.categorySlug ?? "general";
+    if (
+      req.body.categorySlug &&
+      !(await Category.exists({ slug: categorySlug, isActive: true }))
+    ) {
+      throw AppError.badRequest("That category does not exist.", {
+        categorySlug: "Pick one of the listed categories.",
+      });
+    }
+
     const count = await Affirmation.countDocuments({
       user: req.user._id,
       source: "custom",
@@ -66,7 +79,7 @@ export async function createCustom(req, res, next) {
     const affirmation = await Affirmation.create({
       text,
       textKey: text.toLowerCase(),
-      categorySlug: req.body.categorySlug ?? "general",
+      categorySlug,
       source: "custom",
       user: req.user._id,
       locale,

@@ -282,6 +282,95 @@ describe("updatePreferences", () => {
   });
 });
 
+describe("a pending deletion", () => {
+  const PENDING = {
+    ...USER,
+    deletion: {
+      pending: true,
+      requestedAt: "2026-09-01T00:00:00Z",
+      purgeAfter: "2026-10-01T00:00:00Z",
+    },
+  };
+
+  it("is read straight off the account the server returned", async () => {
+    const { result } = await renderAuth({
+      store: makeStore({ hasSession: true }),
+      cache: makeCache(),
+      client: { me: jest.fn(async () => ({ user: PENDING })) },
+    });
+
+    await waitFor(() => expect(result.current.isSignedIn).toBe(true));
+    expect(result.current.deletion).toEqual({
+      pending: true,
+      purgeAfter: "2026-10-01T00:00:00Z",
+    });
+  });
+
+  it("is not pending for an ordinary account, or one the server never described", async () => {
+    const { result } = await renderAuth({
+      store: makeStore({ hasSession: true }),
+      cache: makeCache(),
+      client: { me: jest.fn(async () => ({ user: USER })) },
+    });
+
+    await waitFor(() => expect(result.current.isSignedIn).toBe(true));
+    expect(result.current.deletion).toEqual({ pending: false, purgeAfter: null });
+  });
+
+  it("keepAccount asks the server to restore, and adopts the account it returns", async () => {
+    const cache = makeCache();
+    const restored = {
+      ...USER,
+      deletion: { pending: false, requestedAt: null, purgeAfter: null },
+    };
+    const client = {
+      me: jest.fn(async () => ({ user: PENDING })),
+      restoreMe: jest.fn(async () => ({ user: restored, restored: true })),
+    };
+    const { result } = await renderAuth({
+      store: makeStore({ hasSession: true }),
+      cache,
+      client,
+    });
+
+    await waitFor(() => expect(result.current.deletion.pending).toBe(true));
+    await act(async () => {
+      await result.current.keepAccount();
+    });
+
+    // Signing in did not do this — the call did. And the card watches the
+    // account, so it must be the server's answer that clears the flag.
+    expect(client.restoreMe).toHaveBeenCalledTimes(1);
+    expect(result.current.deletion.pending).toBe(false);
+    expect(cache.saveUser).toHaveBeenLastCalledWith(restored);
+  });
+
+  it("keepAccount leaves the countdown showing when the server cannot be reached", async () => {
+    const client = {
+      me: jest.fn(async () => ({ user: PENDING })),
+      restoreMe: jest.fn(async () => {
+        throw new NetworkError(new Error("offline"));
+      }),
+    };
+    const { result } = await renderAuth({
+      store: makeStore({ hasSession: true }),
+      cache: makeCache(),
+      client,
+    });
+
+    await waitFor(() => expect(result.current.deletion.pending).toBe(true));
+    await expect(
+      act(async () => {
+        await result.current.keepAccount();
+      }),
+    ).rejects.toBeInstanceOf(NetworkError);
+
+    // Claiming the account is safe before the server agreed would be the one
+    // lie here with a deadline attached.
+    expect(result.current.deletion.pending).toBe(true);
+  });
+});
+
 describe("useAuth outside a provider", () => {
   it("throws a useful error", async () => {
     const spy = jest.spyOn(console, "error").mockImplementation(() => {});
