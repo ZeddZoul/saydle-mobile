@@ -2,7 +2,7 @@
 
 _Draft for review. Replace the bracketed items, have it checked by counsel, and host it at the URL set in `EXPO_PUBLIC_TERMS_URL` (default https://saydle.app/terms). Effective date: [date]._
 
-These terms are an agreement between you and **[Buckqr Technologies Limited]** ("Saydle", "we") for the Saydle app and service. By creating an account you accept them. If you download Saydle from the Apple App Store, Apple's Licensed Application End User License Agreement also applies, and where the two conflict, Apple's terms govern for the App Store.
+These terms are an agreement between you and **[Bickqr Technologies Limited]** ("Saydle", "we") for the Saydle app and service. By creating an account you accept them. If you download Saydle from the Apple App Store, Apple's Licensed Application End User License Agreement also applies, and where the two conflict, Apple's terms govern for the App Store.
 
 ## The service
 
@@ -46,4 +46,4 @@ These terms are governed by the laws of the Federal Republic of Nigeria. Where c
 
 ## Contact
 
-[Buckqr Technologies Limited], [address]. Email: [support@saydle.app].
+[Bickqr Technologies Limited], [address]. Email: [support@saydle.app].

@@ -2,7 +2,7 @@
 
 _Draft for review. Replace the bracketed items, have it checked by counsel, and host it at the URL set in `EXPO_PUBLIC_PRIVACY_URL` (default https://saydle.app/privacy). Effective date: [date]._
 
-Saydle is operated by **[Buckqr Technologies Limited]** ("we", "us"), a company registered in Nigeria with registration number [CAC number] and registered office at [address]. Contact: [support@saydle.app].
+Saydle is operated by **[Bickqr Technologies Limited]** ("we", "us"), a company registered in Nigeria with registration number [CAC number] and registered office at [address]. Contact: [support@saydle.app].
 
 ## What Saydle does
 
