@@ -20,21 +20,40 @@ nothing. "20.2 seconds against a 15-second timeout" is a post.
 **Don't claim it's launched.** It isn't on a store yet. "Building" and "shipping
 soon" are true and equally postable.
 
-| #   | Post                                          | Status                     |
-| --- | --------------------------------------------- | -------------------------- |
-| 1   | The home-screen widget, both platforms        | **drafted 2026-08-24**     |
-| 2   | Why the Android widget is drawn, not laid out | next                       |
-| 3   | 20.2s first load against a 15s timeout        |                            |
-| 4   | Token economics of one 240-line call          |                            |
-| 5   | Six themes, and softness bought per platform  |                            |
-| 6   | The icons are rendered, not drawn             |                            |
-| 7   | GDPR deletion done properly                   |                            |
-| 8   | The RevenueCat `test_` key trap               |                            |
-| 9   | Today became a feed — before/after            |                            |
-| 10  | The video export engine, with a real mp4      |                            |
-| 11  | The seven-selection eval                      |                            |
-| 12  | The ElevenLabs voice test                     | blocked — needs the voices |
-| 13  | The bug the fallback hid                      | thread, ready to write     |
+**Posted is the record.** A blank there means it has not gone out, or nobody
+wrote it down — either way, ask rather than assume. Drafted only means the copy
+exists below. Order is top to bottom, skipping anything blocked.
+
+| #   | Post                                          | Format | Drafted    | Posted                     |
+| --- | --------------------------------------------- | ------ | ---------- | -------------------------- |
+| 1   | The home-screen widget, both platforms        | single | 2026-08-24 |                            |
+| 2   | Why the Android widget is drawn, not laid out | thread | 2026-08-25 |                            |
+| 3   | 20.2s first load against a 15s timeout        | single |            |                            |
+| 4   | Token economics of one 240-line call          | thread |            |                            |
+| 5   | Six themes, softness bought per platform      | single |            |                            |
+| 6   | The icons are rendered, not drawn             | single |            |                            |
+| 7   | GDPR deletion done properly                   | thread |            |                            |
+| 8   | The RevenueCat `test_` key trap               | single |            |                            |
+| 9   | Today became a feed — before/after            | single |            |                            |
+| 10  | The video export engine, with a real mp4      | single |            |                            |
+| 11  | The seven-selection eval                      | thread |            |                            |
+| 12  | The ElevenLabs voice test                     | video  |            | blocked — needs the voices |
+| 13  | The bug the fallback hid                      | thread | 2026-08-25 |                            |
+
+--- | --------------------------------------------- | -------------------------- |
+| 1 | The home-screen widget, both platforms | **drafted 2026-08-24** |
+| 2 | Why the Android widget is drawn, not laid out | next |
+| 3 | 20.2s first load against a 15s timeout | |
+| 4 | Token economics of one 240-line call | |
+| 5 | Six themes, and softness bought per platform | |
+| 6 | The icons are rendered, not drawn | |
+| 7 | GDPR deletion done properly | |
+| 8 | The RevenueCat `test_` key trap | |
+| 9 | Today became a feed — before/after | |
+| 10 | The video export engine, with a real mp4 | |
+| 11 | The seven-selection eval | |
+| 12 | The ElevenLabs voice test | blocked — needs the voices |
+| 13 | The bug the fallback hid | thread, ready to write |
 
 ---
 
