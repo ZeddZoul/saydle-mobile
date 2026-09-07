@@ -1,4 +1,4 @@
-import { ScrollView, StyleSheet, Text, View } from "react-native";
+import { Linking, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { SafeAreaView } from "react-native-safe-area-context";
 import GradientBackground from "../GradientBackground.jsx";
@@ -7,6 +7,7 @@ import Button from "../Button.jsx";
 import Spacer from "../Spacer.jsx";
 import { colors, spacing, type } from "../../theme/tokens.js";
 import { useT } from "../../lib/i18n.js";
+import { PRIVACY_URL, TERMS_URL } from "../../lib/config.js";
 
 /**
  * The end-of-flow paywall. This is where the account gets created — either path
@@ -92,6 +93,29 @@ const Paywall = ({ onSubscribe, canPurchase = false, packages = [] }) => {
           ) : null}
 
           <Text style={styles.price}>{t("paywall.price")}</Text>
+
+          {/* Required next to a subscription CTA (App Review 3.1.2), and the
+              decent thing regardless: what the money buys, on what terms, one
+              tap away rather than buried. */}
+          <View style={styles.legal}>
+            <Pressable
+              onPress={() => Linking.openURL(TERMS_URL).catch(() => {})}
+              accessibilityRole="link"
+              hitSlop={8}
+              testID="paywall-terms"
+            >
+              <Text style={styles.legalLink}>{t("legal.terms")}</Text>
+            </Pressable>
+            <Text style={styles.legalDot}>·</Text>
+            <Pressable
+              onPress={() => Linking.openURL(PRIVACY_URL).catch(() => {})}
+              accessibilityRole="link"
+              hitSlop={8}
+              testID="paywall-privacy"
+            >
+              <Text style={styles.legalLink}>{t("legal.privacy")}</Text>
+            </Pressable>
+          </View>
         </View>
       </SafeAreaView>
     </GradientBackground>
@@ -101,6 +125,24 @@ const Paywall = ({ onSubscribe, canPurchase = false, packages = [] }) => {
 export default Paywall;
 
 const styles = StyleSheet.create({
+  legal: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: spacing.sm,
+    marginTop: spacing.md,
+  },
+  legalLink: {
+    ...type.body,
+    fontSize: 13,
+    color: colors.white,
+    textDecorationLine: "underline",
+    opacity: 0.85,
+  },
+  legalDot: {
+    color: colors.white,
+    opacity: 0.6,
+  },
   planWrap: { marginBottom: spacing.sm },
   perMonth: {
     ...type.body,

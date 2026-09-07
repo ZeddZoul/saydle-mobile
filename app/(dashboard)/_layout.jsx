@@ -52,6 +52,7 @@ const DashboardLayout = () => {
       {/* Reached from Profile: a place to go when you have something to write,
           not a fifth thing competing for the tab bar. */}
       <Tabs.Screen name="my-words" options={{ href: null, title: t("myWords.title") }} />
+      <Tabs.Screen name="saved" options={{ href: null, title: t("saved.title") }} />
       {/* Same treatment as the stream: paged full-screen, so the tab bar has to
           go or every page is laid out taller than the visible area. */}
       <Tabs.Screen

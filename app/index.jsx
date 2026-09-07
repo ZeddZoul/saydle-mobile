@@ -5,7 +5,6 @@ import { MaterialCommunityIcons } from "@expo/vector-icons";
 import GradientBackground from "../components/GradientBackground.jsx";
 import DisplayText from "../components/DisplayText.jsx";
 import Sparkles from "../components/Sparkles.jsx";
-import TestimonialCarousel from "../components/TestimonialCarousel.jsx";
 import Button from "../components/Button";
 import Spacer from "../components/Spacer";
 import { colors, spacing } from "../theme/tokens.js";
@@ -30,7 +29,9 @@ const Home = () => {
           </View>
 
           <View style={styles.proof}>
-            {/* Placeholder social proof — replace with a real, substantiated line. */}
+            {/* A claim about the product, deliberately not about its users.
+                Invented praise and five fabricated stars sat here before
+                launch; a store reviewer reads this screen too. */}
             <View style={styles.stat}>
               <MaterialCommunityIcons
                 name="leaf"
@@ -46,8 +47,6 @@ const Home = () => {
                 style={styles.leafRight}
               />
             </View>
-
-            <TestimonialCarousel />
           </View>
 
           <View style={styles.actions}>

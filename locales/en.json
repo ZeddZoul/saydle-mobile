@@ -17,16 +17,9 @@
   },
   "landing": {
     "tagline": "Daily affirmations, crafted for you.",
-    "proof": "Loved by early users",
-    "rating": "Rated five stars",
+    "proof": "One new affirmation every morning, written for where you are.",
     "getStarted": "Get started",
-    "haveAccount": "I already have an account",
-    "testimonials": [
-      "The gentlest part of my morning.",
-      "It finally sounds like me.",
-      "Small reminders that actually land.",
-      "Calmer before I've even had coffee."
-    ]
+    "haveAccount": "I already have an account"
   },
   "auth": {
     "welcomeBack": "Welcome back",
@@ -345,5 +338,17 @@
       "desc": "Unhurried. Someone with time.",
       "preview": "Hear the grandfatherly voice"
     }
+  },
+  "saved": {
+    "title": "Saved",
+    "empty": "Nothing on the shelf yet. Tap the bookmark on a line you want to come back to.",
+    "remove": "Remove \"{{text}}\" from your shelf",
+    "lockedTitle": "A shelf for later",
+    "lockedBody": "A heart is a reaction. A bookmark is an intention — a line you mean to come back to. The shelf is part of Saydle premium.",
+    "lockedCta": "See what premium includes"
+  },
+  "legal": {
+    "terms": "Terms of Use",
+    "privacy": "Privacy Policy"
   }
 }

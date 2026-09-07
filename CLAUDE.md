@@ -392,7 +392,7 @@ match jest-expo 57; do not bump it to v30.
 
 ## Current state
 
-Full vertical slice, end to end, with tests on both halves (**925 total**: 358 API + 567 mobile).
+Full vertical slice, end to end, with tests on both halves (**942 total**: 364 API + 578 mobile).
 Verified on a native iOS dev build, not just in Expo Go — including the home-screen widget
 rendering real data in the active theme, at both small and medium sizes.
 
@@ -423,11 +423,6 @@ The 13-item roadmap is complete and verified on device. What remains:
 
 - **Fill the remaining env vars** in `.env.example` — RevenueCat keys and `APPLE_TEAM_ID`.
   JWT secrets, Resend, DeepL and Vertex are all filled and exercised.
-- **Bookmarks save into a void.** The feed offers one (`AffirmationFeed`), the server stores it and
-  serves `/api/library/saved`, and `api.saved()` exists in the client — but nothing in the app ever
-  calls it. There is no shelf. It is the only control in the product that does nothing, and the
-  comment above it ("a heart is a reaction; a bookmark is an intention") promises exactly the
-  distinction the missing screen fails to deliver.
 - **A real purchase has never been made** — only the trial path is exercised. Needs a store listing
   and a sandbox tester.
 - **The listening session is read by ElevenLabs, and the server is the only thing that talks to
@@ -450,7 +445,17 @@ The 13-item roadmap is complete and verified on device. What remains:
   session its seven files all live on the API. **Untested against the real service** — there is no
   key here, so every test mocks `fetch`. The first real render is what proves the ids.
 - **The Android video export has never run on a device.** The Kotlin compiles; only the iOS half
-  is verified against real output.
+  is verified against real output. `videoShareAvailable()` therefore reports false off iOS —
+  verifying the Kotlin on hardware and deleting that gate is the whole ticket.
+- **Store-readiness state (2026-09-02).** The shelf exists (`saved.jsx`, reached from the bookmark
+  in the Favorites header). The landing screen carries a product claim, not invented testimonials.
+  The paywall links Terms and Privacy, served by the API at `/legal/terms` and `/legal/privacy` —
+  keep those URLs stable, the store listings will point at them. `ITSAppUsesNonExemptEncryption`
+  is answered in app.json. `eas.json` carries empty RevenueCat key slots: cloud builds never see
+  `.env`, and for local builds the empty value _overrides_ the `test_` key, so the paywall
+  degrades instead of shipping a crash-and-reject. Fill them with the `appl_`/`goog_` keys for
+  the submission build. `support@saydle.app` is named in both legal documents — it must exist
+  before submission.
 - **Vertex is deploy-ready but undeployed.** Generation runs as
   `saydle-api@saydle-web.iam.gserviceaccount.com` (`roles/aiplatform.user`, nothing else), via
   `GOOGLE_APPLICATION_CREDENTIALS` in `server/.env`. On a Google host, attach that service account

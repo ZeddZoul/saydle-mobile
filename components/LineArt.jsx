@@ -234,6 +234,33 @@ const ART = {
     </G>
   ),
 
+  savedEmpty: (s) => (
+    <G>
+      {/* A bookmark waiting to hold something — same dotted hand as the empty
+          heart, with the first small one already arriving. */}
+      <Path
+        d="M42 20h36a5 5 0 0 1 5 5v70l-23-14-23 14V25a5 5 0 0 1 5-5Z"
+        stroke={s}
+        strokeWidth="1.4"
+        strokeLinejoin="round"
+        strokeLinecap="round"
+        strokeDasharray="3 5.5"
+        fill="none"
+      />
+      <G transform="translate(88 12) scale(0.24)">
+        <Path
+          d="M42 20h36a5 5 0 0 1 5 5v70l-23-14-23 14V25a5 5 0 0 1 5-5Z"
+          stroke={s}
+          strokeWidth="4.8"
+          strokeLinejoin="round"
+          fill="none"
+        />
+      </G>
+      <Sparkle x={24} y={34} r={3} stroke={s} opacity={0.5} />
+      <Sparkle x={100} y={64} r={3.5} stroke={s} opacity={0.6} />
+    </G>
+  ),
+
   /** The quill at the ready, above a line not yet written. */
   wordsEmpty: (s) => (
     <G>

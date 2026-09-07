@@ -29,7 +29,7 @@ export const FLOATING_HEADER_INSET = 116;
 
 const BUTTON = 44;
 
-const FloatingHeader = ({ title, onBack }) => {
+const FloatingHeader = ({ title, onBack, trailing = null }) => {
   const router = useRouter();
   const { theme } = useAppTheme();
   const { t } = useT();
@@ -70,11 +70,12 @@ const FloatingHeader = ({ title, onBack }) => {
           </DisplayText>
         ) : null}
 
-        {/* Reserves the back button's width so the title stays optically
-            centred. Deliberately NOT styles.button: that carries a border, and
-            with no borderColor set it renders as a black ring — a control that
-            looks tappable and does nothing. */}
-        <View style={styles.spacer} pointerEvents="none" />
+        {/* The right side either carries a real control or reserves the back
+            button's width, so the title stays optically centred either way.
+            The empty spacer is deliberately NOT styles.button: that carries a
+            border, and with no borderColor set it renders as a black ring — a
+            control that looks tappable and does nothing. */}
+        {trailing ?? <View style={styles.spacer} pointerEvents="none" />}
       </View>
     </SafeAreaView>
   );

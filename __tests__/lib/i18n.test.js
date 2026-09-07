@@ -91,10 +91,6 @@ describe("translation", () => {
     expect(t("favorites.remove", { text: "I don't have to earn it" })).toContain("don't");
   });
 
-  it("returns the testimonial list rather than its key", () => {
-    expect(Array.isArray(t("landing.testimonials"))).toBe(true);
-  });
-
   it("falls back to English for a key a translation hasn't caught up with", () => {
     setLocale("es");
     // Real key, deliberately absent from es.json's questions block.

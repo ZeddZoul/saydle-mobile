@@ -1,4 +1,5 @@
 import { ActivityIndicator, FlatList, Pressable, StyleSheet, Text, View } from "react-native";
+import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
 import GradientBackground from "../../components/GradientBackground.jsx";
@@ -15,11 +16,34 @@ const Favorites = () => {
   const { t } = useT();
   const { favorites, loading, offline, toggle } = useFavorites();
   const { theme } = useAppTheme();
+  const router = useRouter();
+
+  // The shelf lives one tap from here: hearts and bookmarks are siblings, and
+  // this is the only place the app puts them side by side.
+  const shelf = (
+    <Pressable
+      onPress={() => router.push("/saved")}
+      accessibilityRole="button"
+      accessibilityLabel={t("saved.title")}
+      hitSlop={12}
+      testID="favorites-shelf"
+      style={({ pressed }) => [
+        styles.shelfButton,
+        {
+          backgroundColor: theme.dark ? "rgba(255,255,255,0.14)" : "rgba(255,255,255,0.55)",
+          borderColor: theme.border,
+        },
+        pressed && { opacity: 0.7 },
+      ]}
+    >
+      <Ionicons name="bookmark-outline" size={20} color={theme.ink} />
+    </Pressable>
+  );
 
   if (loading) {
     return (
       <GradientBackground style={styles.centered} testID="favorites-loading">
-        <FloatingHeader title={t("tabs.favorites")} />
+        <FloatingHeader title={t("tabs.favorites")} trailing={shelf} />
 
         <ActivityIndicator size="large" color={theme.accent} />
       </GradientBackground>
@@ -33,7 +57,7 @@ const Favorites = () => {
 
   return (
     <GradientBackground>
-      <FloatingHeader title={t("tabs.favorites")} />
+      <FloatingHeader title={t("tabs.favorites")} trailing={shelf} />
 
       <OfflineBanner visible={offline} />
 
@@ -74,6 +98,14 @@ const Favorites = () => {
 export default Favorites;
 
 const styles = StyleSheet.create({
+  shelfButton: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    borderWidth: 1,
+    alignItems: "center",
+    justifyContent: "center",
+  },
   centered: {
     alignItems: "center",
     justifyContent: "center",

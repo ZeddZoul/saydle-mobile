@@ -39,6 +39,7 @@ exists below. Order is top to bottom, skipping anything blocked.
 | 11  | The seven-selection eval                      | thread |            |                            |
 | 12  | The ElevenLabs voice test                     | video  |            | blocked — needs the voices |
 | 13  | The bug the fallback hid                      | thread | 2026-08-25 |                            |
+| 14  | The one control that did nothing              | single | 2026-09-02 |                            |
 
 --- | --------------------------------------------- | -------------------------- |
 | 1 | The home-screen widget, both platforms | **drafted 2026-08-24** |
@@ -330,3 +331,22 @@ noticing.
 **Bonus trap, same handler:** Express's `res.set` runs `mime.charsets.lookup`
 and appends `; charset=utf-8` to anything it does not recognise — so binary
 audio went out mislabelled. `res.setHeader` avoids it.
+
+---
+
+## 14 — The one control that did nothing · drafted
+
+**Format:** single + one screenshot (the new shelf).
+
+> For three weeks my app had a bookmark button that worked perfectly and did
+> nothing.
+>
+> Server stored every save. API served them. The client even had the method.
+> Nothing ever called it — there was no screen.
+>
+> A control that works invisibly is indistinguishable from one that's broken.
+>
+> Shipped the shelf today. #Shipaton #buildinpublic
+
+**Why it lands:** everyone has shipped a write path without its read path. The
+"indistinguishable" line is the tweetable bit.

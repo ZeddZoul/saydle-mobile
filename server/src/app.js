@@ -16,6 +16,7 @@ import { profileRouter } from "./routes/profile.routes.js";
 import { streakRouter } from "./routes/streak.routes.js";
 import { subscriptionRouter } from "./routes/subscription.routes.js";
 import { voiceRouter } from "./routes/voice.routes.js";
+import { legalRouter } from "./routes/legal.routes.js";
 import { notFound, errorHandler } from "./middleware/error.js";
 
 export function createApp() {
@@ -55,6 +56,8 @@ export function createApp() {
   app.use("/api/streak", streakRouter);
   app.use("/api/subscription", subscriptionRouter);
   app.use("/api/voice", voiceRouter);
+  // Public documents, not API: no /api prefix, no auth, readable in a browser.
+  app.use("/legal", legalRouter);
 
   app.use(notFound);
   app.use(errorHandler);

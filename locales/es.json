@@ -17,16 +17,9 @@
   },
   "landing": {
     "tagline": "Afirmaciones diarias, hechas para ti.",
-    "proof": "Con el cariño de nuestros primeros usuarios",
-    "rating": "Cinco estrellas",
+    "proof": "Una afirmación nueva cada mañana, escrita para tu momento.",
     "getStarted": "Empezar",
-    "haveAccount": "Ya tengo una cuenta",
-    "testimonials": [
-      "La parte más amable de mi mañana.",
-      "Por fin suena como yo.",
-      "Recordatorios pequeños que de verdad llegan.",
-      "Más en calma antes del primer café."
-    ]
+    "haveAccount": "Ya tengo una cuenta"
   },
   "auth": {
     "welcomeBack": "Hola de nuevo",
@@ -497,5 +490,17 @@
       "desc": "Sin prisa. Alguien con tiempo.",
       "preview": "Escuchar la voz del abuelo"
     }
+  },
+  "saved": {
+    "title": "Guardadas",
+    "empty": "Aún no hay nada en tu estante. Toca el marcador en una frase a la que quieras volver.",
+    "remove": "Quitar «{{text}}» de tu estante",
+    "lockedTitle": "Un estante para después",
+    "lockedBody": "Un corazón es una reacción. Un marcador es una intención: una frase a la que piensas volver. El estante es parte de Saydle premium.",
+    "lockedCta": "Ver qué incluye premium"
+  },
+  "legal": {
+    "terms": "Condiciones de uso",
+    "privacy": "Política de privacidad"
   }
 }
