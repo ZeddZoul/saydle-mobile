@@ -423,8 +423,9 @@ The 13-item roadmap is complete and verified on device. What remains:
 
 - **Fill the remaining env vars** in `.env.example` — RevenueCat keys and `APPLE_TEAM_ID`.
   JWT secrets, Resend, DeepL and Vertex are all filled and exercised.
-- **A real purchase has never been made** — only the trial path is exercised. Needs a store listing
-  and a sandbox tester.
+- **The purchase flow works against the sandbox** (owner-verified 2026-09-07): products exist in
+  App Store Connect, RevenueCat is wired with real keys, and a sandbox purchase completed end to
+  end. A production purchase has still never been made — that only becomes possible after launch.
 - **The listening session is read by ElevenLabs, and the server is the only thing that talks to
   it.** The key can never be an `EXPO_PUBLIC_*` var — those are inlined at build time — so
   rendering, the cache and the voice preference all live on the API (`voice.service.js`,
