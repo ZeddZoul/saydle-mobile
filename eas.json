@@ -12,6 +12,9 @@
       },
       "ios": {
         "simulator": true
+      },
+      "env": {
+        "APPLE_TEAM_ID": ""
       }
     },
     "preview": {
@@ -27,7 +30,8 @@
         "EXPO_PUBLIC_API_URL": "https://REPLACE-ME.example.com",
         "EXPO_PUBLIC_REVENUECAT_IOS_KEY": "",
         "EXPO_PUBLIC_REVENUECAT_ANDROID_KEY": "",
-        "EXPO_PUBLIC_REVENUECAT_ENTITLEMENT_ID": "premium"
+        "EXPO_PUBLIC_REVENUECAT_ENTITLEMENT_ID": "premium",
+        "APPLE_TEAM_ID": ""
       }
     },
     "production": {
@@ -41,7 +45,8 @@
         "EXPO_PUBLIC_API_URL": "https://REPLACE-ME.example.com",
         "EXPO_PUBLIC_REVENUECAT_IOS_KEY": "",
         "EXPO_PUBLIC_REVENUECAT_ANDROID_KEY": "",
-        "EXPO_PUBLIC_REVENUECAT_ENTITLEMENT_ID": "premium"
+        "EXPO_PUBLIC_REVENUECAT_ENTITLEMENT_ID": "premium",
+        "APPLE_TEAM_ID": ""
       }
     }
   },

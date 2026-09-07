@@ -14,7 +14,7 @@
       "backgroundColor": "#F7CAC5"
     },
     "ios": {
-      "supportsTablet": true,
+      "supportsTablet": false,
       "bundleIdentifier": "com.saydle.app",
       "entitlements": {
         "com.apple.security.application-groups": ["group.com.saydle.app.expowidgets"]
