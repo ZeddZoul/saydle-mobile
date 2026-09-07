@@ -223,6 +223,37 @@ Two things behave differently in a release build, both deliberately:
 degrades rather than crashing (see Gotchas), and there is no Metro — a white screen means
 the bundle failed, not that the server is down.
 
+## Deploying the API
+
+`scripts/deploy-api.sh` (`pnpm deploy:api`) builds `server/Dockerfile` and deploys to
+Cloud Run. Idempotent — run it as often as you like.
+
+**Cloud Run rather than a generic host for one specific reason.** Generation already runs
+as `saydle-api@saydle-web.iam.gserviceaccount.com`; attaching that service account to the
+service means Vertex authenticates with **no key file at all**, and
+`GOOGLE_APPLICATION_CREDENTIALS` stops being needed. A key on disk is the thing most
+likely to leak, and this removes it rather than guarding it.
+
+Deploying uses `gcloud auth login` — the CLI account. It is **not** the ADC trap in
+Gotchas below, which is `gcloud auth application-default login` and would take Vertex
+down here.
+
+Secrets live in Secret Manager, never in the image and never in the repo. The script
+refuses to deploy until all six exist and prints the exact `gcloud secrets create` line
+for any that are missing: `MONGODB_URI`, `JWT_ACCESS_SECRET`, `JWT_REFRESH_SECRET`,
+`ELEVENLABS_API_KEY`, `RESEND_API_KEY`, `REVENUECAT_WEBHOOK_SECRET`.
+
+**The database has to be hosted.** `mongodb://127.0.0.1:27017` is a laptop; a deployed
+service cannot reach it. Atlas free tier is enough. Cloud Run has no fixed egress IP
+without a VPC connector, so the Atlas allowlist needs `0.0.0.0/0` — which is why the
+script checks `"db":true` in `/healthz` rather than trusting a successful deploy. An API
+that answers and cannot reach its database is worse than one that fails to start.
+
+Afterwards, two things must be pointed at the new URL, and the first is easy to forget
+because it fails silently: `EXPO_PUBLIC_API_URL` in **`eas.json`** (inlined at build
+time — see Shipping a build), and the RevenueCat webhook, at
+`<url>/api/subscription/webhook`.
+
 ## Gotchas
 
 - **A RevenueCat `test_` key must never reach a release build.** That prefix is the Test Store —

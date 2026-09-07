@@ -1,0 +1,48 @@
+# The build context is the workspace root, because the lockfile and
+# pnpm-workspace.yaml are what define the dependency graph. Everything the API
+# does not need is excluded here rather than in the Dockerfile, so the context
+# stays small and a stray file cannot silently invalidate the layer cache.
+
+node_modules
+**/node_modules
+
+# Generated native projects. Enormous, and nothing to do with the server.
+ios
+android
+.expo
+dist
+web-build
+
+# The mobile half.
+app
+assets
+components
+contexts
+hooks
+lib
+locales
+modules
+styles
+theme
+widgets
+__tests__
+scripts
+
+# Secrets never enter an image. Cloud Run injects configuration at deploy time.
+.env
+.env.*
+!.env.example
+**/*.pem
+**/*-key.json
+**/serviceAccount*.json
+
+# Tests pull in an in-memory MongoDB binary that has no place in a running
+# service. `pnpm install --prod` already skips it; this makes it impossible.
+server/tests
+server/vitest.config.js
+
+.git
+.github
+.vscode
+*.log
+.DS_Store
