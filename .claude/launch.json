@@ -1,0 +1,11 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "saydle-web",
+      "runtimeExecutable": "bash",
+      "runtimeArgs": ["-c", "cd /Users/zedd/Work/Saydle && npx next dev"],
+      "port": 3000
+    }
+  ]
+}

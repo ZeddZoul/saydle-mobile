@@ -6,16 +6,16 @@ values that cannot exist until the API is deployed.
 
 ## Identity
 
-| Field           | Value                                    |
-| --------------- | ---------------------------------------- |
-| Name (30)       | `Saydle — Daily Affirmations`            |
-| Subtitle (30)   | `Affirmations written for you`           |
-| Category        | Lifestyle (secondary: Health & Fitness)  |
-| Age rating      | 4+ (see the questionnaire notes below)   |
-| Support URL     | `REPLACE-ME` (API domain works: `/legal/terms` page links support mail) |
-| Marketing URL   | optional — leave empty for v1            |
-| Privacy Policy  | `REPLACE-ME/legal/privacy`               |
-| Support email   | `support@saydle.app` — **must receive mail before submission** |
+| Field          | Value                                                                   |
+| -------------- | ----------------------------------------------------------------------- |
+| Name (30)      | `Saydle — Daily Affirmations`                                           |
+| Subtitle (30)  | `Affirmations written for you`                                          |
+| Category       | Lifestyle (secondary: Health & Fitness)                                 |
+| Age rating     | 4+ (see the questionnaire notes below)                                  |
+| Support URL    | `REPLACE-ME` (API domain works: `/legal/terms` page links support mail) |
+| Marketing URL  | optional — leave empty for v1                                           |
+| Privacy Policy | `REPLACE-ME/legal/privacy`                                              |
+| Support email  | `support@saydle.com` — **must receive mail before submission**          |
 
 ## Promotional text (170 chars, changeable without review)
 
@@ -53,7 +53,7 @@ values that cannot exist until the API is deployed.
 >
 > Saydle is a wellbeing companion, not a medical or mental-health service.
 >
-> — 
+> —
 >
 > Saydle Premium unlocks affirmations written personally for you, the listening
 > session, your shelf, and My Words. Monthly or annual, auto-renewing;
@@ -82,10 +82,10 @@ plural are already indexed from the title.)
 
 ## Spanish (es-ES / es-MX locale)
 
-| Field         | Value                                  |
-| ------------- | -------------------------------------- |
-| Name          | `Saydle — Afirmaciones diarias`        |
-| Subtitle (30) | `Afirmaciones escritas para ti`        |
+| Field         | Value                           |
+| ------------- | ------------------------------- |
+| Name          | `Saydle — Afirmaciones diarias` |
+| Subtitle (30) | `Afirmaciones escritas para ti` |
 
 Promotional:
 

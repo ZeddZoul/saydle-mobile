@@ -30,7 +30,7 @@ const schema = z
     // falls back to the device's own speech, which is how it worked before, so
     // a missing key costs the quality of the voice and nothing else.
     ELEVENLABS_API_KEY: z.string().optional(),
-    MAIL_FROM: z.string().default("Saydle <noreply@saydle.app>"),
+    MAIL_FROM: z.string().default("Saydle <noreply@saydle.com>"),
 
     CORS_ORIGIN: z.string().default(""),
     LOG_LEVEL: z

@@ -455,7 +455,7 @@ The 13-item roadmap is complete and verified on device. What remains:
   is answered in app.json. `eas.json` carries empty RevenueCat key slots: cloud builds never see
   `.env`, and for local builds the empty value _overrides_ the `test_` key, so the paywall
   degrades instead of shipping a crash-and-reject. Fill them with the `appl_`/`goog_` keys for
-  the submission build. `support@saydle.app` is named in both legal documents — it must exist
+  the submission build. `support@saydle.com` is named in both legal documents — it must exist
   before submission.
 - **Vertex is deploy-ready but undeployed.** Generation runs as
   `saydle-api@saydle-web.iam.gserviceaccount.com` (`roles/aiplatform.user`, nothing else), via

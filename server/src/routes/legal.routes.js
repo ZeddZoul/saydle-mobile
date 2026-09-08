@@ -91,7 +91,7 @@ their data.</p>
 
 <h2>Changes and contact</h2>
 <p>If this policy changes materially, the app will say so. Questions and
-requests: <a href="mailto:support@saydle.app">support@saydle.app</a>.</p>
+requests: <a href="mailto:support@saydle.com">support@saydle.com</a>.</p>
 `,
 );
 
@@ -143,7 +143,7 @@ limited.</p>
 <h2>Changes and contact</h2>
 <p>If these terms change materially, the app will say so before the change
 applies to you. Questions:
-<a href="mailto:support@saydle.app">support@saydle.app</a>.</p>
+<a href="mailto:support@saydle.com">support@saydle.com</a>.</p>
 `,
 );
 

@@ -1,14 +1,14 @@
 # App Review notes + demo account
 
 Paste the "Notes for the reviewer" block into App Store Connect → App Review
-Information. Fill the demo credentials *after* creating the account on the
+Information. Fill the demo credentials _after_ creating the account on the
 production database — a reviewer signing into an account that only exists on a
 laptop is an instant rejection.
 
 ## Demo account (create on PROD after the API deploys)
 
 ```
-email:    review@saydle.app        (or any address you control)
+email:    review@saydle.com        (or any address you control)
 password: <set one, paste it into ASC — never commit it>
 ```
 
@@ -24,13 +24,13 @@ is fine: the app treats verification as a banner, never a wall.
 >
 > WHERE THINGS ARE
 > • Today's affirmation appears on the first screen after sign-in; swipe up
->   for more lines.
+> for more lines.
 > • Practice (bottom of the Today screen) reads today's seven lines aloud —
->   device volume needs to be up; each line plays, rests, then advances.
+> device volume needs to be up; each line plays, rests, then advances.
 > • The home-screen widget is under the app's name in the widget gallery; it
->   updates from the app and holds two weeks of content offline.
+> updates from the app and holds two weeks of content offline.
 > • Account deletion is in Profile → Delete account (30-day grace period,
->   cancellable by signing back in — described in the privacy policy).
+> cancellable by signing back in — described in the privacy policy).
 >
 > SUBSCRIPTIONS
 > The paywall appears at the end of onboarding for new accounts. Prices are
@@ -45,13 +45,13 @@ is fine: the app treats verification as a banner, never a wall.
 
 ## Things a reviewer may poke — and what happens
 
-| They try | What happens |
-| --- | --- |
-| Airplane mode after first load | Cached feed still reads; banner says offline; writes queue and replay |
-| Subscribe, then reopen paywall | "Upgrade" path stays available mid-trial-less flow; restore purchases works (`billing`) |
-| Delete account, sign back in | Deletion cancelled, stated plainly |
+| They try                               | What happens                                                                                                           |
+| -------------------------------------- | ---------------------------------------------------------------------------------------------------------------------- |
+| Airplane mode after first load         | Cached feed still reads; banner says offline; writes queue and replay                                                  |
+| Subscribe, then reopen paywall         | "Upgrade" path stays available mid-trial-less flow; restore purchases works (`billing`)                                |
+| Delete account, sign back in           | Deletion cancelled, stated plainly                                                                                     |
 | Type medical/crisis text into My Words | Accepted and stored — Saydle does not moderate a user's private words, and the terms state it is not a medical service |
-| The widget with the app force-quit | Keeps rendering; it holds a fortnight of lines |
+| The widget with the app force-quit     | Keeps rendering; it holds a fortnight of lines                                                                         |
 
 ## Submission-day checklist (the order that avoids re-review)
 

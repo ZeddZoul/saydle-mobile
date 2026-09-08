@@ -12,11 +12,11 @@ exactly as the bank holds it.
 
 1. App Store Connect → **Business** (older accounts see "Agreements, Tax, and
    Banking").
-2. Find **Paid Applications** (or "Paid Apps"). Status will read *Pending* or
-   *New*.
+2. Find **Paid Applications** (or "Paid Apps"). Status will read _Pending_ or
+   _New_.
 3. **View and Agree to Terms** → read → accept.
 
-Status moves to *waiting for banking and tax*. The free-apps agreement is
+Status moves to _waiting for banking and tax_. The free-apps agreement is
 already active — that's what let TestFlight work.
 
 ## 2. Banking
@@ -38,18 +38,18 @@ already active — that's what let TestFlight work.
    - U.S. person/entity → W-9.
 3. Other forms (Australia, Canada, Japan, Brazil…) appear only if required for
    those storefronts, and most can be skipped by not distributing there — but
-   fill any marked *required*.
+   fill any marked _required_.
 
 ## 4. Wait for Active
 
-The Paid Applications row goes *Processing* → **Active**. Usually hours,
+The Paid Applications row goes _Processing_ → **Active**. Usually hours,
 occasionally days. Until it says Active:
 
 - Subscriptions cannot move to "Ready to Submit"
 - Sandbox purchases can fail with vague errors that look like code bugs
 
 If a sandbox purchase already works, this is likely already Active — check the
-status anyway before submitting, because *Processing* at review time bounces
+status anyway before submitting, because _Processing_ at review time bounces
 the binary.
 
 ## 5. Then, immediately: the Small Business Program
@@ -62,7 +62,7 @@ which is worth more than every cost optimisation in the codebase combined.
 2. It requires the Paid Applications agreement to be Active first (step 4).
 3. You confirm you're not associated with other developer accounts and that
    proceeds were under $1M.
-4. **Timing matters:** enrollment takes effect the *following* month. Enroll
+4. **Timing matters:** enrollment takes effect the _following_ month. Enroll
    the moment step 4 completes, not the day before launch.
 
 ## The trap list
@@ -70,7 +70,7 @@ which is worth more than every cost optimisation in the codebase combined.
 - Only the Account Holder sees these screens. An Admin role sees nothing and
   concludes the UI is broken.
 - Bank name mismatch → silently stuck at "pending verification".
-- Agreement *Active* but products created *before* it activated can sit in a
+- Agreement _Active_ but products created _before_ it activated can sit in a
   stale state — if a subscription refuses to go "Ready to Submit", edit and
   re-save it.
 - The agreement must be re-accepted when Apple updates terms (roughly yearly).
