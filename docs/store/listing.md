@@ -62,8 +62,8 @@ values that cannot exist until the API is deployed.
 > before the end of the current period. Manage or cancel in your App Store
 > account settings.
 >
-> Terms: REPLACE-ME/legal/terms
-> Privacy: REPLACE-ME/legal/privacy
+> Terms: https://saydle.com/terms
+> Privacy: https://saydle.com/privacy
 
 ## Keywords (100 chars, comma-separated, no spaces after commas)
 
