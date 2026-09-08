@@ -1,3 +1,6 @@
+// First, before any import that might read Google credentials: ESM hoists
+// imports, so this must be its own module rather than inline code up here.
+import "./config/bootstrapCredentials.js";
 import { createApp } from "./app.js";
 import { connectDb, disconnectDb } from "./config/db.js";
 import { env } from "./config/env.js";
