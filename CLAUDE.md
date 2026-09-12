@@ -273,10 +273,13 @@ time — see Shipping a build), and the RevenueCat webhook, at
   It is not about Customer Center: that works with the warning present, which was verified on
   device, and configuring Customer Center leaves the warning byte-identical.
 - **The entitlement _identifier_ is the contract, not its display name.** `EXPO_PUBLIC_REVENUECAT_ENTITLEMENT_ID`
-  and `REVENUECAT_ENTITLEMENT_ID` must both equal the identifier in the RevenueCat dashboard
-  (`premium`). A dashboard entitlement named "Saydle Pro" whose identifier is anything else means
-  `entitlements.active[ENTITLEMENT_ID]` is forever undefined: nobody is entitled, every paid user
-  sees the paywall, and nothing logs an error anywhere.
+  and `REVENUECAT_ENTITLEMENT_ID` must both equal the identifier in the RevenueCat dashboard,
+  which is **`Saydle Pro`** — with the space, proven by the sandbox purchase completing end to
+  end. A mismatch means `entitlements.active[ENTITLEMENT_ID]` is forever undefined: nobody is
+  entitled, every paid user sees the paywall, and nothing logs an error anywhere. Two ways to
+  reintroduce that silently: `eas.json` carried `premium` until 2026-09-11, and the value is
+  quoted in the local `.env` files — node's `--env-file` strips those quotes, but a host that
+  takes values literally (Railway's raw editor) would ship them as part of the string.
 - **`pnpm android` needs `JAVA_HOME` and `ANDROID_HOME`, and neither error names the variable.**
   Android Studio ships a JDK (`/Applications/Android Studio.app/Contents/jbr/Contents/Home`) but
   exports nothing, so Gradle dies with **`Unable to locate a Java Runtime`** — which sounds like

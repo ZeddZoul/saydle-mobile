@@ -30,7 +30,7 @@
         "EXPO_PUBLIC_API_URL": "https://REPLACE-ME.example.com",
         "EXPO_PUBLIC_REVENUECAT_IOS_KEY": "",
         "EXPO_PUBLIC_REVENUECAT_ANDROID_KEY": "",
-        "EXPO_PUBLIC_REVENUECAT_ENTITLEMENT_ID": "premium",
+        "EXPO_PUBLIC_REVENUECAT_ENTITLEMENT_ID": "Saydle Pro",
         "APPLE_TEAM_ID": ""
       }
     },
@@ -45,7 +45,7 @@
         "EXPO_PUBLIC_API_URL": "https://REPLACE-ME.example.com",
         "EXPO_PUBLIC_REVENUECAT_IOS_KEY": "",
         "EXPO_PUBLIC_REVENUECAT_ANDROID_KEY": "",
-        "EXPO_PUBLIC_REVENUECAT_ENTITLEMENT_ID": "premium",
+        "EXPO_PUBLIC_REVENUECAT_ENTITLEMENT_ID": "Saydle Pro",
         "APPLE_TEAM_ID": ""
       }
     }

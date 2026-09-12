@@ -58,7 +58,7 @@ is fine: the app treats verification as a banner, never a wall.
 1. API deployed, `/healthz` shows `"db":true`; legal URLs resolve publicly.
 2. `eas.json`: real `EXPO_PUBLIC_API_URL`, real `appl_` key, `APPLE_TEAM_ID`.
 3. Subscriptions created in ASC ($9.99 monthly / $49.99 annual), attached in
-   RevenueCat, entitlement identifier exactly `premium`.
+   RevenueCat, entitlement identifier exactly `Saydle Pro`.
 4. **Submit the subscriptions WITH the app version** — first-time IAPs are
    reviewed together; submitting the binary alone leaves the paywall dead.
 5. One sandbox purchase completed end to end on a TestFlight build.
