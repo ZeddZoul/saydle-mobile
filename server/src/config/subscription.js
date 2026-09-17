@@ -41,8 +41,24 @@ export const EVENT_STATUS = {
   NON_RENEWING_PURCHASE: "active",
   PRODUCT_CHANGE: "active",
   SUBSCRIPTION_EXTENDED: "active",
-  CANCELLATION: "expired",
+  // Neither of these ends access, and treating them as if they did is how you
+  // take away something someone has paid for.
+  //
+  // CANCELLATION means auto-renew was switched off. Someone who cancels on day
+  // two of an annual subscription has bought 363 more days. RevenueCat also
+  // reports refunds as CANCELLATION, and there the event carries an expiry of
+  // now — so trusting `expiration_at_ms` gets both cases right and neither
+  // needs a special case here.
+  //
+  // BILLING_ISSUE means a renewal payment failed while Apple retries the card.
+  // Through the billing grace period the customer is still a subscriber, and
+  // cutting them off is the grace period defeated: billed-retried and locked
+  // out at the same time.
+  CANCELLATION: "active",
+  BILLING_ISSUE: "active",
+
+  // These do end it. EXPIRATION fires when the term actually runs out, grace
+  // period included.
   EXPIRATION: "expired",
-  BILLING_ISSUE: "expired",
   SUBSCRIPTION_PAUSED: "expired",
 };

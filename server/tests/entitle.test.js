@@ -118,3 +118,69 @@ describe("a real purchase afterwards", () => {
     expect(serializeSubscription(user).verified).toBe(true);
   });
 });
+
+describe("events that must not end access", () => {
+  const YEAR_END = new Date("2027-01-01T00:00:00Z");
+
+  it("keeps a cancelled subscription until the term it paid for runs out", () => {
+    // Auto-renew off is not the same as access off. Someone who cancels on day
+    // two of an annual subscription has bought 363 more days.
+    const user = blank();
+    applyWebhookEvent(user, {
+      type: "INITIAL_PURCHASE",
+      store: "APP_STORE",
+      expiration_at_ms: YEAR_END.getTime(),
+    });
+
+    applyWebhookEvent(user, {
+      type: "CANCELLATION",
+      store: "APP_STORE",
+      expiration_at_ms: YEAR_END.getTime(),
+    });
+
+    expect(isEntitled(user, new Date("2026-03-01T00:00:00Z"))).toBe(true);
+    expect(isEntitled(user, new Date("2027-02-01T00:00:00Z"))).toBe(false);
+  });
+
+  it("ends access on a refund, which arrives as a cancellation with a past expiry", () => {
+    // RevenueCat reports refunds as CANCELLATION too, carrying an expiry of
+    // now. Trusting the date rather than the event type gets both right without
+    // a special case.
+    const user = blank();
+    applyWebhookEvent(user, {
+      type: "CANCELLATION",
+      store: "APP_STORE",
+      expiration_at_ms: new Date("2026-01-01T00:00:00Z").getTime(),
+    });
+
+    expect(isEntitled(user, new Date("2026-01-02T00:00:00Z"))).toBe(false);
+  });
+
+  it("keeps access through the billing grace period", () => {
+    // The point of the grace period: Apple is retrying the card and still
+    // counts them a subscriber. Expiring them here bills and locks out at once.
+    const user = blank();
+    applyWebhookEvent(user, {
+      type: "BILLING_ISSUE",
+      store: "APP_STORE",
+      expiration_at_ms: new Date("2026-06-01T00:00:00Z").getTime(),
+      grace_period_expiration_at_ms: new Date("2026-06-17T00:00:00Z").getTime(),
+    });
+
+    // Original expiry has passed; the grace expiry has not.
+    expect(isEntitled(user, new Date("2026-06-10T00:00:00Z"))).toBe(true);
+    expect(isEntitled(user, new Date("2026-06-20T00:00:00Z"))).toBe(false);
+  });
+
+  it("still expires when the term genuinely ends", () => {
+    const user = blank();
+    applyWebhookEvent(user, {
+      type: "EXPIRATION",
+      store: "APP_STORE",
+      expiration_at_ms: new Date("2026-06-01T00:00:00Z").getTime(),
+    });
+
+    expect(isEntitled(user, new Date("2026-06-02T00:00:00Z"))).toBe(false);
+    expect(user.subscription.status).toBe("expired");
+  });
+});

@@ -107,9 +107,12 @@ export function applyWebhookEvent(user, event, { now = new Date() } = {}) {
 
   user.subscription.status = status;
   user.subscription.productId = event.product_id ?? user.subscription.productId;
-  user.subscription.expiresAt = event.expiration_at_ms
-    ? new Date(event.expiration_at_ms)
-    : null;
+  // The grace period expiry wins when there is one. During a billing retry the
+  // original expiry has already passed, so reading that would expire someone
+  // Apple still considers a subscriber. A null expiry stays null: that is a
+  // lifetime or non-renewing purchase, which `isEntitled` treats as no expiry.
+  const expiry = event.grace_period_expiration_at_ms ?? event.expiration_at_ms;
+  user.subscription.expiresAt = expiry ? new Date(expiry) : null;
   user.subscription.source = event.store === "PLAY_STORE" ? "play_store" : "app_store";
   user.subscription.verifiedAt = now;
 

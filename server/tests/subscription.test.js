@@ -92,11 +92,26 @@ describe("applyWebhookEvent", () => {
     expect(user.subscription.verifiedAt).not.toBeNull();
   });
 
-  it("expires on cancellation and billing failure", () => {
+  it("ends access once the paid term has run out, whatever the event type", () => {
+    // The date decides, not the label. Every one of these carries an expiry in
+    // the past, so none of them is entitled regardless of how it is reported.
     for (const type of ["CANCELLATION", "EXPIRATION", "BILLING_ISSUE"]) {
       applyWebhookEvent(user, { type, expiration_at_ms: Date.now() - DAY });
-      expect(user.subscription.status).toBe("expired");
       expect(isEntitled(user)).toBe(false);
+    }
+  });
+
+  it("marks expired only when the term really ended", () => {
+    // CANCELLATION is auto-renew switched off and BILLING_ISSUE is a payment
+    // being retried. Neither is the end of a subscription, and writing
+    // "expired" for them is what would take away a paid-for year on day two.
+    applyWebhookEvent(user, { type: "EXPIRATION", expiration_at_ms: Date.now() - DAY });
+    expect(user.subscription.status).toBe("expired");
+
+    for (const type of ["CANCELLATION", "BILLING_ISSUE"]) {
+      applyWebhookEvent(user, { type, expiration_at_ms: Date.now() + DAY });
+      expect(user.subscription.status).toBe("active");
+      expect(isEntitled(user)).toBe(true);
     }
   });
 
