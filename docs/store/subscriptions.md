@@ -29,22 +29,22 @@ separate groups a customer can buy monthly _and_ annual and be charged for both.
 
 App → **Subscriptions** → create a group:
 
-- Reference Name: `Saydle Pro`
+- Reference Name: `Saydle Premium`
 
 Then inside it, two subscriptions:
 
-| Field          | Monthly              | Annual              |
-| -------------- | -------------------- | ------------------- |
-| Reference Name | `Saydle Pro Monthly` | `Saydle Pro Annual` |
-| Product ID     | `saydle_pro_monthly` | `saydle_pro_annual` |
-| Duration       | 1 Month              | 1 Year              |
-| Price          | **$9.99**            | **$49.99**          |
+| Field          | Monthly                  | Annual                  |
+| -------------- | ------------------------ | ----------------------- |
+| Reference Name | `Saydle Premium Monthly` | `Saydle Premium Annual` |
+| Product ID     | `saydle_pro_monthly`     | `saydle_pro_annual`     |
+| Duration       | 1 Month                  | 1 Year                  |
+| Price          | **$9.99**                | **$49.99**              |
 
 Each needs a localization (App Store Display Name and Description) before it can
 be submitted. English (U.K.) matches the rest of the listing:
 
-- Monthly display name: `Saydle Pro, Monthly`
-- Annual display name: `Saydle Pro, Annual`
+- Monthly display name: `Saydle Premium, Monthly`
+- Annual display name: `Saydle Premium, Annual`
 - Description, both: `Affirmations written for you, the listening session, your
 shelf, and My Words.`
 
@@ -65,8 +65,8 @@ Once the products exist in App Store Connect:
 
 1. **Product catalog → Products** → import or add both, attached to the
    `Saydle (App Store)` app.
-2. **Entitlements** → open `Saydle Pro` → attach both products. The identifier
-   must stay exactly `Saydle Pro`, with the space. A mismatch means
+2. **Entitlements** → open `Saydle Premium` → attach both products. The identifier
+   must stay exactly `Saydle Premium`, with the space. A mismatch means
    `entitlements.active[ENTITLEMENT_ID]` is forever `undefined`: nobody is
    entitled, every paying customer sees the paywall, and nothing logs an error
    anywhere. `eas.json` carried `premium` until 2026-09-11 for this reason.

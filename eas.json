@@ -30,7 +30,7 @@
         "EXPO_PUBLIC_API_URL": "https://api.saydle.com",
         "EXPO_PUBLIC_REVENUECAT_IOS_KEY": "appl_okTnHmATDkxrepRZgxMmvGMPJad",
         "EXPO_PUBLIC_REVENUECAT_ANDROID_KEY": "",
-        "EXPO_PUBLIC_REVENUECAT_ENTITLEMENT_ID": "Saydle Pro",
+        "EXPO_PUBLIC_REVENUECAT_ENTITLEMENT_ID": "Saydle Premium",
         "APPLE_TEAM_ID": "CXH9CWA254"
       }
     },
@@ -45,7 +45,7 @@
         "EXPO_PUBLIC_API_URL": "https://api.saydle.com",
         "EXPO_PUBLIC_REVENUECAT_IOS_KEY": "appl_okTnHmATDkxrepRZgxMmvGMPJad",
         "EXPO_PUBLIC_REVENUECAT_ANDROID_KEY": "",
-        "EXPO_PUBLIC_REVENUECAT_ENTITLEMENT_ID": "Saydle Pro",
+        "EXPO_PUBLIC_REVENUECAT_ENTITLEMENT_ID": "Saydle Premium",
         "APPLE_TEAM_ID": "CXH9CWA254"
       }
     }

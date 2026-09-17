@@ -274,8 +274,8 @@ time — see Shipping a build), and the RevenueCat webhook, at
   device, and configuring Customer Center leaves the warning byte-identical.
 - **The entitlement _identifier_ is the contract, not its display name.** `EXPO_PUBLIC_REVENUECAT_ENTITLEMENT_ID`
   and `REVENUECAT_ENTITLEMENT_ID` must both equal the identifier in the RevenueCat dashboard,
-  which is **`Saydle Pro`** — with the space, proven by the sandbox purchase completing end to
-  end. A mismatch means `entitlements.active[ENTITLEMENT_ID]` is forever undefined: nobody is
+  which is **`Saydle Premium`** — with the space, and matching what every piece of user-facing
+  copy already calls it. A mismatch means `entitlements.active[ENTITLEMENT_ID]` is forever undefined: nobody is
   entitled, every paid user sees the paywall, and nothing logs an error anywhere. Two ways to
   reintroduce that silently: `eas.json` carried `premium` until 2026-09-11, and the value is
   quoted in the local `.env` files — node's `--env-file` strips those quotes, but a host that
