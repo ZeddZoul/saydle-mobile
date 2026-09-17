@@ -3,7 +3,16 @@ import { VoiceClip } from "../models/VoiceClip.js";
 import { User } from "../models/User.js";
 import { AppError } from "../utils/AppError.js";
 import { clipFor, clipsForSession, voiceAvailable } from "../services/voice.service.js";
-import { DEFAULT_VOICE, VOICE_IDS, isVoiceKey, resolveVoice } from "../config/voices.js";
+import { isEntitled } from "../services/subscription.service.js";
+import { verifyClipSignature, CLIP_URL_TTL_SECONDS } from "../services/clipSignature.js";
+import {
+  DEFAULT_VOICE,
+  VOICE_IDS,
+  VOICE_REQUIRES_PREMIUM,
+  isVoiceKey,
+  resolveVoice,
+} from "../config/voices.js";
+import { todayInZone, addDays } from "../utils/dates.js";
 
 /**
  * What each voice says when auditioned.
@@ -14,11 +23,28 @@ import { DEFAULT_VOICE, VOICE_IDS, isVoiceKey, resolveVoice } from "../config/vo
  */
 const PREVIEW_LINE = "You can be steady about this, without being certain.";
 
-/** The reader's own local day, sent by the app. Their midnight, not the server's. */
-function localDay(req) {
-  const today = String(req.query.today ?? req.body?.today ?? "");
-  return /^\d{4}-\d{2}-\d{2}$/.test(today) ? today : new Date().toISOString().slice(0, 10);
+/**
+ * The one place the voice's paywall is decided.
+ *
+ * Same shape as the library's gate, and the same 403, so the app treats both
+ * as "show the paywall". Rendering is the single line that scales with
+ * engagement — it is not something a free account gets to spend.
+ */
+function gate(user) {
+  if (!VOICE_REQUIRES_PREMIUM) return;
+  if (isEntitled(user)) return;
+
+  throw AppError.forbidden("Listening with a Saydle voice is part of Saydle premium.");
 }
+
+/**
+ * The reader's own local day. Derived from the timezone on the account, not
+ * from the request: the app still sends `today`, and it is ignored, because a
+ * day the client chooses is a day the client can choose to its own benefit —
+ * a voice change "from tomorrow" that lands today, on seven already-paid
+ * renders.
+ */
+const localDay = (user) => todayInZone(user.timezone);
 
 /**
  * The seven lines of a session, each with the clip that reads it.
@@ -29,15 +55,14 @@ function localDay(req) {
  */
 export async function session(req, res, next) {
   try {
-    const ids = Array.isArray(req.body?.affirmationIds)
-      ? req.body.affirmationIds.slice(0, 7)
-      : [];
-    if (ids.length === 0) throw AppError.badRequest("No affirmations to read.");
+    gate(req.user);
+
+    const ids = req.body.affirmationIds.slice(0, 7);
 
     // Only lines this reader can actually see: their own, or the shared bank.
     const lines = await Affirmation.find(
       { _id: { $in: ids }, $or: [{ user: req.user._id }, { user: null }] },
-      { text: 1 },
+      { text: 1, source: 1 },
     ).lean();
 
     if (lines.length === 0) throw AppError.notFound("Those lines are not yours to play.");
@@ -47,13 +72,17 @@ export async function session(req, res, next) {
     const byId = new Map(lines.map((l) => [String(l._id), l]));
     const ordered = ids.map((id) => byId.get(String(id))).filter(Boolean);
 
-    const voice = resolveVoice(req.user, localDay(req));
-    const clips = await clipsForSession(
-      ordered.map((l) => ({ id: l._id, text: l.text })),
+    const voice = resolveVoice(req.user, localDay(req.user));
+    const { clips, throttled } = await clipsForSession(
+      // Their own words are theirs alone: keyed on them, served only to them.
+      ordered.map((l) => ({ id: l._id, text: l.text, private: l.source === "custom" })),
       VOICE_IDS[voice],
-      // Passed so it can be taken back out. The model was told to use it, and
-      // a name is the one word a synthetic voice must not get wrong.
-      { name: req.user.firstName },
+      {
+        // Passed so it can be taken back out. The model was told to use it, and
+        // a name is the one word a synthetic voice must not get wrong.
+        name: req.user.firstName,
+        userId: req.user._id,
+      },
     );
 
     res.json({
@@ -61,6 +90,9 @@ export async function session(req, res, next) {
       // False tells the app to read with the device's own speech instead of
       // waiting for audio that is never coming.
       rendered: voiceAvailable(),
+      // True when the daily render budget ran out part-way: the lines without
+      // a clip are the device's to read today.
+      throttled,
       lines: clips,
     });
   } catch (err) {
@@ -82,13 +114,28 @@ export async function session(req, res, next) {
  * anything it does not recognise. A charset on binary audio is meaningless at
  * best and rejected at worst.
  *
- * Cached hard: a clip is immutable by construction — its id is derived from the
- * text and the voice — so it can never go stale.
+ * Unauthenticated, because the audio player carries no bearer token. A shared
+ * clip is safe that way: the id names a rendering of a line, not a person. A
+ * private one — somebody's own words — is served only under the signed URL the
+ * session handed out, and cached privately for as long as that URL lasts.
+ *
+ * Shared clips are cached hard: a clip is immutable by construction — its id
+ * is derived from the text and the voice — so it can never go stale.
  */
 export async function clip(req, res, next) {
   try {
     const found = await VoiceClip.findById(req.params.id).lean();
     if (!found) throw AppError.notFound("That clip is not here.");
+
+    if (found.user) {
+      const { sig, exp } = req.query;
+      if (!verifyClipSignature(found._id, sig, exp)) {
+        throw AppError.forbidden("This clip is not yours to play.");
+      }
+      res.setHeader("Cache-Control", `private, max-age=${CLIP_URL_TTL_SECONDS}`);
+    } else {
+      res.setHeader("Cache-Control", "public, max-age=31536000, immutable");
+    }
 
     // `.lean()` hands back the raw driver value, which may be a Binary rather
     // than a Buffer depending on how it was written.
@@ -98,7 +145,6 @@ export async function clip(req, res, next) {
     const total = audio.length;
 
     res.setHeader("Content-Type", found.mimeType);
-    res.setHeader("Cache-Control", "public, max-age=31536000, immutable");
     // Advertised even on a full response: without it the player may not bother
     // asking for a range at all, and some clients then refuse to seek.
     res.setHeader("Accept-Ranges", "bytes");
@@ -170,7 +216,7 @@ export async function preview(req, res, next) {
 /** Which voice reads today, and which is waiting to. */
 export async function getVoice(req, res, next) {
   try {
-    const today = localDay(req);
+    const today = localDay(req.user);
     const pref = req.user.preferences?.voice ?? {};
     const active = resolveVoice(req.user, today);
 
@@ -194,17 +240,15 @@ export async function getVoice(req, res, next) {
  */
 export async function setVoice(req, res, next) {
   try {
-    const key = String(req.body?.voice ?? "");
-    if (!isVoiceKey(key)) throw AppError.badRequest("That is not one of the voices.");
+    gate(req.user);
 
-    const today = localDay(req);
+    const key = req.body.voice;
+    const today = localDay(req.user);
     const active = resolveVoice(req.user, today);
 
-    // Tomorrow in the reader's own day — string arithmetic on their date, not
-    // on the server's clock, which may be most of a day away from theirs.
-    const tomorrow = new Date(`${today}T00:00:00Z`);
-    tomorrow.setUTCDate(tomorrow.getUTCDate() + 1);
-    const from = tomorrow.toISOString().slice(0, 10);
+    // Tomorrow in the reader's own day — date arithmetic on their calendar
+    // day, not on the server's clock, which may be most of a day away.
+    const from = addDays(today, 1);
 
     const voice = { active, pending: key, pendingFrom: from };
     await User.updateOne({ _id: req.user._id }, { $set: { "preferences.voice": voice } });

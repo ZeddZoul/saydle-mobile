@@ -32,7 +32,14 @@ ENV NODE_ENV=production
 
 COPY --from=deps /app/node_modules ./node_modules
 COPY --from=deps /app/server/node_modules ./server/node_modules
-COPY server ./server
+
+# Only what runs. `server/tests` carries fixtures and the in-memory Mongo
+# harness, and `.env.example` is documentation; neither belongs in an image
+# that will be pulled onto a host.
+COPY server/package.json ./server/
+COPY server/src ./server/src
+COPY server/migrations ./server/migrations
+COPY server/scripts ./server/scripts
 
 # Cloud Run injects PORT and expects the process to honour it. The default here
 # only matters when running the image by hand.
@@ -42,4 +49,9 @@ EXPOSE 8080
 # Never root. A compromised process should not own the filesystem it runs on.
 USER node
 
-CMD ["node", "server/src/index.js"]
+# Migrations first, then the server. `autoIndex` is off in production, so the
+# migrations are the only thing that builds indexes — a container that starts
+# serving before they have run is serving without the unique constraints the
+# code relies on. The runner is idempotent, so every boot may run it. `exec`
+# so the server is PID 1's child and receives SIGTERM for a graceful stop.
+CMD ["sh", "-c", "node server/migrations/run.js && exec node server/src/index.js"]

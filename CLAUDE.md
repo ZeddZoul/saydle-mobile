@@ -96,7 +96,33 @@ server/                 Express API — see server/README.md for its own layout
 - **Entitlement is server-truth.** The RevenueCat webhook is the only path that may mark a
   subscription verified — a client claiming to have paid is never evidence. `lib/purchases.js`
   is a guarded boundary: no native module (Expo Go) or no key (no store listing) both report
-  `available: false`, and the paywall runs on the real server-side trial.
+  `available: false`, and the paywall then shows the free plan only. **There is no trial.** The
+  free plan is the curated bank; premium adds affirmations written from the reader's answers,
+  Practice read in a real voice, and their own words kept. The paywall always carries a
+  "Continue with the free plan" button, a back chevron, Restore, the per-package term and price
+  from the offering, the renewal sentence, and Terms / Privacy links (`SubscriptionDisclosure`,
+  `lib/subscriptionTerms.js`, `lib/legal.js`) — a paywall someone cannot decline, or that omits
+  those, is the one App Review rejects. The same disclosure sits under the plans on Billing.
+- **Webhook events are idempotent and ordered.** `subscription.lastEventId` / `lastEventAt` drop a
+  replayed id or an older timestamp with a 204; the account is resolved by `app_user_id`, then
+  `aliases[]`, then `original_app_user_id`. `CANCELLATION` and `BILLING_ISSUE` keep `active` and
+  only move `expiresAt` — turning off auto-renew keeps access until the paid period ends, and a
+  refund arrives with a past expiry so the date check revokes it. Only `EXPIRATION` and
+  `SUBSCRIPTION_PAUSED` set `expired`; `TRANSFER` moves it.
+- **Practice-with-voice is premium.** `POST /api/voice/session` and `PUT /api/voice/preference`
+  answer a free reader with the library's 403; the client treats that as the paywall — device
+  speech reads the session, the voice picker shows a "Premium" tag that routes to Billing, and
+  nothing toasts. The reader's day is derived server-side from their timezone; the client's
+  `today` is ignored. Each session line carries `clipUrl`: a bare path for a shared clip, a
+  signed `?sig=…&exp=…` path (1 h) for a clip of the reader's own words, which is keyed on its
+  owner and served only under that signature. `lineClipUrl()` in `lib/voices.js` prefers it —
+  building the URL from `clipId` would drop the signature and the clip would 403 into device
+  speech with nothing logged. Paid calls are budgeted: per-user rate limits on `/voice/session`,
+  `/library/warm` and the writes that regenerate, and `VOICE_DAILY_CHAR_BUDGET` characters of
+  ElevenLabs per account per day, past which lines return `clipId: null` and `throttled: true`.
+- **Deleting an account is cancelled by a tap, never by signing in.** `DeletionPendingCard` on
+  Today ("Keep my account" → `POST /api/auth/me/restore`) returns every launch until the server
+  says `pending: false`; dismissal is component state only. The copy everywhere says so.
 - **Native boundaries follow one pattern** (`lib/notifications.js`, `lib/purchases.js`,
   `lib/widget.js`): lazy `require` in a try/catch, every function returning `{ available: false }`
   rather than throwing. That is what keeps Expo Go working while native features exist.
@@ -191,6 +217,11 @@ capped), TTS $0.76–1.89 depending on tier, infra ~$0.25. **Voice is 10–20x t
 it is the only line that scales with engagement, which is why the cache is keyed on
 `(text, voiceId)` and a voice change only takes effect the next day.
 
+**Legal URLs.** `EXPO_PUBLIC_PRIVACY_URL` / `EXPO_PUBLIC_TERMS_URL` / `EXPO_PUBLIC_SUPPORT_EMAIL`
+(defaults in `lib/legal.js`) feed the paywall, Billing, Profile's Legal card and the landing
+footer. Drafts of both documents are in `docs/legal/`; they have to be hosted and reviewed
+before submission, and the same privacy URL goes into App Store Connect.
+
 **Enrol in the Apple Small Business Program before listing.** Under $1M/year it drops the
 store cut from 30% to 15%, worth more than every cost optimisation in this file combined.
 
@@ -212,16 +243,30 @@ Expo account means never updating the listing. Run `eas credentials` and keep a 
 once there is a real listing.
 
 **The trap that makes a standalone build useless: `EXPO_PUBLIC_*` is inlined at build
-time.** A release APK built against `EXPO_PUBLIC_API_URL=http://localhost:4000` reaches
-nothing — `localhost` on a phone is the phone, and there is no `adb reverse` for someone
-else's device. The `preview` and `production` profiles therefore set it explicitly in
-`eas.json` rather than inheriting `.env`. Point it at a deployed API, or at `pnpm tunnel`
-for a throwaway test — and remember a quick tunnel takes a new hostname every start.
+time.** A release build cut against `EXPO_PUBLIC_API_URL=http://localhost:4000` reaches
+nothing — `localhost` on a phone is the phone. The `preview` and `production` profiles therefore
+take every release value from **EAS environment variables** (eas.dev → project → Environment
+variables), never from `.env` and never from `eas.json`, and `scripts/check-release-env.mjs`
+runs as the `eas-build-pre-install` hook and **refuses to build either profile** while any of
+these is wrong:
 
-Two things behave differently in a release build, both deliberately:
+| Variable                                          | Rule                                            |
+| ------------------------------------------------- | ----------------------------------------------- |
+| `EXPO_PUBLIC_API_URL`                             | https, not localhost / example.com / REPLACE-ME |
+| `EXPO_PUBLIC_REVENUECAT_IOS_KEY` / `_ANDROID_KEY` | set, and not a `test_` Test Store key           |
+| `APPLE_TEAM_ID`                                   | set on iOS — signs the widget extension         |
+| `EXPO_PUBLIC_PRIVACY_URL` / `_TERMS_URL`          | https if set (defaults in `lib/legal.js`)       |
+
+Run `pnpm check:release-env` with `EAS_BUILD_PROFILE=production EAS_BUILD_PLATFORM=ios` to
+try it locally. Two things behave differently in a release build, both deliberately:
 `usableKey()` withholds a RevenueCat `test_` key when `__DEV__` is false, so the paywall
-degrades rather than crashing (see Gotchas), and there is no Metro — a white screen means
-the bundle failed, not that the server is down.
+degrades rather than crashing (see Gotchas), and there is no Metro — a white screen means the
+bundle failed, not that the server is down.
+
+**`app.config.js` sits over `app.json`.** app.json is static JSON and Expo substitutes nothing
+in it, so `"devTeamId": "$APPLE_TEAM_ID"` reached Xcode as that literal string. The only job
+of `app.config.js` is to read `APPLE_TEAM_ID` from the environment into the widget plugin's
+`devTeamId`; everything declarative stays in app.json.
 
 ## Gotchas
 
@@ -276,6 +321,28 @@ not found`**. The `android` script sets both itself, `${VAR:-default}` so a real
   `ios/` those accumulate until a file sits in two `SourcesBuildPhase`s and `pod install` fails in
   the post-install hook. `ios/` and `android/` are generated and gitignored, so the fix is
   `pnpm prebuild --clean` — never hand-editing the pbxproj.
+- **The widget plugin must run in `mode: "production"` for a store build.** That option is
+  written verbatim into the extension's entitlements as `aps-environment`, so `"development"`
+  ships an extension whose entitlements do not match a distribution provisioning profile and
+  code signing fails on EAS. The widget never uses push; the value is only there because the
+  plugin always writes it.
+- **The widget plugin writes the extension's version keys swapped.** Its Info.plist writer calls
+  `getKeyValues(bundleVersion, shortVersion)` against a `(shortVersion, bundleVersion)`
+  signature, so a fresh prebuild ships an extension at `CFBundleShortVersionString "1"` next to
+  an app at `"1.0.0"` — an App Store validation error. `plugins/withWidgetVersion.js` rewrites
+  both keys to `$(MARKETING_VERSION)` / `$(CURRENT_PROJECT_VERSION)`, pins those settings on
+  the extension's configurations to the app's values, and names the extension "Saydle" instead
+  of the plugin's "ExpoWidgets". EAS's remote versioning then writes the build number into
+  every target's Info.plist (it walks `INFOPLIST_FILE` per target), so the two stay together on
+  each autoIncrement. Verified against a generated project, not inferred.
+- **Every bundle that touches a required-reason API needs its own privacy manifest.** The app's
+  comes from `ios.privacyManifests` in app.json (UserDefaults `CA92.1` + `1C8F.1`, the App Group
+  reason). The extension reads the App Group suite too, and the widget plugin copies only
+  `.swift/.plist/.xcassets/.entitlements/.intentdefinition/.strings` out of `widgets/ios`, so
+  `widgets/ios/PrivacyInfo.xcprivacy` is placed and registered by
+  `plugins/withWidgetPrivacyManifest.js` — the same file-reference-by-hand route as
+  `withWidgetFonts`, for the same reason. Without it App Store Connect rejects the upload
+  (ITMS-91053).
 - The widget's **App Group is fixed by the plugin** as `group.<bundleId>.expowidgets` and is not
   read from config. `lib/widget.js`, `widgets/ios/SaydleShared.swift`, and `app.json` must all use
   it — a mismatch fails silently, with a widget that simply never updates.
@@ -361,7 +428,7 @@ match jest-expo 57; do not bump it to v30.
 
 ## Current state
 
-Full vertical slice, end to end, with tests on both halves (**925 total**: 358 API + 567 mobile).
+Full vertical slice, end to end, with tests on both halves (**1,064 total**: 426 API + 638 mobile).
 Verified on a native iOS dev build, not just in Expo Go — including the home-screen widget
 rendering real data in the active theme, at both small and medium sizes.
 
@@ -390,13 +457,15 @@ The app needs a running API (`pnpm api`) and `EXPO_PUBLIC_API_URL` pointing at i
 
 The 13-item roadmap is complete and verified on device. What remains:
 
-- **Fill the remaining env vars** in `.env.example` — RevenueCat keys and `APPLE_TEAM_ID`.
-  JWT secrets, Resend, DeepL and Vertex are all filled and exercised.
-- **Bookmarks save into a void.** The feed offers one (`AffirmationFeed`), the server stores it and
-  serves `/api/library/saved`, and `api.saved()` exists in the client — but nothing in the app ever
-  calls it. There is no shelf. It is the only control in the product that does nothing, and the
-  comment above it ("a heart is a reaction; a bookmark is an intention") promises exactly the
-  distinction the missing screen fails to deliver.
+- **Set the release environment** as EAS environment variables — the API origin, the `appl_` /
+  `goog_` RevenueCat keys, `APPLE_TEAM_ID`, and the legal URLs — and the server's production
+  secrets (`TOMBSTONE_HMAC_KEY`, `CLIP_SIGNING_SECRET`, `RESEND_API_KEY` are now required there).
+  `pnpm check:release-env` says what is missing.
+- **Host the privacy policy and terms** from `docs/legal/` and have them reviewed; the app links
+  to them but nothing serves them yet.
+- **Bookmarks have no shelf.** The server stores them and serves `/api/library/saved`,
+  `hooks/useSaved.js` and `api.saved()` exist — but the feed withholds the control until there is
+  somewhere to see what was kept. Ship the shelf, then un-hide the bookmark in `AffirmationFeed`.
 - **A real purchase has never been made** — only the trial path is exercised. Needs a store listing
   and a sandbox tester.
 - **The listening session is read by ElevenLabs, and the server is the only thing that talks to

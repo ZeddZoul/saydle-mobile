@@ -3,11 +3,19 @@ import Login from "../../app/(auth)/login.jsx";
 import { AuthProvider } from "../../contexts/AuthContext.jsx";
 import { ApiError, NetworkError } from "../../lib/errors.js";
 
+// Swapped per test: the paywall's "Restore purchases" lands here with
+// `restore=1`, and the screen has to say where the restore actually lives.
+let mockParams = {};
 jest.mock("expo-router", () => ({
   Link: ({ children }) => children,
   useRouter: () => ({ replace: jest.fn(), push: jest.fn() }),
   useSegments: () => [],
+  useLocalSearchParams: () => mockParams,
 }));
+
+beforeEach(() => {
+  mockParams = {};
+});
 
 const store = () => ({
   hasSession: jest.fn(async () => false),
@@ -159,5 +167,22 @@ describe("Login screen", () => {
     fireEvent.changeText(screen.getByLabelText("Email"), "ada@example.com");
 
     await waitFor(() => expect(screen.queryByText("Enter a valid email address.")).toBeNull());
+  });
+});
+
+describe("Login screen — arriving from the paywall's Restore purchases", () => {
+  it("says restore happens after sign-in, on the billing screen", async () => {
+    mockParams = { restore: "1" };
+    await renderLogin({ me: jest.fn(), login: jest.fn() });
+
+    // No account exists before sign-in, so nothing can be restored on the
+    // paywall itself. The honest version points at the place that can.
+    expect(screen.getByTestId("login-restore-hint")).toBeTruthy();
+    expect(screen.getByText(/Restore purchases/)).toBeTruthy();
+  });
+
+  it("shows no such hint on an ordinary visit", async () => {
+    await renderLogin({ me: jest.fn(), login: jest.fn() });
+    expect(screen.queryByTestId("login-restore-hint")).toBeNull();
   });
 });

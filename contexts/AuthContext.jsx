@@ -168,6 +168,19 @@ export function AuthProvider({
       outbox,
       syncToken,
 
+      /**
+       * Whether the account is counting down to a purge, and until when.
+       *
+       * Every authenticated response carries `user.deletion` (the server
+       * derives `pending` from the purge date, so the two can never disagree).
+       * Read from the user rather than stored separately, so a cached account
+       * mid-countdown still shows the card offline.
+       */
+      deletion: {
+        pending: Boolean(user?.deletion?.pending),
+        purgeAfter: user?.deletion?.purgeAfter ?? null,
+      },
+
       async signIn({ email, password }) {
         return adoptSession(await client.login({ email, password }));
       },
@@ -221,6 +234,19 @@ export function AuthProvider({
        * used where an endpoint changes the account rather than its preferences.
        */
       async adoptUser(fresh) {
+        setUser(fresh);
+        await cache.saveUser(fresh);
+        return fresh;
+      },
+
+      /**
+       * Cancels a scheduled deletion. Signing in only makes this reachable;
+       * this is the call that actually keeps the account. The server answers
+       * with the user, `deletion.pending` now false, and that is what the card
+       * watches — so it disappears the moment the server agrees, not before.
+       */
+      async keepAccount() {
+        const { user: fresh } = await client.restoreMe();
         setUser(fresh);
         await cache.saveUser(fresh);
         return fresh;

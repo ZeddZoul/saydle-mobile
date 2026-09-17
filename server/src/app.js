@@ -3,7 +3,7 @@ import helmet from "helmet";
 import cors from "cors";
 import pinoHttp from "pino-http";
 import mongoose from "mongoose";
-import { logger } from "./lib/logger.js";
+import { logger, serializers } from "./lib/logger.js";
 import { corsOrigins, isTest } from "./config/env.js";
 import { authRouter } from "./routes/auth.routes.js";
 import {
@@ -38,7 +38,7 @@ export function createApp() {
   app.use(express.json({ limit: "16kb" }));
 
   if (!isTest) {
-    app.use(pinoHttp({ logger, genReqId: () => crypto.randomUUID() }));
+    app.use(pinoHttp({ logger, serializers, genReqId: () => crypto.randomUUID() }));
   }
 
   app.get("/healthz", (_req, res) => {

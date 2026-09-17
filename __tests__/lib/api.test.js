@@ -318,6 +318,7 @@ describe("endpoint helpers", () => {
     await client.addFavorite("abc");
     await client.removeFavorite("abc");
     await client.updatePreferences({ tone: "gentle" });
+    await client.restoreMe();
 
     const calls = fetchImpl.mock.calls.map(([url, opts]) => [url, opts.method]);
 
@@ -327,6 +328,9 @@ describe("endpoint helpers", () => {
       ["http://api/api/affirmations/abc/favorite", "PUT"],
       ["http://api/api/affirmations/abc/favorite", "DELETE"],
       ["http://api/api/preferences", "PATCH"],
+      // Cancels a pending deletion; authenticated, because sign-in keeps
+      // working for a pending account — that is the whole design.
+      ["http://api/api/auth/me/restore", "POST"],
     ]);
   });
 });

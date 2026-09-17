@@ -30,8 +30,14 @@ const SAMPLE_KEY = "voices.sample";
  * A choice takes effect tomorrow, which the row says plainly. Today's audio is
  * already rendered against the current voice, so switching now would discard it
  * and pay to render it again.
+ *
+ * `locked` is the free plan: every voice can still be auditioned — the previews
+ * are shared and cost nothing — but the choose control becomes a small
+ * "Premium" tag that opens Billing instead of a radio that would be refused.
+ * Locked rather than hidden, because hearing what a subscription buys is the
+ * whole pitch.
  */
-const VoicePicker = ({ active, pending, onChoose }) => {
+const VoicePicker = ({ active, pending, onChoose, locked = false, onUpgrade }) => {
   const { t } = useT();
   const { theme } = useAppTheme();
   const { client } = useAuth();
@@ -98,24 +104,43 @@ const VoicePicker = ({ active, pending, onChoose }) => {
               </Text>
             </View>
 
-            <Pressable
-              onPress={() => {
-                Haptics.selectionAsync().catch(() => {});
-                onChoose?.(voice.key);
-              }}
-              hitSlop={8}
-              accessibilityRole="radio"
-              accessibilityState={{ selected: isActive || isPending }}
-              accessibilityLabel={t(`voices.${voice.key}.name`)}
-              style={styles.pick}
-              testID={`voice-choose-${voice.key}`}
-            >
-              <Ionicons
-                name={isActive || isPending ? "checkmark-circle" : "ellipse-outline"}
-                size={22}
-                color={isActive || isPending ? theme.accent : theme.border}
-              />
-            </Pressable>
+            {locked ? (
+              <Pressable
+                onPress={() => {
+                  Haptics.selectionAsync().catch(() => {});
+                  onUpgrade?.();
+                }}
+                hitSlop={8}
+                accessibilityRole="button"
+                accessibilityLabel={t("voices.premiumHint")}
+                style={[styles.premium, { borderColor: theme.accent }]}
+                testID={`voice-premium-${voice.key}`}
+              >
+                <Ionicons name="lock-closed-outline" size={12} color={theme.accent} />
+                <Text style={[styles.premiumText, { color: theme.accent }]}>
+                  {t("voices.premium")}
+                </Text>
+              </Pressable>
+            ) : (
+              <Pressable
+                onPress={() => {
+                  Haptics.selectionAsync().catch(() => {});
+                  onChoose?.(voice.key);
+                }}
+                hitSlop={8}
+                accessibilityRole="radio"
+                accessibilityState={{ selected: isActive || isPending }}
+                accessibilityLabel={t(`voices.${voice.key}.name`)}
+                style={styles.pick}
+                testID={`voice-choose-${voice.key}`}
+              >
+                <Ionicons
+                  name={isActive || isPending ? "checkmark-circle" : "ellipse-outline"}
+                  size={22}
+                  color={isActive || isPending ? theme.accent : theme.border}
+                />
+              </Pressable>
+            )}
           </View>
         );
       })}
@@ -138,6 +163,16 @@ const styles = StyleSheet.create({
   },
   play: { padding: spacing.xs },
   pick: { padding: spacing.xs },
+  premium: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    paddingVertical: 4,
+    paddingHorizontal: spacing.sm,
+    borderRadius: radius.pill,
+    borderWidth: 1,
+  },
+  premiumText: { fontSize: 11, fontWeight: "700", letterSpacing: 0.4 },
   text: { flex: 1 },
   name: { fontSize: 16 },
   desc: { ...type.body, fontSize: 12, marginTop: 2 },

@@ -3,6 +3,7 @@ import { hash as argonHash, verify as argonVerify } from "@node-rs/argon2";
 import { PROFILE_FIELDS } from "../config/profileFields.js";
 import { DEFAULT_LOCALE } from "../config/locales.js";
 import { isEntitled } from "../services/subscription.service.js";
+import { SOURCES } from "../config/subscription.js";
 
 // The progressive-profile sub-schema is generated from the field config, so a
 // new question added there needs no change here. Values are validated by zod on
@@ -55,10 +56,19 @@ const userSchema = new mongoose.Schema(
       // Store product identifier, once there is a listing to have one.
       productId: { type: String, default: null },
       expiresAt: { type: Date, default: null },
-      // "app_store" | "play_store" | "promotional"
-      source: { type: String, default: null },
+      // Where it was bought. `other` covers promotional grants, Stripe and
+      // RevenueCat's own billing — real entitlement, no store receipt.
+      source: { type: String, enum: SOURCES, default: null },
       // Null until a receipt has actually been checked by the store.
       verifiedAt: { type: Date, default: null },
+      /**
+       * The last webhook event applied, so a redelivery is dropped rather
+       * than replayed and an event that arrives out of order cannot roll a
+       * renewal back to the cancellation that preceded it. RevenueCat retries
+       * and does not promise ordering; this is what makes that safe.
+       */
+      lastEventId: { type: String, default: null },
+      lastEventAt: { type: Date, default: null },
     },
     // IANA zone, used to decide when a user's daily affirmation rolls over
     // and when reminders fire.
@@ -190,9 +200,11 @@ const userSchema = new mongoose.Schema(
         // Derived here rather than stored, so a trial that ran out overnight is
         // expired the next time anyone asks — no sweep job, no stale flag.
         if (ret.subscription) {
+          // eslint-disable-next-line no-unused-vars -- stripped, not shipped
+          const { lastEventId, lastEventAt, ...subscription } = ret.subscription;
           ret.subscription = {
-            ...ret.subscription,
-            entitled: isEntitled({ subscription: ret.subscription }),
+            ...subscription,
+            entitled: isEntitled({ subscription }),
           };
         }
 

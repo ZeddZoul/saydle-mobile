@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { ActivityIndicator, StyleSheet } from "react-native";
 import { useRouter } from "expo-router";
 import GradientBackground from "../components/GradientBackground.jsx";
@@ -25,8 +25,8 @@ const EMAIL_INDEX = ONBOARDING_QUESTIONS.findIndex((q) => q.key === "email");
 /**
  * The whole sign-up flow: the account fields (email, password) are steps like
  * any other, and the account is only created at the very end, once the user
- * chooses a plan on the paywall. Nothing is persisted server-side until then —
- * abandoning the flow leaves no account, by design.
+ * chooses a plan — or the free one — on the paywall. Nothing is persisted
+ * server-side until then; abandoning the flow leaves no account, by design.
  *
  * Never shows how many pages remain ("keep the mystery").
  */
@@ -39,6 +39,9 @@ const Onboarding = () => {
   // questions | paywall | creating
   const [phase, setPhase] = useState("questions");
   const [packages, setPackages] = useState([]);
+  // idle | loading | done — so the paywall can tell "still asking the store"
+  // from "the store had nothing", and offer a retry only for the second.
+  const [plans, setPlans] = useState("idle");
   const [index, setIndex] = useState(0);
   const [answers, setAnswers] = useState({});
   // Mirror of answers, updated synchronously — a single-select advances on a
@@ -74,15 +77,23 @@ const Onboarding = () => {
   };
   const back = () => setIndex((i) => Math.max(0, prevVisible(i)));
 
-  // `plan` ("trial" | "paid") is UI-only until real billing is wired; both paths
-  // create the account so the flow can complete.
+  // From the paywall, back to the last question — a wrong email is the usual
+  // reason to want this, and the paywall must not be a door that only opens
+  // one way.
+  const backFromPaywall = () => {
+    setIndex(Math.max(0, prevVisible(ONBOARDING_QUESTIONS.length)));
+    setPhase("questions");
+  };
+
   /**
-   * Grants entitlement at the end of the flow.
+   * Buys, if that is what they chose.
    *
-   * Everyone leaves the paywall entitled: whoever buys gets the subscription,
-   * and whoever skips — or starts a purchase and thinks better of it — gets the
-   * trial. Best-effort throughout, because the account already exists by this
-   * point and a billing hiccup must not strand someone inside signup.
+   * Best-effort throughout, because the account already exists by this point
+   * and a billing hiccup must not strand someone inside signup. A real purchase
+   * is confirmed by the server via RevenueCat's webhook, never by the return
+   * value here — so there is nothing to record. Anything short of a completed
+   * purchase leaves them on the free plan, which the billing screen can change
+   * later.
    */
   const grantAccess = async (intent, userId, chosen = null) => {
     try {
@@ -95,43 +106,40 @@ const Onboarding = () => {
         // for them — and picking it arbitrarily.
         const pick = packages.find((p) => p.identifier === chosen?.identifier) ?? packages[0];
 
-        if (pick) {
-          const result = await purchasePackage(pick);
-          // A real purchase is confirmed by the server via RevenueCat's
-          // webhook, never by this return value — so there is nothing to record
-          // here. Anything short of a purchase falls through to the trial.
-          if (result.purchased) return;
-        }
+        if (pick) await purchasePackage(pick);
       }
     } catch {
-      /* Non-fatal: the account exists, and the trial can be started later. */
+      /* Non-fatal: the account exists, and the plan can be bought from Billing. */
     }
   };
 
   /**
-   * The offering, loaded when the paywall appears.
+   * The offering, loaded when the paywall appears and again on Retry.
    *
    * The screen has to show what each term actually costs, and the store is the
-   * only authority on that — it is what localises the currency. Failing here is
-   * silent: the paywall simply shows no prices, which is the state it was in
-   * before it showed any.
+   * only authority on that — it is what localises the currency. Failing here
+   * leaves the paywall with no plans and a Retry, never with nothing to tap:
+   * the free plan is always there.
    */
+  const loadOffering = useCallback(async () => {
+    if (!purchasesAvailable()) return;
+    setPlans("loading");
+    try {
+      const { packages: found } = await getOffering();
+      setPackages(found ?? []);
+    } catch {
+      setPackages([]);
+    } finally {
+      setPlans("done");
+    }
+  }, []);
+
   useEffect(() => {
-    if (phase !== "paywall" || !purchasesAvailable()) return;
+    if (phase !== "paywall") return;
+    loadOffering();
+  }, [phase, loadOffering]);
 
-    let cancelled = false;
-    getOffering()
-      .then(({ packages: found }) => {
-        if (!cancelled) setPackages(found ?? []);
-      })
-      .catch(() => {});
-
-    return () => {
-      cancelled = true;
-    };
-  }, [phase]);
-
-  const createAccount = async (intent = "trial", chosen = null) => {
+  const createAccount = async (intent = "free", chosen = null) => {
     setPhase("creating");
     const { account, preferences, profile, reminderWindow } = buildSignupPayload(answers);
 
@@ -196,8 +204,15 @@ const Onboarding = () => {
     return (
       <Paywall
         packages={packages}
-        onSubscribe={(pkg) => createAccount("subscribe", pkg)}
+        plansLoading={plans === "loading"}
         canPurchase={purchasesAvailable()}
+        onSubscribe={(pkg) => createAccount("subscribe", pkg)}
+        onContinueFree={() => createAccount("free")}
+        onBack={backFromPaywall}
+        onRetry={loadOffering}
+        // No account exists yet, so there is nothing to attach a restored
+        // purchase to. Someone who already paid signs in; Billing restores.
+        onRestore={() => router.replace({ pathname: "/login", params: { restore: "1" } })}
       />
     );
   }

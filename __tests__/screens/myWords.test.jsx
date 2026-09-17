@@ -21,7 +21,7 @@ jest.mock("expo-router", () => ({
 
 const USER = { id: "u1", firstName: "Ada" };
 
-const entitled = { entitled: true, status: "trialing", verified: false };
+const entitled = { entitled: true, status: "active", verified: true };
 const unentitled = { entitled: false, status: "none", verified: false };
 
 function makeStore() {
@@ -51,7 +51,6 @@ function makeCache() {
 const baseClient = ({ subscription = entitled, list = [], over = {} } = {}) => ({
   me: jest.fn(async () => ({ user: USER })),
   subscription: jest.fn(async () => ({ subscription })),
-  startTrial: jest.fn(),
   customAffirmations: jest.fn(async () => ({ affirmations: list })),
   createCustomAffirmation: jest.fn(async (text) => ({
     affirmation: { id: "c1", text, source: "custom" },
@@ -200,9 +199,9 @@ describe("MyWords", () => {
 });
 
 describe("MyWords — entitlement freshness", () => {
-  it("re-reads entitlement on focus, so a trial started elsewhere unlocks it", async () => {
+  it("re-reads entitlement on focus, so a subscription started elsewhere unlocks it", async () => {
     // Caught on device: the tab screen stays mounted, so a mount-only fetch left
-    // the paywall showing after the trial had already started server-side.
+    // the paywall showing after the subscription had already landed server-side.
     const client = baseClient({ subscription: unentitled });
     const { findByTestId } = await renderMyWords(client);
 

@@ -23,7 +23,13 @@ const refreshTokenSchema = new mongoose.Schema(
     // Set when this token is rotated, so a replay is distinguishable from a
     // token that was simply revoked at logout.
     rotatedAt: { type: Date, default: null },
-    userAgent: { type: String, default: null },
+    /**
+     * When the family was first issued — the sign-in this chain descends
+     * from. Copied to every successor, so the family's absolute age is one
+     * read rather than a walk back through its ancestors. Null on rows from
+     * before it existed; those fall back to their own createdAt.
+     */
+    familyIssuedAt: { type: Date, default: null },
   },
   { timestamps: true },
 );

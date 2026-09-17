@@ -2,6 +2,7 @@ import { env } from "../config/env.js";
 import { logger } from "../lib/logger.js";
 import { VoiceClip, clipKey } from "../models/VoiceClip.js";
 import { spokenFor } from "./spoken.service.js";
+import { signedClipPath } from "./clipSignature.js";
 
 /**
  * Rendering a line in one of the five voices.
@@ -25,6 +26,8 @@ const API = "https://api.elevenlabs.io/v1/text-to-speech";
  * quality difference is far smaller than it is across a paragraph of prose.
  */
 const MODEL = "eleven_flash_v2_5";
+
+const DAY_MS = 24 * 60 * 60 * 1000;
 
 export function voiceAvailable() {
   return Boolean(env.ELEVENLABS_API_KEY);
@@ -70,20 +73,47 @@ async function render(text, voiceId, { signal } = {}) {
 }
 
 /**
+ * Characters rendered on this reader's behalf in the last day.
+ *
+ * Only cache misses are recorded (`renderedFor` is set on insert), so this is
+ * what they actually cost us — a reader replaying the same seven lines all
+ * afternoon spends nothing here.
+ */
+export async function charactersRenderedFor(userId, { since } = {}) {
+  const [row] = await VoiceClip.aggregate([
+    {
+      $match: {
+        renderedFor: userId,
+        createdAt: { $gte: since ?? new Date(Date.now() - DAY_MS) },
+      },
+    },
+    { $group: { _id: null, characters: { $sum: "$characters" } } },
+  ]);
+  return row?.characters ?? 0;
+}
+
+/**
  * A line in a voice, rendered once and remembered.
  *
  * Reads the cache first, and on a hit does no network work at all — which is
  * the entire cost strategy. On a miss it renders, stores, and returns.
+ *
+ * `ownerId` makes the clip private: keyed on the owner too, and served only
+ * under a signed URL. `renderedFor` is who pays, for the daily budget; the
+ * caller decides whether they still can with `allowRender`, and `onRender`
+ * hears about it when they did.
  *
  * Concurrent callers asking for the same clip both render: the upsert makes
  * that harmless rather than a duplicate row, and the alternative — a lock — is
  * a lot of machinery to save one duplicate render of a five-word sentence.
  */
 export async function clipFor(text, voiceId, options = {}) {
+  const { ownerId = null, renderedFor = null, allowRender = true, onRender, signal } = options;
+
   const trimmed = String(text ?? "").trim();
   if (!trimmed || !voiceId) return null;
 
-  const key = clipKey(trimmed, voiceId);
+  const key = clipKey(trimmed, voiceId, ownerId);
 
   const cached = await VoiceClip.findOneAndUpdate(
     { key },
@@ -92,11 +122,11 @@ export async function clipFor(text, voiceId, options = {}) {
   );
   if (cached) return cached;
 
-  if (!voiceAvailable()) return null;
+  if (!voiceAvailable() || !allowRender) return null;
 
   let audio;
   try {
-    audio = await render(trimmed, voiceId, options);
+    audio = await render(trimmed, voiceId, { signal });
   } catch (err) {
     // A failed render is the device voice for that line, not a failed session.
     logger.error({ err, voiceId }, "voice render failed");
@@ -107,11 +137,15 @@ export async function clipFor(text, voiceId, options = {}) {
     key,
     voiceId,
     text: trimmed,
+    user: ownerId,
+    renderedFor,
     audio,
     bytes: audio.length,
     characters: trimmed.length,
     lastUsedAt: new Date(),
   };
+
+  onRender?.(trimmed.length);
 
   // Upsert rather than create: two requests for the same new clip race, and
   // losing that race should return the winner's clip, not throw a duplicate key.
@@ -120,6 +154,12 @@ export async function clipFor(text, voiceId, options = {}) {
     { $setOnInsert: doc },
     { new: true, upsert: true },
   );
+}
+
+/** Where the app fetches a clip. Signed when it belongs to somebody. */
+export function clipPath(clip) {
+  if (!clip) return null;
+  return clip.user ? signedClipPath(clip._id) : `/api/voice/clip/${clip._id}`;
 }
 
 /**
@@ -135,17 +175,46 @@ export async function clipFor(text, voiceId, options = {}) {
  * while the audio plays, and the reader should still see the line as it was
  * written for them.
  *
+ * A line marked `private` — the reader's own words — is keyed on them and
+ * handed back under a signed URL, so nobody else can play it.
+ *
+ * Renders are budgeted per reader per rolling day. Past the budget a line
+ * still comes back — with no clip, so the device reads it — because a session
+ * that stops is worse than a session in the wrong voice. `throttled` tells
+ * the app which of those it got.
+ *
  * Sequential on purpose. Seven parallel requests is a burst against a
  * per-minute quota for no wall-clock benefit worth having — the reader is not
  * waiting on line seven while line one plays. It also means a rate-limit hit
  * costs one line rather than all of them.
  */
-export async function clipsForSession(lines, voiceId, { name } = {}) {
+export async function clipsForSession(
+  lines,
+  voiceId,
+  { name, userId = null, now = new Date() } = {},
+) {
+  const budget = env.VOICE_DAILY_CHAR_BUDGET;
+  let used = userId
+    ? await charactersRenderedFor(userId, { since: new Date(now.getTime() - DAY_MS) })
+    : 0;
+  let throttled = false;
+
   const clips = [];
 
   for (const line of lines) {
     const spoken = spokenFor(line.text, { name });
-    const clip = await clipFor(spoken, voiceId);
+    const allowRender = used + spoken.length <= budget;
+
+    const clip = await clipFor(spoken, voiceId, {
+      ownerId: line.private ? userId : null,
+      renderedFor: userId,
+      allowRender,
+      onRender: (characters) => {
+        used += characters;
+      },
+    });
+
+    if (!clip && !allowRender) throttled = true;
 
     clips.push({
       id: String(line.id ?? line._id ?? ""),
@@ -154,8 +223,16 @@ export async function clipsForSession(lines, voiceId, { name } = {}) {
       // Null means "read this one with the device voice" — a partial session is
       // better than none, and the seam already handles a mixed source.
       clipId: clip ? String(clip._id) : null,
+      clipUrl: clipPath(clip),
     });
   }
 
-  return clips;
+  if (throttled) {
+    logger.warn(
+      { userId: String(userId), used, budget },
+      "voice budget reached — device voice",
+    );
+  }
+
+  return { clips, throttled };
 }

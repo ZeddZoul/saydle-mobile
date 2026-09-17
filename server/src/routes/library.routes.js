@@ -2,6 +2,7 @@ import { Router } from "express";
 import { z } from "zod";
 import { requireAuth } from "../middleware/auth.js";
 import { validate } from "../middleware/validate.js";
+import { perUserLimiter } from "../middleware/rateLimit.js";
 import { idParamSchema } from "../validators/affirmation.schema.js";
 import * as library from "../controllers/library.controller.js";
 
@@ -26,7 +27,8 @@ libraryRouter.get("/saved", library.listSaved);
 
 libraryRouter.get("/", library.list);
 libraryRouter.post("/seen", validate(cursorSchema), library.seen);
-libraryRouter.post("/warm", library.warm);
+// Five a quarter-hour: onboarding calls it once. Anything more is a loop.
+libraryRouter.post("/warm", perUserLimiter({ max: 5 }), library.warm);
 
 libraryRouter.put("/:id/save", validate(idParamSchema, "params"), library.save);
 libraryRouter.delete("/:id/save", validate(idParamSchema, "params"), library.unsave);

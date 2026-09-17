@@ -3,7 +3,13 @@ import request from "supertest";
 import { createApp } from "../src/app.js";
 import { registerUser } from "./helpers.js";
 import { User } from "../src/models/User.js";
-import { applyWebhookEvent, isEntitled } from "../src/services/subscription.service.js";
+import {
+  applyWebhookEvent,
+  applyTransfer,
+  isEntitled,
+  isStaleEvent,
+} from "../src/services/subscription.service.js";
+import { mapStore } from "../src/config/subscription.js";
 
 const app = createApp();
 
@@ -92,12 +98,89 @@ describe("applyWebhookEvent", () => {
     expect(user.subscription.verifiedAt).not.toBeNull();
   });
 
-  it("expires on cancellation and billing failure", () => {
-    for (const type of ["CANCELLATION", "EXPIRATION", "BILLING_ISSUE"]) {
-      applyWebhookEvent(user, { type, expiration_at_ms: Date.now() - DAY });
+  it("keeps a cancelled subscription entitled until the paid period ends", () => {
+    applyWebhookEvent(user, {
+      type: "INITIAL_PURCHASE",
+      expiration_at_ms: Date.now() + 30 * DAY,
+    });
+
+    // "Cancelled" means "will not renew". They paid for the month; they keep
+    // the month. Revoking on the cancellation was the bug.
+    applyWebhookEvent(user, { type: "CANCELLATION", expiration_at_ms: Date.now() + 20 * DAY });
+
+    expect(user.subscription.status).toBe("active");
+    expect(isEntitled(user)).toBe(true);
+    expect(user.subscription.expiresAt.getTime()).toBeGreaterThan(Date.now() + 19 * DAY);
+  });
+
+  it("revokes on a refund, which is a cancellation whose expiry is already past", () => {
+    applyWebhookEvent(user, {
+      type: "INITIAL_PURCHASE",
+      expiration_at_ms: Date.now() + 30 * DAY,
+    });
+    applyWebhookEvent(user, { type: "CANCELLATION", expiration_at_ms: Date.now() - 1000 });
+
+    // Same status, different date — and the date is what isEntitled reads.
+    expect(user.subscription.status).toBe("active");
+    expect(isEntitled(user)).toBe(false);
+  });
+
+  it("keeps access through a billing issue's grace period", () => {
+    applyWebhookEvent(user, { type: "INITIAL_PURCHASE", expiration_at_ms: Date.now() + DAY });
+    applyWebhookEvent(user, {
+      type: "BILLING_ISSUE",
+      expiration_at_ms: Date.now() - 1000,
+      grace_period_expiration_at_ms: Date.now() + 16 * DAY,
+    });
+
+    // The store gives a card that failed sixteen days to be fixed. So do we.
+    expect(isEntitled(user)).toBe(true);
+    expect(user.subscription.expiresAt.getTime()).toBeGreaterThan(Date.now() + 15 * DAY);
+  });
+
+  it("falls back to the paid-through date on a billing issue with no grace", () => {
+    applyWebhookEvent(user, { type: "BILLING_ISSUE", expiration_at_ms: Date.now() - 1000 });
+    expect(isEntitled(user)).toBe(false);
+  });
+
+  it("revokes on expiration and on pause", () => {
+    for (const type of ["EXPIRATION", "SUBSCRIPTION_PAUSED"]) {
+      applyWebhookEvent(user, { type: "RENEWAL", expiration_at_ms: Date.now() + 30 * DAY });
+      applyWebhookEvent(user, { type, expiration_at_ms: Date.now() + 30 * DAY });
+
+      // Expired regardless of the date on the event: the store said it is over.
       expect(user.subscription.status).toBe("expired");
       expect(isEntitled(user)).toBe(false);
     }
+  });
+
+  it("records where it was bought, and 'other' for anything that is not a store", () => {
+    expect(mapStore("APP_STORE")).toBe("app_store");
+    expect(mapStore("MAC_APP_STORE")).toBe("app_store");
+    expect(mapStore("PLAY_STORE")).toBe("play_store");
+    for (const store of ["PROMOTIONAL", "STRIPE", "RC_BILLING", "AMAZON", undefined]) {
+      expect(mapStore(store)).toBe("other");
+    }
+
+    applyWebhookEvent(user, { type: "INITIAL_PURCHASE", store: "PROMOTIONAL" });
+    expect(user.subscription.source).toBe("other");
+    // And the model accepts it — an enum the mapping can produce but the
+    // schema refuses would fail on save, after the webhook already said 204.
+    expect(user.validateSync()).toBeUndefined();
+  });
+
+  it("remembers which event it applied last", () => {
+    applyWebhookEvent(user, {
+      id: "evt_1",
+      type: "INITIAL_PURCHASE",
+      event_timestamp_ms: 1_700_000_000_000,
+      expiration_at_ms: Date.now() + DAY,
+    });
+
+    expect(user.subscription.lastEventId).toBe("evt_1");
+    expect(user.subscription.lastEventAt.getTime()).toBe(1_700_000_000_000);
+    // Bookkeeping, not something the app needs to see.
+    expect(user.toJSON().subscription).not.toHaveProperty("lastEventId");
   });
 
   it("ignores an event type it doesn't recognise rather than revoking access", () => {
@@ -117,6 +200,78 @@ describe("applyWebhookEvent", () => {
       }),
     ).toBe(false);
     expect(isEntitled(user)).toBe(false);
+  });
+});
+
+describe("isStaleEvent", () => {
+  it("flags a redelivery of an event already applied", () => {
+    user.subscription.lastEventId = "evt_1";
+    expect(isStaleEvent(user, { id: "evt_1", event_timestamp_ms: Date.now() })).toBe("replay");
+    expect(isStaleEvent(user, { id: "evt_2", event_timestamp_ms: Date.now() })).toBeNull();
+  });
+
+  it("flags an event older than the last one applied", () => {
+    user.subscription.lastEventAt = new Date(2_000);
+    expect(isStaleEvent(user, { id: "evt_x", event_timestamp_ms: 1_000 })).toBe("out_of_order");
+    expect(isStaleEvent(user, { id: "evt_y", event_timestamp_ms: 3_000 })).toBeNull();
+  });
+
+  it("treats a missing timestamp as current rather than stale", () => {
+    user.subscription.lastEventAt = new Date();
+    expect(isStaleEvent(user, { id: "evt_z" })).toBeNull();
+  });
+});
+
+describe("applyTransfer", () => {
+  const transfer = (over = {}) => ({
+    id: "evt_transfer",
+    type: "TRANSFER",
+    store: "APP_STORE",
+    event_timestamp_ms: Date.now(),
+    ...over,
+  });
+
+  it("moves the entitlement from one account to another", async () => {
+    const donor = user;
+    applyWebhookEvent(donor, {
+      type: "INITIAL_PURCHASE",
+      product_id: "saydle_annual",
+      expiration_at_ms: Date.now() + 300 * DAY,
+      store: "APP_STORE",
+    });
+    const recipient = await User.findById(
+      (await registerUser(app, { email: "recipient@example.com" })).user.id,
+    );
+
+    const changed = applyTransfer({ from: [donor], to: [recipient] }, transfer());
+
+    expect(changed).toHaveLength(2);
+    expect(isEntitled(donor)).toBe(false);
+    expect(isEntitled(recipient)).toBe(true);
+    // The recipient inherits exactly what was paid for, not a fresh grant.
+    expect(recipient.subscription.productId).toBe("saydle_annual");
+    expect(recipient.subscription.expiresAt.getTime()).toBe(
+      donor.subscription.expiresAt.getTime(),
+    );
+    expect(recipient.subscription.verifiedAt).not.toBeNull();
+  });
+
+  it("grants nothing when the donor is unknown and the event carries no expiry", () => {
+    // A transfer from an id we have never seen, with no date to bound it:
+    // granting would be an open-ended subscription on nobody's receipt.
+    const changed = applyTransfer({ from: [], to: [user] }, transfer());
+
+    expect(changed).toHaveLength(0);
+    expect(isEntitled(user)).toBe(false);
+  });
+
+  it("trusts an expiry on the event itself when there is no donor to copy", () => {
+    applyTransfer({ from: [], to: [user] }, transfer({ expiration_at_ms: Date.now() + DAY }));
+    expect(isEntitled(user)).toBe(true);
+  });
+
+  it("does nothing for an event that is not a transfer", () => {
+    expect(applyTransfer({ from: [user], to: [] }, { type: "RENEWAL" })).toEqual([]);
   });
 });
 
@@ -189,6 +344,96 @@ describe("POST /api/subscription/webhook", () => {
       .send(event());
 
     expect(res.status).toBe(401);
+  });
+
+  it("drops a redelivered event rather than applying it twice", async () => {
+    vi.stubEnv("REVENUECAT_WEBHOOK_SECRET", "correct-secret");
+    const send = (body) =>
+      request(app)
+        .post("/api/subscription/webhook")
+        .set("Authorization", "Bearer correct-secret")
+        .send(body);
+
+    await send(event({ id: "evt_1", event_timestamp_ms: 1_000 })).expect(204);
+    // Same id again, now claiming an expiry in the past: a replay must not
+    // move anything, however different its body.
+    await send(
+      event({ id: "evt_1", event_timestamp_ms: 1_000, expiration_at_ms: Date.now() - DAY }),
+    ).expect(204);
+
+    const saved = await User.findById(userId);
+    expect(isEntitled(saved)).toBe(true);
+    vi.unstubAllEnvs();
+  });
+
+  it("drops an event that arrives after a newer one", async () => {
+    vi.stubEnv("REVENUECAT_WEBHOOK_SECRET", "correct-secret");
+    const send = (body) =>
+      request(app)
+        .post("/api/subscription/webhook")
+        .set("Authorization", "Bearer correct-secret")
+        .send(body);
+
+    // The renewal lands first; the expiration it superseded shows up late.
+    await send(event({ id: "evt_renew", type: "RENEWAL", event_timestamp_ms: 2_000 })).expect(
+      204,
+    );
+    await send(event({ id: "evt_old", type: "EXPIRATION", event_timestamp_ms: 1_000 })).expect(
+      204,
+    );
+
+    const saved = await User.findById(userId);
+    expect(saved.subscription.status).toBe("active");
+    expect(saved.subscription.lastEventId).toBe("evt_renew");
+    vi.unstubAllEnvs();
+  });
+
+  it("finds the account through an alias when app_user_id is not ours", async () => {
+    vi.stubEnv("REVENUECAT_WEBHOOK_SECRET", "correct-secret");
+
+    // A purchase made before sign-in lives under RevenueCat's anonymous id;
+    // once aliased, the event names both.
+    const res = await request(app)
+      .post("/api/subscription/webhook")
+      .set("Authorization", "Bearer correct-secret")
+      .send(
+        event({
+          app_user_id: "$RCAnonymousID:abc123",
+          aliases: ["$RCAnonymousID:abc123", userId],
+          original_app_user_id: "$RCAnonymousID:abc123",
+        }),
+      );
+
+    expect(res.status).toBe(204);
+    expect(isEntitled(await User.findById(userId))).toBe(true);
+    vi.unstubAllEnvs();
+  });
+
+  it("moves an entitlement on a TRANSFER event", async () => {
+    vi.stubEnv("REVENUECAT_WEBHOOK_SECRET", "correct-secret");
+    const send = (body) =>
+      request(app)
+        .post("/api/subscription/webhook")
+        .set("Authorization", "Bearer correct-secret")
+        .send(body);
+
+    const other = (await registerUser(app, { email: "transferee@example.com" })).user.id;
+    await send(event({ id: "evt_buy", event_timestamp_ms: 1_000 })).expect(204);
+
+    await send({
+      event: {
+        id: "evt_move",
+        type: "TRANSFER",
+        store: "APP_STORE",
+        event_timestamp_ms: 2_000,
+        transferred_from: [userId],
+        transferred_to: [other],
+      },
+    }).expect(204);
+
+    expect(isEntitled(await User.findById(userId))).toBe(false);
+    expect(isEntitled(await User.findById(other))).toBe(true);
+    vi.unstubAllEnvs();
   });
 
   it("acknowledges an event for an account that no longer exists", async () => {

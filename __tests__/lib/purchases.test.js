@@ -132,7 +132,7 @@ describe("with a Test Store key", () => {
     });
   });
 
-  it("degrades to the trial path instead of a dead paywall", async () => {
+  it("degrades to the free plan instead of a dead paywall", async () => {
     await withDev(false, async () => {
       const purchases = loadFresh({ key: "test_abc123", module: fakePurchases() });
 

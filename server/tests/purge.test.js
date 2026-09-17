@@ -1,4 +1,5 @@
 import { describe, it, expect, beforeEach } from "vitest";
+import crypto from "node:crypto";
 import request from "supertest";
 import mongoose from "mongoose";
 import { createApp } from "../src/app.js";
@@ -16,6 +17,12 @@ import { FeedEntry } from "../src/models/FeedEntry.js";
 import { Favorite } from "../src/models/Favorite.js";
 import { Affirmation } from "../src/models/Affirmation.js";
 import { RefreshToken } from "../src/models/RefreshToken.js";
+import { VoiceClip } from "../src/models/VoiceClip.js";
+import { tombstoneKey } from "../src/config/env.js";
+
+// Ten minutes from now: past the orphan sweep's grace window, so rows created
+// a moment ago count as old enough to be judged.
+const later = () => new Date(Date.now() + 10 * 60 * 1000);
 
 const app = createApp();
 const password = "correct horse battery";
@@ -100,6 +107,11 @@ describe("purging an account", () => {
     expect(stone).toBeTruthy();
     expect(stone.emailHash).toBe(hashEmail(email));
     expect(stone.subscription.status).toBeTruthy();
+    // Keyed on the dedicated tombstone key, so rotating an auth secret cannot
+    // orphan every tombstone written before it.
+    expect(stone.emailHash).toBe(
+      crypto.createHmac("sha256", tombstoneKey).update(email).digest("hex"),
+    );
 
     // The point of the whole exercise: nothing here says who they were.
     const text = JSON.stringify(stone);
@@ -118,6 +130,37 @@ describe("purging an account", () => {
 
     expect(years).toBeGreaterThan(5.9);
     expect(years).toBeLessThan(6.1);
+  });
+
+  it("removes their own clips and leaves the shared ones", async () => {
+    const email = "spoken@example.com";
+    const { id, accessToken } = await accountWithData(email);
+    await schedule(accessToken, email);
+
+    const audio = Buffer.from("mp3");
+    await VoiceClip.create([
+      {
+        key: "shared-1",
+        voiceId: "v",
+        text: "shared",
+        audio,
+        bytes: 3,
+        characters: 6,
+        user: null,
+        renderedFor: id,
+      },
+      { key: "mine-1", voiceId: "v", text: "mine", audio, bytes: 3, characters: 4, user: id },
+    ]);
+
+    await purgeAccount(await User.findById(id));
+
+    // Their own words go with them. A curated line they happened to be the
+    // first to play belongs to the line, not to them — only the record of who
+    // paid for that render is cleared.
+    expect(await VoiceClip.countDocuments({ user: id })).toBe(0);
+    const shared = await VoiceClip.findOne({ key: "shared-1" }).lean();
+    expect(shared).toBeTruthy();
+    expect(shared.renderedFor).toBeNull();
   });
 
   it("can be run twice without failing", async () => {
@@ -203,16 +246,34 @@ describe("the backlog left by the old delete", () => {
     await User.deleteOne({ _id: id });
     expect(await FeedEntry.countDocuments({ user: id })).toBeGreaterThan(0);
 
-    await purgeOrphans();
+    await purgeOrphans({ now: later() });
 
     expect(await FeedEntry.countDocuments({ user: id })).toBe(0);
     expect(await Affirmation.countDocuments({ user: id })).toBe(0);
   });
 
+  it("leaves rows created after the snapshot alone", async () => {
+    const { id } = await accountWithData("newcomer@example.com");
+
+    // Stage the race: the sweep took its list of accounts, then this one
+    // registered. Its rows are seconds old and its id is not in the list —
+    // exactly what an orphan looks like, except that it is not one.
+    await User.deleteOne({ _id: id });
+
+    await purgeOrphans();
+
+    expect(await RefreshToken.countDocuments({ user: id })).toBeGreaterThan(0);
+    expect(await FeedEntry.countDocuments({ user: id })).toBeGreaterThan(0);
+
+    // The next sweep, once the window has passed, takes them.
+    await purgeOrphans({ now: later() });
+    expect(await RefreshToken.countDocuments({ user: id })).toBe(0);
+  });
+
   it("leaves the curated bank alone", async () => {
     const before = await Affirmation.countDocuments({ user: null });
 
-    await purgeOrphans();
+    await purgeOrphans({ now: later() });
 
     // Curated rows have no owner by design; a naive "delete anything whose user
     // is missing" would wipe the shared bank every run.

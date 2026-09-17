@@ -212,6 +212,39 @@ describe("refilling", () => {
     expect(libraryCalls(240).length + libraryCalls(50).length).toBeGreaterThan(0);
   });
 
+  it("warms an empty library", async () => {
+    const res = await request(app).post("/api/library/warm").set("authorization", auth);
+    await flushRefills();
+
+    expect(res.status).toBe(202);
+    expect(res.body.started).toBe(true);
+    expect(libraryCalls(240)).toHaveLength(1);
+  });
+
+  it("does not warm a library that is already full", async () => {
+    await refill(user, { size: 240 });
+    generateAffirmations.mockClear();
+
+    // The onboarding screen calls this once. Before it checked, every call was
+    // a fresh 240-line batch that retired the one it had just written.
+    const res = await request(app).post("/api/library/warm").set("authorization", auth);
+    await flushRefills();
+
+    expect(res.status).toBe(202);
+    expect(res.body.started).toBe(false);
+    expect(libraryCalls(240)).toHaveLength(0);
+  });
+
+  it("never warms for a free reader", async () => {
+    const free = await registerUser(app, { email: "freewarm@example.com" });
+
+    const res = await request(app).post("/api/library/warm").set("authorization", free.auth);
+    await flushRefills();
+
+    expect(res.body.started).toBe(false);
+    expect(libraryCalls(240)).toHaveLength(0);
+  });
+
   it("does not refill a reader who has barely started", async () => {
     await refill(user, { size: 240 });
     generateAffirmations.mockClear();

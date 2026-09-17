@@ -127,4 +127,40 @@ describe("VoicePicker", () => {
     expect(await findByText("Reading today")).toBeTruthy();
     expect(await findByText("From tomorrow")).toBeTruthy();
   });
+
+  /**
+   * The free plan: hear every voice, choose none.
+   *
+   * Previews are shared and cost nothing, so auditioning stays open — hearing
+   * what a subscription buys is the whole pitch. The choose control becomes a
+   * "Premium" tag that opens Billing, because a radio the server would refuse
+   * is a tap that visibly does nothing.
+   */
+  describe("when choosing is premium", () => {
+    it("still lets every voice be heard", async () => {
+      const { findByTestId } = await renderPicker({ locked: true });
+
+      await fireEvent.press(await findByTestId("voice-preview-father"));
+
+      expect(mockPlay).toHaveBeenCalledTimes(1);
+    });
+
+    it("replaces the choose control with a Premium tag", async () => {
+      const { findAllByText, queryByTestId } = await renderPicker({ locked: true });
+
+      expect((await findAllByText("Premium")).length).toBe(VOICES.length);
+      expect(queryByTestId("voice-choose-mentor")).toBeNull();
+    });
+
+    it("sends the tag to Billing rather than choosing", async () => {
+      const onChoose = jest.fn();
+      const onUpgrade = jest.fn();
+      const { findByTestId } = await renderPicker({ locked: true, onChoose, onUpgrade });
+
+      await fireEvent.press(await findByTestId("voice-premium-mentor"));
+
+      expect(onUpgrade).toHaveBeenCalledTimes(1);
+      expect(onChoose).not.toHaveBeenCalled();
+    });
+  });
 });

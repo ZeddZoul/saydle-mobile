@@ -23,6 +23,7 @@ import BenefitsPanel from "./BenefitsPanel.jsx";
 import ThemePicker from "../ThemePicker.jsx";
 import { DEFAULT_THEME } from "../../theme/themes.js";
 import { requestPermission } from "../../lib/notifications.js";
+import { DEFAULT_REMINDER_WINDOW } from "../../lib/reminders.js";
 import { validateEmail, PASSWORD_MIN } from "../../lib/validation.js";
 import { colors, radius, shadow, spacing, type } from "../../theme/tokens.js";
 import { useT } from "../../lib/i18n.js";
@@ -84,9 +85,15 @@ const OnboardingStep = ({ question, value, onChange, onNext, onBack, onSkip, isF
   const centered = ["text", "info", "streak", "benefits"].includes(question.kind);
 
   // "Allow and Save" — the reminders step asks the OS right here, where the
-  // value is on screen, rather than surprising them with a sheet later.
+  // value is on screen, rather than surprising them with a sheet later. It
+  // also saves what the screen showed: someone who accepts the proposed
+  // window without touching the slider has still chosen it, and the step used
+  // to record nothing for them.
   const handleNext = async () => {
-    if (question.kind === "reminders") await requestPermission();
+    if (question.kind === "reminders") {
+      if (!value?.count) onChange({ ...DEFAULT_REMINDER_WINDOW });
+      await requestPermission();
+    }
     onNext();
   };
   // Guarded: for multi steps `value` is an array, so text checks must not run.

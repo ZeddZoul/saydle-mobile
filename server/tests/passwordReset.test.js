@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeEach } from "vitest";
 import request from "supertest";
 import { createApp } from "../src/app.js";
+import { flushPasswordResets } from "../src/controllers/auth.controller.js";
 import { seed } from "../migrations/seed.js";
 import { registerUser } from "./helpers.js";
 import { User } from "../src/models/User.js";
@@ -112,6 +113,8 @@ describe("POST /api/auth/forgot-password", () => {
     const { user } = await registerUser(app);
 
     await request(app).post("/api/auth/forgot-password").send({ email: user.email });
+    // The 204 goes out before the lookup; the code is written after.
+    await flushPasswordResets();
 
     expect(await PasswordResetToken.countDocuments({ user: await userIdFor(user.email) })).toBe(
       1,
@@ -120,6 +123,7 @@ describe("POST /api/auth/forgot-password", () => {
 
   it("creates nothing for an unknown address", async () => {
     await request(app).post("/api/auth/forgot-password").send({ email: "nobody@example.com" });
+    await flushPasswordResets();
 
     expect(await PasswordResetToken.countDocuments()).toBe(0);
   });

@@ -83,6 +83,33 @@ describe("POST /api/affirmations/custom", () => {
     }
   });
 
+  it("refuses a category the app was never offered", async () => {
+    await entitle(user);
+
+    const res = await request(app)
+      .post("/api/affirmations/custom")
+      .set("Authorization", auth)
+      .send({ text: "I can begin again on a Tuesday.", categorySlug: "not-a-category" });
+
+    expect(res.status).toBe(400);
+    expect(res.body.error.details).toHaveProperty("categorySlug");
+    expect(await Affirmation.countDocuments({ source: "custom" })).toBe(0);
+  });
+
+  it("accepts a category that exists", async () => {
+    await entitle(user);
+    const { Category } = await import("../src/models/Category.js");
+    const any = await Category.findOne({ isActive: true });
+
+    const res = await request(app)
+      .post("/api/affirmations/custom")
+      .set("Authorization", auth)
+      .send({ text: "I can begin again on a Tuesday.", categorySlug: any.slug });
+
+    expect(res.status).toBe(201);
+    expect(res.body.affirmation.categorySlug).toBe(any.slug);
+  });
+
   it("refuses a duplicate rather than storing it twice", async () => {
     await entitle(user);
     const text = "I can begin again on a Tuesday.";

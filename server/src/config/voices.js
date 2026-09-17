@@ -20,6 +20,16 @@ export const VOICE_IDS = {
 
 export const DEFAULT_VOICE = "mother";
 
+/**
+ * Premium from day one.
+ *
+ * Stated here rather than in the controller for the same reason the library's
+ * flag lives in config/library.js: rendering is the one cost that scales with
+ * how much someone listens, and the decision to charge for it should be one
+ * edit in a file named after the thing, not a hunt through route handlers.
+ */
+export const VOICE_REQUIRES_PREMIUM = true;
+
 /** A voice suggested by the tone they chose at onboarding. Never an assignment. */
 const BY_TONE = { gentle: "mother", grounded: "father", energetic: "peer" };
 

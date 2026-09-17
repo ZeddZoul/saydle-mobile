@@ -5,12 +5,15 @@ import DateTimePicker from "@react-native-community/datetimepicker";
 import * as Haptics from "expo-haptics";
 import FadeInView from "../FadeInView.jsx";
 import DisplayText from "../DisplayText.jsx";
-import { MAX_PER_DAY, toClock, toMinutes } from "../../lib/reminders.js";
+import {
+  DEFAULT_REMINDER_WINDOW,
+  MAX_PER_DAY,
+  toClock,
+  toMinutes,
+} from "../../lib/reminders.js";
 import { colors, radius, shadow, spacing, type } from "../../theme/tokens.js";
 import { useT } from "../../lib/i18n.js";
 import { useAppTheme } from "../../contexts/ThemeContext.jsx";
-
-const SAMPLE = "I can begin before I feel ready.";
 
 const toDate = (time) => {
   const [h, m] = time.split(":").map(Number);
@@ -39,7 +42,7 @@ const fromDate = (date) => toClock(date.getHours() * 60 + date.getMinutes());
 const ReminderSetup = ({ value, onChange, onCommit, compact = false, disabled = false }) => {
   const { t } = useT();
   const { theme } = useAppTheme();
-  const settings = { count: 3, start: "09:00", end: "22:00", ...(value ?? {}) };
+  const settings = { ...DEFAULT_REMINDER_WINDOW, ...(value ?? {}) };
   const [picking, setPicking] = useState(null); // "start" | "end" | null
   const pop = useRef(new Animated.Value(1)).current;
 
@@ -120,7 +123,9 @@ const ReminderSetup = ({ value, onChange, onCommit, compact = false, disabled = 
               <Text style={[styles.previewApp, { color: theme.sub }]}>
                 {t("onboarding.notificationPreview")}
               </Text>
-              <Text style={[styles.previewText, { color: theme.ink }]}>{SAMPLE}</Text>
+              <Text style={[styles.previewText, { color: theme.ink }]}>
+                {t("onboarding.sampleLine")}
+              </Text>
             </View>
           </View>
         </FadeInView>

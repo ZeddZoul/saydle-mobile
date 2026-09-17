@@ -2,6 +2,7 @@ import { act, renderHook, waitFor } from "@testing-library/react-native";
 import { AuthProvider } from "../../contexts/AuthContext.jsx";
 import { useVoicePreference } from "../../hooks/useVoicePreference.js";
 import { todayLocal } from "../../lib/dates.js";
+import { ApiError } from "../../lib/errors.js";
 
 /**
  * Which voice reads, and when a change to it lands.
@@ -141,6 +142,52 @@ describe("useVoicePreference", () => {
     // never heard of is worse than a tap that visibly did nothing.
     expect(result.current.active).toBe("mother");
     expect(result.current.pending).toBeNull();
+  });
+
+  it("reads a 403 as the paywall, not as a failure", async () => {
+    const client = makeClient({
+      setVoicePreference: jest.fn(async () => {
+        throw new ApiError(403, "forbidden", "Choosing a voice is part of Saydle premium.");
+      }),
+    });
+    const { result } = await setup({ client });
+    await waitFor(() => expect(result.current.loading).toBe(false));
+
+    expect(result.current.locked).toBe(false);
+    await act(async () => result.current.choose("father"));
+
+    // The voice they had is the voice they keep — and the picker learns to
+    // say "Premium" instead of shrugging at a tap that did nothing.
+    expect(result.current.locked).toBe(true);
+    expect(result.current.active).toBe("mother");
+    expect(result.current.pending).toBeNull();
+  });
+
+  it("learns it is locked from the read too, before anyone taps", async () => {
+    const client = makeClient({
+      voicePreference: jest.fn(async () => {
+        throw new ApiError(403, "forbidden", "premium");
+      }),
+    });
+    const { result } = await setup({ client });
+
+    await waitFor(() => expect(result.current.locked).toBe(true));
+    // Still usable: the device voice, suggested from their tone.
+    expect(result.current.active).toBe("mother");
+  });
+
+  it("does not mistake being offline for being locked", async () => {
+    const client = makeClient({
+      setVoicePreference: jest.fn(async () => {
+        throw new Error("offline");
+      }),
+    });
+    const { result } = await setup({ client });
+    await waitFor(() => expect(result.current.loading).toBe(false));
+
+    await act(async () => result.current.choose("father"));
+
+    expect(result.current.locked).toBe(false);
   });
 
   it("reports no pending change when they re-pick the current voice", async () => {

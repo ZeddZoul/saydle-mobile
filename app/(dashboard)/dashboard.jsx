@@ -7,6 +7,7 @@ import FloatingChrome from "../../components/FloatingChrome.jsx";
 import AffirmationFeed from "../../components/AffirmationFeed.jsx";
 import StreakToast from "../../components/StreakToast.jsx";
 import VerifyEmailCard from "../../components/VerifyEmailCard.jsx";
+import DeletionPendingCard from "../../components/DeletionPendingCard.jsx";
 import { useFeed } from "../../hooks/useFeed.js";
 import { useFavorites } from "../../hooks/useFavorites.js";
 import { useStreak } from "../../hooks/useStreak.js";
@@ -93,6 +94,10 @@ const Dashboard = () => {
               instead — still never covering the line, and still absent
               entirely until there is something to ask. */}
           <View style={styles.overlayCards} pointerEvents="box-none">
+            {/* First, because it is the one with a deadline. Signing in did
+                not cancel the deletion — this card is what does. */}
+            <DeletionPendingCard />
+
             <VerifyEmailCard compact />
 
             <ProfileNudge

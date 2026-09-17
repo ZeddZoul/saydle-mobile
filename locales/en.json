@@ -13,20 +13,17 @@
     "startAt": "Start at",
     "endAt": "End at",
     "streakCaption": "Build a streak, one day at a time",
-    "notificationPreview": "Saydle · now"
+    "notificationPreview": "Saydle · now",
+    "benefitFocus": "Stay focused on what you're working toward",
+    "benefitReframe": "Catch a harsh thought and turn it around",
+    "benefitGentle": "Be a little gentler with yourself each day",
+    "sampleLine": "I can begin before I feel ready."
   },
   "landing": {
     "tagline": "Daily affirmations, crafted for you.",
-    "proof": "Loved by early users",
-    "rating": "Rated five stars",
     "getStarted": "Get started",
     "haveAccount": "I already have an account",
-    "testimonials": [
-      "The gentlest part of my morning.",
-      "It finally sounds like me.",
-      "Small reminders that actually land.",
-      "Calmer before I've even had coffee."
-    ]
+    "blurb": "One affirmation a day, free to read. Premium writes yours from what you tell us and reads it aloud."
   },
   "auth": {
     "welcomeBack": "Welcome back",
@@ -50,7 +47,8 @@
     "newPasswordPlaceholder": "At least 8 characters",
     "resetSubmit": "Set new password",
     "resetDone": "Password changed. Sign in with your new one.",
-    "backToLogin": "Back to sign in"
+    "backToLogin": "Back to sign in",
+    "restoreHint": "Sign in first. Then open Profile → Subscription and tap Restore purchases."
   },
   "validation": {
     "emailRequired": "Email is required.",
@@ -63,10 +61,11 @@
   "today": {
     "greeting": "Hello, {{name}}",
     "greetingAnonymous": "Hello",
-    "empty": "Nothing scheduled for today yet. Pull down to refresh.",
+    "empty": "Nothing for today yet. Check back in a moment.",
     "share": "Share this affirmation",
     "save": "Save to favorites",
-    "unsave": "Remove from favorites"
+    "unsave": "Remove from favorites",
+    "favorite": "Favorite this affirmation"
   },
   "favorites": {
     "title": "Favorites",
@@ -97,7 +96,7 @@
     "signOut": "Sign out",
     "deleteAccount": "Delete account",
     "deleteTitle": "Delete account",
-    "deleteBody": "Your account will be scheduled for deletion in {{days}} days. Nothing is removed before then — sign back in any time to cancel.",
+    "deleteBody": "Your account will be scheduled for deletion in {{days}} days. Nothing is removed before then — to cancel, sign in and tap Keep my account.",
     "deleteBillingNotice": "This does not cancel a paid subscription. Manage that in the App Store or Play Store.",
     "deletePasswordLabel": "Your password",
     "deleteConfirmLabel": "Type {{email}} to confirm",
@@ -130,13 +129,14 @@
   "paywall": {
     "title": "Saydle has created a safe space for you",
     "subtitle": "Crafted around everything you shared.",
-    "perk1": "Personalized affirmations, crafted just for your journey",
-    "perk2": "Gentle, timed reminders right when you need a boost",
-    "perk3": "Instant offline access to your saved favorites",
-    "price": "Cancel anytime.",
+    "perk1": "Affirmations written from your answers",
+    "perk2": "Practice read aloud in a real voice",
+    "perk3": "Your own words, kept",
     "subscribe": "Subscribe now",
     "creating": "Crafting affirmations just for you…",
-    "perMonth": "That's {{price}} a month."
+    "perMonth": "That's {{price}} a month.",
+    "continueFree": "Continue with the free plan",
+    "plansFailed": "Couldn't load plans."
   },
   "nudge": {
     "eyebrow": "Make it more yours",
@@ -192,7 +192,7 @@
     "next": "Another line",
     "source": {
       "today": "Today",
-      "saved": "Saved",
+      "favorites": "Favorites",
       "mine": "Mine"
     },
     "voiceRecord": "My voice",
@@ -266,7 +266,6 @@
     "noExpiry": "Yours to keep — no renewal date.",
     "freeHint": "You're on the free plan.",
     "purchasedVia": "Purchased via",
-    "sourceTrial": "Free trial",
     "sourceAppStore": "App Store",
     "sourcePlayStore": "Google Play",
     "confirmed": "Confirmed with store",
@@ -285,14 +284,6 @@
     "restore": "Restore purchases",
     "restored": "Purchases restored.",
     "storeFailed": "Couldn't open the store.",
-    "stepInstalled": "Install the app",
-    "stepInstalledHint": "Set up around what you told us.",
-    "stepToday": "Today: full access",
-    "stepTodayHint": "Everything unlocked, free for {{days}} days.",
-    "stepRemind": "{{date}} — Trial reminder",
-    "stepRemindHint": "So the end doesn't arrive unannounced.",
-    "stepCharge": "{{date}} — Become a member",
-    "stepChargeHint": "Your trial ends unless you cancel before then.",
     "restoreNothing": "No earlier purchase on this store account. If you paid with a different one, sign in to it and try again.",
     "restoreUnavailable": "Purchases aren't set up on this build yet.",
     "restoreSyncing": "Found your purchase — it'll appear here in a moment.",
@@ -301,12 +292,31 @@
     "upgradeKicker": "Not a bigger library. A different author.",
     "sampleEyebrow": "Here's one Saydle wrote for you",
     "sampleFooter": "That's what every day looks like from here.",
-    "compareFree": "Free",
-    "comparePremium": "Premium",
-    "compareRow1": "Affirmations written from your answers",
-    "compareRow2": "A voice reading them to you",
-    "compareRow3": "Your own words, kept",
-    "compareRow4": "Save lines to come back to"
+    "sourcePromotional": "Promotional",
+    "period": {
+      "day": "{{count}} day",
+      "days": "{{count}} days",
+      "week": "{{count}} week",
+      "weeks": "{{count}} weeks",
+      "month": "{{count}} month",
+      "months": "{{count}} months",
+      "year": "{{count}} year",
+      "years": "{{count}} years"
+    },
+    "per": {
+      "day": "per day",
+      "days": "per {{count}} days",
+      "week": "per week",
+      "weeks": "per {{count}} weeks",
+      "month": "per month",
+      "months": "per {{count}} months",
+      "year": "per year",
+      "years": "per {{count}} years"
+    },
+    "planTerm": "{{price}} {{per}}",
+    "planTermOnce": "{{price}} once",
+    "renewalTermsIos": "Renews automatically at the same price until cancelled at least 24 hours before the end of the period. Manage or cancel in App Store settings.",
+    "renewalTermsAndroid": "Renews automatically at the same price until cancelled at least 24 hours before the end of the period. Manage or cancel in Google Play settings."
   },
   "themes": {
     "preview": "This is how your affirmation will look."
@@ -344,6 +354,26 @@
       "name": "Grandfatherly",
       "desc": "Unhurried. Someone with time.",
       "preview": "Hear the grandfatherly voice"
-    }
+    },
+    "premium": "Premium",
+    "premiumHint": "Choosing a voice is part of Saydle premium",
+    "lockedHint": "Tap a voice to hear it. Choosing the one that reads your session is part of Saydle premium — until then, your phone reads it."
+  },
+  "legal": {
+    "title": "Legal",
+    "terms": "Terms of Use",
+    "privacy": "Privacy Policy",
+    "contact": "Contact support",
+    "supportSubject": "Saydle support",
+    "openFailed": "Couldn't open that link."
+  },
+  "deletion": {
+    "eyebrow": "Scheduled for deletion",
+    "scheduled": "Your account is scheduled for deletion on {{date}}.",
+    "scheduledSoon": "Your account is scheduled for deletion.",
+    "body": "Signing in didn't cancel it. Tap Keep my account and nothing will be removed.",
+    "keep": "Keep my account",
+    "notNow": "Not now",
+    "kept": "Your account stays. Nothing will be deleted."
   }
 }

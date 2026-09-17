@@ -8,7 +8,7 @@ import {
   Text,
   View,
 } from "react-native";
-import { useRouter } from "expo-router";
+import { useLocalSearchParams, useRouter } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
 import GradientBackground from "../../components/GradientBackground.jsx";
 import DisplayText from "../../components/DisplayText.jsx";
@@ -23,6 +23,10 @@ import { useT } from "../../lib/i18n.js";
 const Login = () => {
   const { t } = useT();
   const router = useRouter();
+  // `restore=1` is the paywall's "Restore purchases": there is no account to
+  // attach a purchase to before sign-in, so the paywall sends people here and
+  // this line says where the restore actually lives.
+  const { restore } = useLocalSearchParams();
   const { signIn } = useAuth();
   const [form, setForm] = useState({ email: "", password: "" });
   const [fieldErrors, setFieldErrors] = useState({});
@@ -83,6 +87,11 @@ const Login = () => {
                 {t("auth.welcomeBack")}
               </DisplayText>
               <Text style={styles.subtitle}>{t("auth.welcomeSubtitle")}</Text>
+              {restore ? (
+                <Text style={styles.restoreHint} testID="login-restore-hint">
+                  {t("auth.restoreHint")}
+                </Text>
+              ) : null}
             </View>
 
             <View style={styles.form}>
@@ -186,6 +195,14 @@ const styles = StyleSheet.create({
     textAlign: "center",
     marginTop: spacing.sm,
     maxWidth: 300,
+  },
+  restoreHint: {
+    ...type.subtitle,
+    fontSize: 14,
+    textAlign: "center",
+    marginTop: spacing.md,
+    maxWidth: 320,
+    color: colors.coral,
   },
   form: {
     width: "100%",

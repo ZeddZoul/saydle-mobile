@@ -20,7 +20,6 @@ import OfflineBanner from "./OfflineBanner";
 import { useAppTheme } from "../contexts/ThemeContext.jsx";
 import { useFavorites } from "../hooks/useFavorites.js";
 import { useLibrary } from "../hooks/useLibrary.js";
-import { useSaved } from "../hooks/useSaved.js";
 import { useT } from "../lib/i18n.js";
 import { spacing, type } from "../theme/tokens.js";
 
@@ -39,7 +38,7 @@ import { spacing, type } from "../theme/tokens.js";
  * anything else passes a FloatingHeader. Keeping that out of here is what lets
  * one implementation serve both without either growing a mode flag.
  */
-const Page = ({ item, height, theme, favorited, saved, onFavorite, onSave, onShare, t }) => (
+const Page = ({ item, height, theme, favorited, onFavorite, onShare, t }) => (
   <View style={[styles.page, { height }]} testID="library-page">
     <DisplayText style={[styles.text, { color: theme.ink }]}>{item.text}</DisplayText>
 
@@ -53,8 +52,6 @@ const Page = ({ item, height, theme, favorited, saved, onFavorite, onSave, onSha
         <Ionicons name="share-outline" size={26} color={theme.sub} />
       </Pressable>
 
-      {/* A heart is a reaction; a bookmark is an intention. Two controls,
-          because collapsing them loses which one they meant. */}
       <Pressable
         onPress={onFavorite}
         accessibilityRole="button"
@@ -66,20 +63,12 @@ const Page = ({ item, height, theme, favorited, saved, onFavorite, onSave, onSha
         <Ionicons name={favorited ? "heart" : "heart-outline"} size={28} color={theme.accent} />
       </Pressable>
 
-      <Pressable
-        onPress={onSave}
-        accessibilityRole="button"
-        accessibilityState={{ selected: saved }}
-        accessibilityLabel={t("library.save")}
-        hitSlop={12}
-        testID="library-save"
-      >
-        <Ionicons
-          name={saved ? "bookmark" : "bookmark-outline"}
-          size={26}
-          color={theme.accent}
-        />
-      </Pressable>
+      {/* No bookmark until there is a shelf to find it on. A heart is a
+          reaction; a bookmark is an intention — and hooks/useSaved.js,
+          api.saved() and the server's /api/library/saved are all ready for the
+          second. But nothing in the app yet lists what was saved, and a control
+          whose result can never be seen is worse than none. Restore this
+          alongside the Saved shelf. */}
     </View>
   </View>
 );
@@ -91,7 +80,6 @@ const AffirmationFeed = ({ chrome }) => {
 
   const library = useLibrary();
   const { isFavorite, toggle: toggleFavorite } = useFavorites();
-  const { isSaved, toggle: toggleSaved } = useSaved();
 
   const [sharing, setSharing] = useState(null);
 
@@ -212,15 +200,10 @@ const AffirmationFeed = ({ chrome }) => {
               theme={theme}
               t={t}
               favorited={isFavorite(item.id)}
-              saved={isSaved(item.id)}
               onShare={() => setSharing(item)}
               onFavorite={() => {
                 Haptics.selectionAsync().catch(() => {});
                 toggleFavorite(item).catch(() => {});
-              }}
-              onSave={() => {
-                Haptics.selectionAsync().catch(() => {});
-                toggleSaved(item).catch(() => {});
               }}
             />
           )}

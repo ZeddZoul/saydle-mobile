@@ -14,7 +14,15 @@ import { spacing, type } from "../theme/tokens.js";
  * the choice has to be made next to the session it changes, with the option to
  * hear each one on the spot.
  */
-const VoiceSheet = ({ visible, active, pending, onChoose, onClose }) => {
+const VoiceSheet = ({
+  visible,
+  active,
+  pending,
+  onChoose,
+  onClose,
+  locked = false,
+  onUpgrade,
+}) => {
   const { t } = useT();
   const { theme } = useAppTheme();
 
@@ -50,8 +58,16 @@ const VoiceSheet = ({ visible, active, pending, onChoose, onClose }) => {
             contentContainerStyle={styles.scroll}
             showsVerticalScrollIndicator={false}
           >
-            <Text style={[styles.hint, { color: theme.sub }]}>{t("voices.hint")}</Text>
-            <VoicePicker active={active} pending={pending} onChoose={onChoose} />
+            <Text style={[styles.hint, { color: theme.sub }]}>
+              {t(locked ? "voices.lockedHint" : "voices.hint")}
+            </Text>
+            <VoicePicker
+              active={active}
+              pending={pending}
+              onChoose={onChoose}
+              locked={locked}
+              onUpgrade={onUpgrade}
+            />
           </ScrollView>
         </SafeAreaView>
       </View>
