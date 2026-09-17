@@ -13,9 +13,24 @@ password: <set one, paste it into ASC — never commit it>
 ```
 
 Create it through the app itself against the deployed API (run the onboarding
-once), then in the RevenueCat sandbox make it premium — the reviewer should
-see the paid experience, not the curated-bank one. Skipping email verification
-is fine: the app treats verification as a banner, never a wall.
+once). Skipping email verification is fine: the app treats verification as a
+banner, never a wall. `support@saydle.com` has a catch-all forwarder, so any
+address at the domain reaches you.
+
+Then entitle it, which is **not optional**. The paywall is hard: a reviewer who
+cannot complete a purchase sees only the curated bank, never Practice, the
+shelf, My Words or the listening session — most of what the listing describes —
+and rejects the app for features they could not reach.
+
+```bash
+pnpm --filter @saydle/server entitle review@saydle.com --days 365
+```
+
+It writes `source: promotional` and leaves `verifiedAt` null, so the billing
+screen honestly reads "not confirmed": no store was ever asked. Revoke with
+`--revoke` once review is done. Run it with `MONGODB_URI` pointing at
+production; the script prints which database it touched, because the likeliest
+mistake is entitling an account on a laptop.
 
 ## Notes for the reviewer (paste as-is, fill the blanks)
 

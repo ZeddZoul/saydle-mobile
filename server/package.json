@@ -15,6 +15,7 @@
     "migrate": "node --env-file=.env migrations/run.js",
     "seed": "node --env-file=.env migrations/seed.js",
     "purge": "node --env-file=.env scripts/purge.mjs",
+    "entitle": "node --env-file=.env scripts/entitle.mjs",
     "import-bank": "node --env-file=.env scripts/import-bank.mjs"
   },
   "dependencies": {

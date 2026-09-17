@@ -36,6 +36,49 @@ export function serializeSubscription(user, now = new Date()) {
   };
 }
 
+const DAY_MS = 24 * 60 * 60 * 1000;
+
+/**
+ * Grants premium by hand, with no store involved.
+ *
+ * The paywall is hard, so an App Review reviewer who cannot buy sees only the
+ * curated bank — not Practice, the shelf, My Words or the listening session,
+ * which is most of what the listing describes. This is how the demo account
+ * gets the real product. It is also the honest way to comp someone.
+ *
+ * `verifiedAt` is deliberately left alone. `applyWebhookEvent` is the only path
+ * allowed to set it, because it is the only one behind a receipt a store has
+ * checked. Nothing has been checked here, so the billing screen correctly reads
+ * "not confirmed" — which is the truth, and the reason `source` says
+ * `promotional` rather than naming a store that was never asked.
+ *
+ * An expiry is always written rather than left null: a null expiry means
+ * "lifetime" to `isEntitled`, and a comp that silently never ends is not a comp.
+ */
+export function grantPromotionalEntitlement(user, { days = 365, now = new Date() } = {}) {
+  user.subscription.status = "active";
+  user.subscription.source = "promotional";
+  user.subscription.expiresAt = new Date(now.getTime() + days * DAY_MS);
+  // No store product was bought, so claiming one would make the billing screen
+  // name a product this account does not hold.
+  user.subscription.productId = null;
+
+  return user;
+}
+
+/**
+ * Ends a hand-granted entitlement.
+ *
+ * Expired rather than erased: `source` and `expiresAt` stay as the record of
+ * what happened, and `isEntitled` already refuses anything that is not active.
+ */
+export function revokePromotionalEntitlement(user, { now = new Date() } = {}) {
+  user.subscription.status = "expired";
+  user.subscription.expiresAt = now;
+
+  return user;
+}
+
 /**
  * Applies a RevenueCat webhook event.
  *
