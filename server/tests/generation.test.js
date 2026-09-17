@@ -56,8 +56,7 @@ beforeEach(async () => {
 
   // Everything below is about *how* we generate, which only happens for a
   // paying reader — free accounts read the curated bank and cost no model time.
-  // Shaped like a webhook rather than a trial, so it keeps meaning "paying"
-  // once the trial is gone.
+  // Shaped like a webhook, which is the only thing that grants entitlement.
   user.subscription.status = "active";
   user.subscription.expiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
   user.subscription.verifiedAt = new Date();
@@ -440,8 +439,7 @@ describe("the read path never waits for the model", () => {
  */
 describe("who we spend model time on", () => {
   const entitle = async (user) => {
-    // Shaped like a webhook, not a trial: this must keep meaning "paying"
-    // after the trial is gone.
+    // Shaped like a webhook, which is the only thing that grants entitlement.
     user.subscription.status = "active";
     user.subscription.expiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
     user.subscription.verifiedAt = new Date();

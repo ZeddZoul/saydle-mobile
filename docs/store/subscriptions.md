@@ -77,21 +77,18 @@ Once the products exist in App Store Connect:
    The paywall renders whatever `offerings.current.availablePackages` returns, so
    an offering that is not marked current produces an empty paywall with no error.
 
-## The trial is a decision, not a default
+## No free trial
 
-There is no server-side trial. `isEntitled` in `services/subscription.service.js`
-returns true only for `status === "active"`, the `User` model has no trial field,
-and `purge.service.js` reads a `subscription.trialEndsAt` that never exists. The
-comment above `STATUSES` in `config/subscription.js` describes a constant that is
-no longer there.
+The paywall is hard. Do not add an **Introductory Offer** to either product.
 
-So a free trial has to be an **App Store introductory offer**, configured on the
-subscription: Introductory Offer → Free Trial → duration. Do not add one on the
-assumption the server already grants one.
+This is the product decision, and the code already matches it: `isEntitled` in
+`services/subscription.service.js` returns true only for `status === "active"`,
+the onboarding paywall has no skip path, and nothing anywhere grants access
+without a purchase. A free reader gets the curated bank; everything written for
+them personally is behind the subscription.
 
-If you do add it, add it to the **annual** product only. A trial on monthly
-mostly converts people who would have paid $9.99 anyway; on annual it is the
-thing that makes a $49.99 commitment answerable.
+Adding a trial in App Store Connect would therefore be the only thing granting
+one, silently and outside the server's knowledge.
 
 ## Apple Small Business Program
 

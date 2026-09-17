@@ -3,8 +3,8 @@
  *
  * Every store-specific value is an env var, because none of them exist until an
  * App Store Connect / Play Console listing does. Nothing here is required to
- * boot: with the vars unset the app runs entirely on trials, which is exactly
- * what local development and the test suite want.
+ * boot: with the vars unset nobody is ever entitled, which is exactly what
+ * local development and the test suite want.
  *
  * Receipts are never validated here. RevenueCat does that against Apple and
  * Google and tells us via webhook — see controllers/subscription.controller.js.
@@ -24,8 +24,6 @@ export const ENTITLEMENT_ID = process.env.REVENUECAT_ENTITLEMENT_ID ?? "premium"
  * which makes the "wrong secret is rejected" case impossible to test honestly.
  */
 export const webhookSecret = () => process.env.REVENUECAT_WEBHOOK_SECRET ?? null;
-
-/** The trial someone gets by skipping the paywall. */
 
 export const STATUSES = ["active", "expired", "none"];
 

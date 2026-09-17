@@ -96,7 +96,7 @@ server/                 Express API — see server/README.md for its own layout
 - **Entitlement is server-truth.** The RevenueCat webhook is the only path that may mark a
   subscription verified — a client claiming to have paid is never evidence. `lib/purchases.js`
   is a guarded boundary: no native module (Expo Go) or no key (no store listing) both report
-  `available: false`, and the paywall runs on the real server-side trial.
+  `available: false`, and the paywall is hard: nothing is entitled without a purchase.
 - **Native boundaries follow one pattern** (`lib/notifications.js`, `lib/purchases.js`,
   `lib/widget.js`): lazy `require` in a try/catch, every function returning `{ available: false }`
   rather than throwing. That is what keeps Expo Go working while native features exist.
@@ -263,7 +263,7 @@ time — see Shipping a build), and the RevenueCat webhook, at
   RevenueCat's own words — "apps submitted with a Test Store API key will be rejected during App
   Review". `EXPO_PUBLIC_*` is inlined **at build time**, so the machine's `.env` is what ships: a
   release cut with the test key in place carries both. `usableKey()` in `lib/purchases.js`
-  withholds it when `__DEV__` is false so the boundary degrades to the trial instead — a seatbelt
+  withholds it when `__DEV__` is false so the boundary degrades to a dead paywall instead — a seatbelt
   against the crash, and no help at all against the rejection. Swap in the `appl_`/`goog_` keys
   before building for submission.
 - **`Failed to assemble ui_config` is expected and permanent — do not chase it.** The SDK fetches

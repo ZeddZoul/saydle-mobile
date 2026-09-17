@@ -48,7 +48,7 @@ is fine: the app treats verification as a banner, never a wall.
 | They try                               | What happens                                                                                                           |
 | -------------------------------------- | ---------------------------------------------------------------------------------------------------------------------- |
 | Airplane mode after first load         | Cached feed still reads; banner says offline; writes queue and replay                                                  |
-| Subscribe, then reopen paywall         | "Upgrade" path stays available mid-trial-less flow; restore purchases works (`billing`)                                |
+| Subscribe, then reopen paywall         | "Upgrade" path stays available; restore purchases works (`billing`)                                                    |
 | Delete account, sign back in           | Deletion cancelled, stated plainly                                                                                     |
 | Type medical/crisis text into My Words | Accepted and stored — Saydle does not moderate a user's private words, and the terms state it is not a medical service |
 | The widget with the app force-quit     | Keeps rendering; it holds a fortnight of lines                                                                         |

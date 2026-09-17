@@ -118,7 +118,7 @@ export function useSubscription() {
    *
    * It waits for the subscription to *change*, not for any particular flag to
    * be true. Two earlier attempts got this wrong in the same way: `entitled` is
-   * already true for someone buying mid-trial, and `verified` is already true
+   * already true for someone renewing, and `verified` is already true
    * for anyone whose account has ever seen a webhook — `verifiedAt` is stamped
    * on every event including EXPIRATION. Both returned on the first read and
    * waited for nothing. A signature over the fields a purchase moves has no

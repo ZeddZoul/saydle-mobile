@@ -74,15 +74,13 @@ const Onboarding = () => {
   };
   const back = () => setIndex((i) => Math.max(0, prevVisible(i)));
 
-  // `plan` ("trial" | "paid") is UI-only until real billing is wired; both paths
-  // create the account so the flow can complete.
   /**
-   * Grants entitlement at the end of the flow.
+   * Attempts the purchase at the end of the flow.
    *
-   * Everyone leaves the paywall entitled: whoever buys gets the subscription,
-   * and whoever skips — or starts a purchase and thinks better of it — gets the
-   * trial. Best-effort throughout, because the account already exists by this
-   * point and a billing hiccup must not strand someone inside signup.
+   * Best-effort on purpose: the account already exists by this point, so a
+   * billing hiccup must not strand someone inside signup. They land in the app
+   * unentitled and meet the paywall again, which is the correct outcome for a
+   * hard paywall - there is nothing to grant on failure.
    */
   const grantAccess = async (intent, userId, chosen = null) => {
     try {
@@ -99,12 +97,12 @@ const Onboarding = () => {
           const result = await purchasePackage(pick);
           // A real purchase is confirmed by the server via RevenueCat's
           // webhook, never by this return value — so there is nothing to record
-          // here. Anything short of a purchase falls through to the trial.
+          // here.
           if (result.purchased) return;
         }
       }
     } catch {
-      /* Non-fatal: the account exists, and the trial can be started later. */
+      /* Non-fatal: the account exists, and they can subscribe from Profile. */
     }
   };
 
@@ -131,7 +129,7 @@ const Onboarding = () => {
     };
   }, [phase]);
 
-  const createAccount = async (intent = "trial", chosen = null) => {
+  const createAccount = async (intent, chosen = null) => {
     setPhase("creating");
     const { account, preferences, profile, reminderWindow } = buildSignupPayload(answers);
 

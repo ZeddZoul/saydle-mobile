@@ -81,7 +81,6 @@ export async function purgeAccount(user, { now = new Date() } = {}) {
           status: user.subscription?.status ?? "none",
           productId: user.subscription?.productId ?? null,
           expiresAt: user.subscription?.expiresAt ?? null,
-          trialEndsAt: user.subscription?.trialEndsAt ?? null,
           source: user.subscription?.source ?? null,
           verifiedAt: user.subscription?.verifiedAt ?? null,
         },

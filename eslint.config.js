@@ -20,6 +20,9 @@ module.exports = defineConfig([
 
   {
     // Build output, native projects, and the coverage report are all generated.
+    // `.claude/worktrees` holds full checkouts of this repo made for background
+    // tasks: linting them reports thousands of problems against a tree that is
+    // deliberately at a different commit, and drowns out the real ones.
     ignores: [
       "dist/*",
       "ios/*",
@@ -27,6 +30,7 @@ module.exports = defineConfig([
       "coverage/*",
       "node_modules/*",
       "server/node_modules/*",
+      ".claude/*",
     ],
   },
 

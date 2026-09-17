@@ -44,7 +44,6 @@ const tombstoneSchema = new mongoose.Schema(
       status: { type: String, default: "none" },
       productId: { type: String, default: null },
       expiresAt: { type: Date, default: null },
-      trialEndsAt: { type: Date, default: null },
       source: { type: String, default: null },
       verifiedAt: { type: Date, default: null },
     },

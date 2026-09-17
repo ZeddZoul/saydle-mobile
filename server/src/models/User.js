@@ -187,8 +187,9 @@ const userSchema = new mongoose.Schema(
         delete ret.__v;
         delete ret.passwordHash;
 
-        // Derived here rather than stored, so a trial that ran out overnight is
-        // expired the next time anyone asks — no sweep job, no stale flag.
+        // Derived here rather than stored, so a subscription that lapsed
+        // overnight reads as expired the next time anyone asks — no sweep job,
+        // no stale flag.
         if (ret.subscription) {
           ret.subscription = {
             ...ret.subscription,

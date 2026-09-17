@@ -26,10 +26,9 @@ export async function registerUser(app, overrides = {}) {
 /**
  * Make an account premium, the way a real one becomes premium.
  *
- * Tests used to call `startTrial` for this, which was the cheapest honest way
- * through the gate while a trial existed. It does not any more: entitlement now
- * arrives one way only, through the RevenueCat webhook, so this writes the
- * state that webhook writes. Mutates and saves, returning the user for chaining.
+ * Entitlement arrives one way only, through the RevenueCat webhook, so this
+ * writes the state that webhook writes rather than inventing a shortcut past
+ * the gate. Mutates and saves, returning the user for chaining.
  */
 export async function entitle(user, { days = 30 } = {}) {
   user.subscription.status = "active";

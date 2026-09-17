@@ -75,17 +75,17 @@ const formatDate = (value) => {
 /**
  * The store, in words rather than in ours.
  *
- * `subscription.source` is a stored enum — `trial`, `app_store`, `play_store` —
- * and it was being rendered straight into the card, so the screen read
+ * `subscription.source` is a stored enum — `app_store`, `play_store`,
+ * `promotional` — and it was being rendered straight into the card, so it read
  * "Purchased via app_store". Falls back to the raw value rather than showing
  * nothing, so a source we add server-side later degrades to ugly instead of
  * blank.
  */
 const sourceLabel = (t, source) => {
   const key = {
-    trial: "billing.sourceTrial",
     app_store: "billing.sourceAppStore",
     play_store: "billing.sourcePlayStore",
+    promotional: "billing.sourcePromotional",
   }[source];
 
   return key ? t(key) : source;
@@ -236,8 +236,8 @@ const Billing = () => {
                   theme={theme}
                 />
               ) : null}
-              {/* An unverified entitlement is one no store has confirmed — a
-                  trial we granted ourselves. Worth saying, not worth alarm. */}
+              {/* An unverified entitlement is one no store has confirmed, so
+                  it was granted by hand. Worth saying, not worth alarm. */}
               {entitled && subscription?.verified === false ? (
                 <Row
                   label={t("billing.confirmed")}
@@ -263,9 +263,9 @@ const Billing = () => {
               ) : null}
             </View>
 
-            {/* Only a paying member has nothing to buy here. There is no trial
-                any more: a free reader scrolls the curated bank, and this is
-                the one way to the affirmations written for them. */}
+            {/* Only a paying member has nothing to buy here. The paywall is
+                hard: a free reader scrolls the curated bank, and this is the one
+                way to the affirmations written for them. */}
             {!entitled && (
               <View style={[styles.card, { backgroundColor: theme.surface }]}>
                 <DisplayText style={[styles.sectionTitle, { color: theme.ink }]}>

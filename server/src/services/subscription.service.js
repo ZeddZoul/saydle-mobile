@@ -6,7 +6,6 @@ import { logger } from "../lib/logger.js";
  *
  * Derived from dates rather than trusting `status`, because a stored status goes
  * stale the moment a date passes and nobody is going to run a sweep at midnight.
- * An expired trial and an expired subscription are the same answer here.
  */
 export function isEntitled(user, now = new Date()) {
   const sub = user?.subscription;
