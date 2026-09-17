@@ -45,12 +45,19 @@ be submitted. English (U.K.) matches the rest of the listing:
 
 - Monthly display name: `Saydle Premium, Monthly`
 - Annual display name: `Saydle Premium, Annual`
-- Description, both: `Affirmations written for you, the listening session, your
-shelf, and My Words.`
+- Description, both: `Affirmations written for you, read aloud.`
+
+**The description is capped at 55 characters**, which is tighter than it looks
+and is not stated until the field turns red. That leaves room for the two
+features someone is actually deciding between paying for: the personalised
+generation and the listening session. The shelf and My Words do not fit, and
+are not why anyone subscribes.
 
 **The first subscription submission also needs a review screenshot** of the
-paywall, at a supported device size. `docs/store/screenshots/` already has the
-iPhone set.
+paywall, at a supported device size. The six shots in `docs/store/screenshots/`
+are the listing set and none of them is the paywall, so this one has to be
+captured. Do it after RevenueCat's offering is live, or the paywall renders
+with no prices on it.
 
 ### The 5:1 ratio is deliberate
 
