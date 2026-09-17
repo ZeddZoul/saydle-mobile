@@ -65,8 +65,11 @@ Once the products exist in App Store Connect:
 
 1. **Product catalog → Products** → import or add both, attached to the
    `Saydle (App Store)` app.
-2. **Entitlements** → open `Saydle Premium` → attach both products. The identifier
-   must stay exactly `Saydle Premium`, with the space. A mismatch means
+2. **Entitlements** → the entitlement's **identifier** is `premium`; its display
+   name is `Saydle Premium`. Attach both products. Only the identifier is the
+   contract, and it deliberately has no space: a value with one has to be quoted
+   in `.env`, and a host that takes values literally ships the quotes as part of
+   the string. A mismatch means
    `entitlements.active[ENTITLEMENT_ID]` is forever `undefined`: nobody is
    entitled, every paying customer sees the paywall, and nothing logs an error
    anywhere. `eas.json` carried `premium` until 2026-09-11 for this reason.

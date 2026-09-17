@@ -274,12 +274,13 @@ time — see Shipping a build), and the RevenueCat webhook, at
   device, and configuring Customer Center leaves the warning byte-identical.
 - **The entitlement _identifier_ is the contract, not its display name.** `EXPO_PUBLIC_REVENUECAT_ENTITLEMENT_ID`
   and `REVENUECAT_ENTITLEMENT_ID` must both equal the identifier in the RevenueCat dashboard,
-  which is **`Saydle Premium`** — with the space, and matching what every piece of user-facing
-  copy already calls it. A mismatch means `entitlements.active[ENTITLEMENT_ID]` is forever undefined: nobody is
-  entitled, every paid user sees the paywall, and nothing logs an error anywhere. Two ways to
-  reintroduce that silently: `eas.json` carried `premium` until 2026-09-11, and the value is
-  quoted in the local `.env` files — node's `--env-file` strips those quotes, but a host that
-  takes values literally (Railway's raw editor) would ship them as part of the string.
+  which is **`premium`**. Its _display_ name is "Saydle Premium", matching what every piece of
+  user-facing copy already calls it, but the display name is decoration and the identifier is the
+  contract. A mismatch means `entitlements.active[ENTITLEMENT_ID]` is forever undefined: nobody is
+  entitled, every paid user sees the paywall, and nothing logs an error anywhere. The identifier
+  has no space on purpose: a value containing one has to be quoted in `.env`, and while node's
+  `--env-file` strips those quotes, a host that takes values literally (Railway's raw editor)
+  ships them as part of the string — which is the same silent failure by another route.
 - **`pnpm android` needs `JAVA_HOME` and `ANDROID_HOME`, and neither error names the variable.**
   Android Studio ships a JDK (`/Applications/Android Studio.app/Contents/jbr/Contents/Home`) but
   exports nothing, so Gradle dies with **`Unable to locate a Java Runtime`** — which sounds like
