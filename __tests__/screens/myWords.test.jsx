@@ -85,7 +85,7 @@ describe("MyWords", () => {
 
     // Someone who came looking should learn what it is, not find an empty screen.
     await findByTestId("my-words-locked");
-    expect(await findByText(/part of Saydle premium/i)).toBeTruthy();
+    expect(await findByText(/part of Saydle Premium/i)).toBeTruthy();
   });
 
   it("does not ask the server for words it isn't allowed to show", async () => {

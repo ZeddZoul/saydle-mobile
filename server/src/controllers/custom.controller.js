@@ -23,7 +23,7 @@ export const MAX_CUSTOM = 100;
  */
 function requirePremium(user) {
   if (!isEntitled(user)) {
-    throw AppError.forbidden("Writing your own affirmations is part of Saydle premium.");
+    throw AppError.forbidden("Writing your own affirmations is part of Saydle Premium.");
   }
 }
 

@@ -222,7 +222,7 @@
     "delete": "Delete \"{{text}}\"",
     "deleteTitle": "Delete this one?",
     "lockedTitle": "Write your own",
-    "lockedBody": "Adding affirmations in your own words is part of Saydle premium. Everything else keeps working exactly as it is."
+    "lockedBody": "Adding affirmations in your own words is part of Saydle Premium. Everything else keeps working exactly as it is."
   },
   "library": {
     "title": "Library",
@@ -231,7 +231,7 @@
     "writing": "Writing your next set…",
     "empty": "Your library is being prepared.",
     "lockedTitle": "Your affirmation library",
-    "lockedBody": "Hundreds of affirmations written for you, to scroll whenever one line isn't enough. Part of Saydle premium.",
+    "lockedBody": "Hundreds of affirmations written for you, to scroll whenever one line isn't enough. Part of Saydle Premium.",
     "yourWords": "Your words"
   },
   "share": {
@@ -336,7 +336,7 @@
     "empty": "Nothing on the shelf yet. Tap the bookmark on a line you want to come back to.",
     "remove": "Remove \"{{text}}\" from your shelf",
     "lockedTitle": "A shelf for later",
-    "lockedBody": "A heart is a reaction. A bookmark is an intention — a line you mean to come back to. The shelf is part of Saydle premium.",
+    "lockedBody": "A heart is a reaction. A bookmark is an intention — a line you mean to come back to. The shelf is part of Saydle Premium.",
     "lockedCta": "See what premium includes"
   },
   "legal": {

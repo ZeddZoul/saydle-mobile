@@ -374,7 +374,7 @@
     "delete": "Eliminar «{{text}}»",
     "deleteTitle": "¿Eliminar esta?",
     "lockedTitle": "Escribe las tuyas",
-    "lockedBody": "Añadir afirmaciones con tus propias palabras es parte de Saydle premium. Todo lo demás sigue funcionando igual."
+    "lockedBody": "Añadir afirmaciones con tus propias palabras es parte de Saydle Premium. Todo lo demás sigue funcionando igual."
   },
   "library": {
     "title": "Biblioteca",
@@ -383,7 +383,7 @@
     "writing": "Escribiendo tu próxima colección…",
     "empty": "Tu biblioteca se está preparando.",
     "lockedTitle": "Tu biblioteca de afirmaciones",
-    "lockedBody": "Cientos de afirmaciones escritas para ti, para leer cuando una sola frase no basta. Parte de Saydle premium.",
+    "lockedBody": "Cientos de afirmaciones escritas para ti, para leer cuando una sola frase no basta. Parte de Saydle Premium.",
     "yourWords": "Tus palabras"
   },
   "share": {
@@ -488,7 +488,7 @@
     "empty": "Aún no hay nada en tu estante. Toca el marcador en una frase a la que quieras volver.",
     "remove": "Quitar «{{text}}» de tu estante",
     "lockedTitle": "Un estante para después",
-    "lockedBody": "Un corazón es una reacción. Un marcador es una intención: una frase a la que piensas volver. El estante es parte de Saydle premium.",
+    "lockedBody": "Un corazón es una reacción. Un marcador es una intención: una frase a la que piensas volver. El estante es parte de Saydle Premium.",
     "lockedCta": "Ver qué incluye premium"
   },
   "legal": {

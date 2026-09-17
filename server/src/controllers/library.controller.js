@@ -21,7 +21,7 @@ function gate(user) {
   if (!REQUIRES_PREMIUM) return;
   if (isEntitled(user)) return;
 
-  throw AppError.forbidden("Saving lines to your shelf is part of Saydle premium.");
+  throw AppError.forbidden("Saving lines to your shelf is part of Saydle Premium.");
 }
 
 export async function list(req, res, next) {
