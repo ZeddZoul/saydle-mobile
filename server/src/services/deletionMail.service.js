@@ -1,6 +1,7 @@
 import { User } from "../models/User.js";
 import { logger } from "../lib/logger.js";
 import { sendMail } from "./mailer.service.js";
+import { buildEmail } from "./emailTemplate.js";
 import { GRACE_DAYS, REMINDER_DAYS_BEFORE } from "../config/deletion.js";
 
 const DAY_MS = 24 * 60 * 60 * 1000;
@@ -26,20 +27,16 @@ export function sendDeletionScheduled({ to, firstName, purgeAfter }) {
   return sendMail({
     to,
     subject: "Your Saydle account is scheduled for deletion",
-    text: [
-      greet(firstName),
-      "",
-      `You asked us to delete your Saydle account. Nothing has been removed yet.`,
-      `Everything will be deleted on ${on(purgeAfter)} — ${GRACE_DAYS} days from now.`,
-      "",
-      "Changed your mind? Just sign in again before then and the deletion is",
-      "cancelled. You don't need to contact anyone.",
-      "",
-      "This does not cancel a paid subscription. Subscriptions belong to your",
-      "App Store or Play Store account and have to be cancelled there.",
-      "",
-      "— Saydle",
-    ].join("\n"),
+    ...buildEmail({
+      preheader: `Nothing has been removed yet. You have ${GRACE_DAYS} days to change your mind.`,
+      greeting: greet(firstName),
+      paragraphs: [
+        "You asked us to delete your Saydle account. Nothing has been removed yet.",
+        `Everything will be deleted on ${on(purgeAfter)}, which is ${GRACE_DAYS} days from now.`,
+        "Changed your mind? Just sign in again before then and the deletion is cancelled. You don't need to contact anyone.",
+        "This does not cancel a paid subscription. Subscriptions belong to your App Store or Play Store account and have to be cancelled there.",
+      ],
+    }),
   });
 }
 
@@ -54,18 +51,14 @@ export function sendDeletionReminder({ to, firstName, purgeAfter }) {
   return sendMail({
     to,
     subject: `Your Saydle account is deleted on ${on(purgeAfter)}`,
-    text: [
-      greet(firstName),
-      "",
-      `A while ago you asked us to delete your Saydle account. That happens on`,
-      `${on(purgeAfter)}, and once it does none of it can be recovered —`,
-      "your affirmations, the ones you kept, your streak, all of it.",
-      "",
-      "If you'd rather keep it, sign in before then and the deletion is",
-      "cancelled. If you still want it gone, do nothing at all.",
-      "",
-      "— Saydle",
-    ].join("\n"),
+    ...buildEmail({
+      preheader: "Sign in before then to cancel it.",
+      greeting: greet(firstName),
+      paragraphs: [
+        `A while ago you asked us to delete your Saydle account. That happens on ${on(purgeAfter)}, and once it does none of it can be recovered: your affirmations, the ones you kept, your streak, all of it.`,
+        "If you'd rather keep it, sign in before then and the deletion is cancelled. If you still want it gone, do nothing at all.",
+      ],
+    }),
   });
 }
 
@@ -80,20 +73,15 @@ export function sendDeletionComplete({ to, firstName }) {
   return sendMail({
     to,
     subject: "Your Saydle account has been deleted",
-    text: [
-      greet(firstName),
-      "",
-      "Your Saydle account and everything in it have now been deleted.",
-      "",
-      "We keep one thing: a record that a subscription existed, with no name and",
-      "no email attached, because tax law requires it. It cannot be traced back",
-      "to you and it disappears on its own.",
-      "",
-      "You're welcome back any time — it would be a fresh start, not a",
-      "restoration, because there is nothing left to restore.",
-      "",
-      "— Saydle",
-    ].join("\n"),
+    ...buildEmail({
+      preheader: "Everything in it is gone.",
+      greeting: greet(firstName),
+      paragraphs: [
+        "Your Saydle account and everything in it have now been deleted.",
+        "We keep one thing: a record that a subscription existed, with no name and no email attached, because tax law requires it. It cannot be traced back to you and it disappears on its own.",
+        "You're welcome back any time. It would be a fresh start rather than a restoration, because there is nothing left to restore.",
+      ],
+    }),
   });
 }
 

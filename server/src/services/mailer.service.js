@@ -1,5 +1,6 @@
 import { env, isProduction, isTest } from "../config/env.js";
 import { logger } from "../lib/logger.js";
+import { buildEmail } from "./emailTemplate.js";
 
 /**
  * Outbound email.
@@ -13,7 +14,7 @@ import { logger } from "../lib/logger.js";
  * not turn into a 500 on a reset request, and must never leak whether an
  * address exists.
  */
-async function deliver({ to, subject, text }) {
+async function deliver({ to, subject, text, html }) {
   if (!env.RESEND_API_KEY) {
     // The one place a reset code is legible. Fine locally, and impossible in
     // production because a missing key there is a boot-time failure.
@@ -27,7 +28,9 @@ async function deliver({ to, subject, text }) {
       authorization: `Bearer ${env.RESEND_API_KEY}`,
       "content-type": "application/json",
     },
-    body: JSON.stringify({ from: env.MAIL_FROM, to, subject, text }),
+    // Both parts, always. text/plain is what screen readers and spam
+    // filters read, and an HTML-only message scores worse for lacking it.
+    body: JSON.stringify({ from: env.MAIL_FROM, to, subject, text, ...(html ? { html } : {}) }),
   });
 
   if (!response.ok) {
@@ -49,44 +52,39 @@ export async function sendMail(message) {
   }
 }
 
-export function sendPasswordResetCode({ to, firstName, code }) {
-  const greeting = firstName ? `Hi ${firstName},` : "Hi,";
+const greet = (firstName) => (firstName ? `Hi ${firstName},` : "Hi,");
 
+export function sendPasswordResetCode({ to, firstName, code }) {
   return sendMail({
     to,
     subject: "Your Saydle reset code",
-    text: [
-      greeting,
-      "",
-      `Your password reset code is ${code}`,
-      "",
-      "It expires in 15 minutes and can only be used once.",
-      "If you didn't ask to reset your password, you can ignore this email —",
-      "nothing has changed.",
-      "",
-      "— Saydle",
-    ].join("\n"),
+    ...buildEmail({
+      preheader: "Your code expires in 15 minutes.",
+      greeting: greet(firstName),
+      code,
+      codeCaption: "Password reset code",
+      paragraphs: [
+        "It expires in 15 minutes and can only be used once.",
+        "If you didn't ask to reset your password, ignore this email. Nothing has changed.",
+      ],
+    }),
   });
 }
 
 export function sendEmailVerificationCode({ to, firstName, code }) {
-  const greeting = firstName ? `Hi ${firstName},` : "Hi,";
-
   return sendMail({
     to,
     subject: "Confirm your email for Saydle",
-    text: [
-      greeting,
-      "",
-      `Your confirmation code is ${code}`,
-      "",
-      "It's good for 24 hours. Confirming your email is what lets us help you",
-      "back in if you ever forget your password.",
-      "",
-      "If you didn't create a Saydle account, you can ignore this email.",
-      "",
-      "— Saydle",
-    ].join("\n"),
+    ...buildEmail({
+      preheader: "Your confirmation code is good for 24 hours.",
+      greeting: greet(firstName),
+      code,
+      codeCaption: "Confirmation code",
+      paragraphs: [
+        "It's good for 24 hours. Confirming your email is what lets us help you back in if you ever forget your password.",
+        "If you didn't create a Saydle account, you can ignore this email.",
+      ],
+    }),
   });
 }
 
