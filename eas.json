@@ -27,7 +27,7 @@
         "simulator": false
       },
       "env": {
-        "EXPO_PUBLIC_API_URL": "https://REPLACE-ME.example.com",
+        "EXPO_PUBLIC_API_URL": "https://api.saydle.com",
         "EXPO_PUBLIC_REVENUECAT_IOS_KEY": "",
         "EXPO_PUBLIC_REVENUECAT_ANDROID_KEY": "",
         "EXPO_PUBLIC_REVENUECAT_ENTITLEMENT_ID": "Saydle Pro",
@@ -42,7 +42,7 @@
         "buildType": "app-bundle"
       },
       "env": {
-        "EXPO_PUBLIC_API_URL": "https://REPLACE-ME.example.com",
+        "EXPO_PUBLIC_API_URL": "https://api.saydle.com",
         "EXPO_PUBLIC_REVENUECAT_IOS_KEY": "",
         "EXPO_PUBLIC_REVENUECAT_ANDROID_KEY": "",
         "EXPO_PUBLIC_REVENUECAT_ENTITLEMENT_ID": "Saydle Pro",
