@@ -24,7 +24,12 @@ module.exports = ({ config }) => {
         ...options,
         ios: {
           ...options.ios,
-          devTeamId: teamId || options.ios?.devTeamId || "",
+          // An empty team is written into the pbxproj verbatim as
+          // `DEVELOPMENT_TEAM = ;`, which is a syntax error that fails every
+          // later prebuild step. A quoted empty string parses, and a simulator
+          // build needs no team at all. Store builds are refused without a real
+          // one by scripts/check-release-env.mjs.
+          devTeamId: teamId || options.ios?.devTeamId || '""',
         },
       },
     ];
