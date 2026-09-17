@@ -61,7 +61,7 @@ describe("grantPromotionalEntitlement", () => {
 
   it("claims no product, since none was bought", () => {
     const user = blank();
-    user.subscription.productId = "saydle_pro_annual";
+    user.subscription.productId = "saydle_premium_annual";
 
     grantPromotionalEntitlement(user);
 
@@ -108,13 +108,13 @@ describe("a real purchase afterwards", () => {
 
     applyWebhookEvent(user, {
       type: "INITIAL_PURCHASE",
-      product_id: "saydle_pro_annual",
+      product_id: "saydle_premium_annual",
       store: "APP_STORE",
       expiration_at_ms: new Date("2027-06-01T00:00:00Z").getTime(),
     });
 
     expect(user.subscription.source).toBe("app_store");
-    expect(user.subscription.productId).toBe("saydle_pro_annual");
+    expect(user.subscription.productId).toBe("saydle_premium_annual");
     expect(serializeSubscription(user).verified).toBe(true);
   });
 });

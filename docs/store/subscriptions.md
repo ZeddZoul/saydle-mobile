@@ -11,10 +11,10 @@ Use the same strings on both platforms. Play Console is the stricter of the
 two (lowercase, digits, underscores and periods only, must start with a letter
 or digit), so these satisfy both:
 
-| What    | Product ID           |
-| ------- | -------------------- |
-| Monthly | `saydle_pro_monthly` |
-| Annual  | `saydle_pro_annual`  |
+| What    | Product ID               |
+| ------- | ------------------------ |
+| Monthly | `saydle_premium_monthly` |
+| Annual  | `saydle_premium_annual`  |
 
 The app never names them. `lib/purchases.js` reads
 `offerings.current.availablePackages`, so RevenueCat's offering decides what the
@@ -36,7 +36,7 @@ Then inside it, two subscriptions:
 | Field          | Monthly                  | Annual                  |
 | -------------- | ------------------------ | ----------------------- |
 | Reference Name | `Saydle Premium Monthly` | `Saydle Premium Annual` |
-| Product ID     | `saydle_pro_monthly`     | `saydle_pro_annual`     |
+| Product ID     | `saydle_premium_monthly` | `saydle_premium_annual` |
 | Duration       | 1 Month                  | 1 Year                  |
 | Price          | **$9.99**                | **$49.99**              |
 
@@ -74,8 +74,8 @@ Once the products exist in App Store Connect:
    entitled, every paying customer sees the paywall, and nothing logs an error
    anywhere. `eas.json` carried `premium` until 2026-09-11 for this reason.
 3. **Offerings** → the offering marked **current** gets two packages:
-   - `$rc_monthly` → `saydle_pro_monthly`
-   - `$rc_annual` → `saydle_pro_annual`
+   - `$rc_monthly` → `saydle_premium_monthly`
+   - `$rc_annual` → `saydle_premium_annual`
 
    The paywall renders whatever `offerings.current.availablePackages` returns, so
    an offering that is not marked current produces an empty paywall with no error.
