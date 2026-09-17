@@ -14,7 +14,7 @@
         "simulator": true
       },
       "env": {
-        "APPLE_TEAM_ID": ""
+        "APPLE_TEAM_ID": "CXH9CWA254"
       }
     },
     "preview": {
@@ -28,10 +28,10 @@
       },
       "env": {
         "EXPO_PUBLIC_API_URL": "https://api.saydle.com",
-        "EXPO_PUBLIC_REVENUECAT_IOS_KEY": "",
+        "EXPO_PUBLIC_REVENUECAT_IOS_KEY": "appl_okTnHmATDkxrepRZgxMmvGMPJad",
         "EXPO_PUBLIC_REVENUECAT_ANDROID_KEY": "",
         "EXPO_PUBLIC_REVENUECAT_ENTITLEMENT_ID": "Saydle Pro",
-        "APPLE_TEAM_ID": ""
+        "APPLE_TEAM_ID": "CXH9CWA254"
       }
     },
     "production": {
@@ -43,10 +43,10 @@
       },
       "env": {
         "EXPO_PUBLIC_API_URL": "https://api.saydle.com",
-        "EXPO_PUBLIC_REVENUECAT_IOS_KEY": "",
+        "EXPO_PUBLIC_REVENUECAT_IOS_KEY": "appl_okTnHmATDkxrepRZgxMmvGMPJad",
         "EXPO_PUBLIC_REVENUECAT_ANDROID_KEY": "",
         "EXPO_PUBLIC_REVENUECAT_ENTITLEMENT_ID": "Saydle Pro",
-        "APPLE_TEAM_ID": ""
+        "APPLE_TEAM_ID": "CXH9CWA254"
       }
     }
   },
