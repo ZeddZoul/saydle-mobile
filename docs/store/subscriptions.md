@@ -45,7 +45,7 @@ be submitted. English (U.K.) matches the rest of the listing:
 
 - Monthly display name: `Saydle Premium, Monthly`
 - Annual display name: `Saydle Premium, Annual`
-- Description, both: `Affirmations written for you, read aloud.`
+- Description, both: `Affirmations written for you, not for everyone.`
 
 **The description is capped at 55 characters**, which is tighter than it looks
 and is not stated until the field turns red. That leaves room for the two
