@@ -68,6 +68,10 @@ AI</strong> generates affirmations from your preferences and profile answers.
 never your name or account details. <strong>RevenueCat</strong> processes
 subscription events from the app stores. <strong>Resend</strong> delivers
 account emails such as verification codes and password resets.</p>
+<p>Google Vertex AI receives your profile and onboarding answers, and your first
+name if you have asked to be addressed by it. These providers process data on
+servers in the United States under their standard contractual clauses, and none
+of them is permitted to use your data for its own purposes.</p>
 
 <h2>Reminders</h2>
 <p>Daily reminders are scheduled locally on your device. We do not run a push

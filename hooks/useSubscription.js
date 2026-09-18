@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { AppState } from "react-native";
 import { useAuth } from "../contexts/AuthContext.jsx";
 import { NetworkError } from "../lib/errors.js";
+import { FAST_SETTLE, SLOW_SETTLE, pollUntil, signature } from "../lib/settle.js";
 import {
   identifyUser,
   getOffering,
@@ -9,21 +10,6 @@ import {
   purchasesAvailable,
   restorePurchases,
 } from "../lib/purchases.js";
-
-/**
- * How long to keep asking after a purchase.
- *
- * FAST blocks the button (~9s, the common case). SLOW runs unawaited for
- * another ~55s because a real Test Store webhook was measured arriving 80
- * seconds after the sale. Both are bounded: entitlement is server-truth, so a
- * webhook that never comes is still corrected on the next foreground, whereas
- * polling forever would turn an outage into a request loop from every install.
- */
-const FAST_SETTLE = [0, 800, 1500, 2500, 4000];
-const SLOW_SETTLE = [6000, 9000, 12000, 12000, 16000];
-
-/** The fields a purchase moves. Compared before and after, never read alone. */
-const signature = (s) => `${s?.status}|${s?.expiresAt ?? ""}|${s?.verified}`;
 
 /**
  * Entitlement, and the ways to get it.
@@ -149,15 +135,8 @@ export function useSubscription() {
    * reasonable a priori — hence a fast blocking phase and a long quiet one.
    */
   const settle = useCallback(
-    async (before, delays) => {
-      for (const wait of delays) {
-        if (wait) await new Promise((resolve) => setTimeout(resolve, wait));
-        const fresh = await refresh();
-        if (signature(fresh) !== signature(before)) return fresh;
-      }
-
-      return null;
-    },
+    (before, delays) =>
+      pollUntil(refresh, (fresh) => signature(fresh) !== signature(before), delays),
     [refresh],
   );
 

@@ -87,6 +87,12 @@ const Paywall = ({ onSubscribe, canPurchase = false, packages = [] }) => {
 
           <Text style={styles.price}>{t("paywall.price")}</Text>
 
+          {/* Auto-renewal, and who charges whom. Required beside a subscription
+              CTA and one of the most routinely cited 3.1.2 rejections — the
+              terms document says it, but a linked document is not the point of
+              sale. */}
+          <Text style={styles.renewal}>{t("paywall.renewal")}</Text>
+
           {/* Required next to a subscription CTA (App Review 3.1.2), and the
               decent thing regardless: what the money buys, on what terms, one
               tap away rather than buried. */}
@@ -191,6 +197,13 @@ const styles = StyleSheet.create({
   price: {
     ...type.subtitle,
     textAlign: "center",
-    marginBottom: spacing.md,
+    marginBottom: spacing.sm,
+  },
+  renewal: {
+    ...type.subtitle,
+    fontSize: 11,
+    lineHeight: 15,
+    textAlign: "center",
+    opacity: 0.8,
   },
 });

@@ -11,6 +11,7 @@ import {
   View,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import { useLocalSearchParams } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
 import GradientBackground from "../../components/GradientBackground.jsx";
 import DisplayText from "../../components/DisplayText.jsx";
@@ -21,14 +22,22 @@ import { useAppTheme } from "../../contexts/ThemeContext.jsx";
 import { useToast } from "../../contexts/ToastContext.jsx";
 import { useSubscription } from "../../hooks/useSubscription.js";
 import { monthlyEquivalent } from "../../lib/purchases.js";
+import { SLOW_SETTLE, pollUntil } from "../../lib/settle.js";
 import { useT } from "../../lib/i18n.js";
 import { PRIVACY_URL, TERMS_URL, DELETION_GRACE_DAYS } from "../../lib/config.js";
 import { radius, shadow, spacing, type } from "../../theme/tokens.js";
 
 const SUPPORT_MAILTO = "mailto:support@saydle.com";
 
-/** Three promises, all in the register the headline sets: what gets written. */
-const PERK_KEYS = ["locked.perk1", "locked.perk2", "locked.perk3"];
+/**
+ * Three promises, all in the register the headline sets: what gets written.
+ *
+ * Shared with the onboarding paywall rather than restated. The two screens make
+ * the same argument to the same person, and a second copy is a second thing to
+ * keep true — the previous one still promised "offline access to your saved
+ * favorites", which under a hard paywall is not something an unpaid reader has.
+ */
+const PERK_KEYS = ["paywall.perk1", "paywall.perk2", "paywall.perk3"];
 
 /**
  * One rise-and-fade, used for both tiers.
@@ -114,9 +123,47 @@ const LockedScreen = () => {
   const { subscription, packages, canPurchase, busy, purchase, restore, refresh } =
     useSubscription();
 
+  // Set by onboarding when the store took the money and the webhook had not
+  // landed within nine seconds. Nothing else sets it, so an ordinary visitor
+  // costs no extra requests.
+  const { settling } = useLocalSearchParams();
+  const [awaitingWebhook, setAwaitingWebhook] = useState(Boolean(settling));
+
   const [deleting, setDeleting] = useState(false);
   const hero = useEntrance(0);
   const offer = useEntrance(90);
+
+  /**
+   * Keeps asking on behalf of someone who has already paid.
+   *
+   * A webhook was measured taking eighty seconds. Onboarding waits nine of
+   * those and hands the rest here, so the screen repaints itself rather than
+   * presenting the offer to someone who has already accepted it — nobody should
+   * have to discover Restore to get what they just bought.
+   *
+   * `refresh` syncs entitlement into the session, so the route guard opens the
+   * app the moment this lands. Bounded on purpose: entitlement is server-truth
+   * and the next foreground corrects it anyway.
+   */
+  const refreshRef = useRef(refresh);
+  refreshRef.current = refresh;
+
+  useEffect(() => {
+    if (!awaitingWebhook) return;
+    let cancelled = false;
+
+    pollUntil(
+      () => refreshRef.current(),
+      (fresh) => fresh.entitled,
+      SLOW_SETTLE,
+    ).finally(() => {
+      if (!cancelled) setAwaitingWebhook(false);
+    });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [awaitingWebhook]);
 
   const onPurchase = async (pkg) => {
     const result = await purchase(pkg);
@@ -145,6 +192,15 @@ const LockedScreen = () => {
     <GradientBackground>
       <SafeAreaView style={styles.safe} edges={["top", "bottom"]}>
         <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+          {awaitingWebhook ? (
+            <View style={[styles.settling, { borderColor: theme.border }]}>
+              <Ionicons name="time-outline" size={18} color={theme.accent} />
+              <Text style={[styles.settlingText, { color: theme.ink }]}>
+                {t("paywall.settling")}
+              </Text>
+            </View>
+          ) : null}
+
           <Animated.View style={[styles.hero, hero]}>
             <DisplayText weight="bold" style={[styles.title, { color: theme.ink }]}>
               {t("locked.title")}
@@ -311,6 +367,17 @@ const styles = StyleSheet.create({
     paddingTop: spacing.xxl,
     paddingBottom: spacing.xxxl,
   },
+
+  settling: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    gap: spacing.md,
+    borderWidth: 1,
+    borderRadius: radius.lg,
+    padding: spacing.lg,
+    marginBottom: spacing.xl,
+  },
+  settlingText: { ...type.body, flex: 1, fontSize: 14, lineHeight: 20 },
 
   hero: { alignItems: "center", marginBottom: spacing.xl },
   title: {

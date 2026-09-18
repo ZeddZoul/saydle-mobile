@@ -8,6 +8,18 @@ import { ToastProvider } from "../../contexts/ToastContext.jsx";
 jest.mock("expo-router", () => ({
   useFocusEffect: (cb) => require("react").useEffect(cb, [cb]),
   useRouter: () => ({ push: jest.fn(), back: jest.fn(), canGoBack: () => false }),
+  useLocalSearchParams: jest.fn(() => ({})),
+}));
+
+const mockRouter = jest.requireMock("expo-router");
+
+// The real ladder waits six seconds before its first re-read, which is right on
+// a phone waiting for a webhook and pointless in a test. The delays themselves
+// are pinned in __tests__/lib/settle.test.js; what matters here is that the
+// screen keeps asking and stops when the answer changes.
+jest.mock("../../lib/settle.js", () => ({
+  ...jest.requireActual("../../lib/settle.js"),
+  SLOW_SETTLE: [0, 10, 10, 10],
 }));
 
 // The factory cannot close over a const: jest.mock is hoisted above every
@@ -107,6 +119,7 @@ beforeEach(() => {
   mockPurchases.getOffering.mockResolvedValue({ available: true, packages: [] });
   mockPurchases.purchasePackage.mockResolvedValue({ available: true, purchased: true });
   mockPurchases.restorePurchases.mockResolvedValue({ available: true, entitled: false });
+  mockRouter.useLocalSearchParams.mockReturnValue({});
 });
 
 /**
@@ -265,6 +278,42 @@ describe("the locked screen", () => {
     await waitFor(() => expect(openURL).toHaveBeenCalled());
     expect(openURL.mock.calls[0][0]).toMatch(/^mailto:support@saydle\.com/);
     openURL.mockRestore();
+  });
+
+  /**
+   * Arriving here straight after paying.
+   *
+   * The store confirms a sale long before our webhook does — eighty seconds, in
+   * one real measurement. Onboarding waits nine of them and sends the rest here
+   * rather than holding a spinner, so this screen has to know the difference
+   * between someone deciding and someone who has already decided.
+   */
+  describe("a sale still in flight", () => {
+    it("says the payment landed instead of selling to them again", async () => {
+      mockRouter.useLocalSearchParams.mockReturnValue({ settling: "1" });
+
+      const { findByText } = await renderLocked();
+
+      expect(await findByText(/Payment received/i)).toBeTruthy();
+    });
+
+    it("keeps asking, and stops the moment the server agrees", async () => {
+      mockRouter.useLocalSearchParams.mockReturnValue({ settling: "1" });
+
+      const { findByText, queryByText } = await renderLocked(UNPAID, PAID);
+
+      // The poll re-reads; the second answer is the entitled one, which is what
+      // lets the route guard open the app without anyone tapping Restore.
+      await waitFor(() => expect(queryByText(/Payment received/i)).toBeNull());
+      expect(await findByText(/Saydle is written for you/i)).toBeTruthy();
+    });
+
+    it("says nothing to someone who is merely deciding", async () => {
+      const { findByText, queryByText } = await renderLocked();
+
+      await findByText(/Saydle is written for you/i);
+      expect(queryByText(/Payment received/i)).toBeNull();
+    });
   });
 
   /**

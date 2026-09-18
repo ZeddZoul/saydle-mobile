@@ -123,13 +123,16 @@
   "paywall": {
     "title": "Saydle ha creado un espacio seguro para ti",
     "subtitle": "Hecho a partir de todo lo que compartiste.",
-    "perk1": "Afirmaciones personalizadas, escritas para tu momento",
-    "perk2": "Recordatorios amables, justo cuando hacen falta",
-    "perk3": "Tus favoritos siempre a mano, incluso sin conexión",
+    "perk1": "Una frase nueva cada mañana, escrita a partir de tus respuestas y no elegida de una lista.",
+    "perk2": "Una sesión de escucha que te la lee, con la voz que elijas.",
+    "perk3": "Todo lo que guardas en un mismo sitio: tus favoritas, tus propias palabras, tu racha.",
     "price": "Cancela cuando quieras.",
+    "renewal": "Tu suscripción se renueva automáticamente al mismo precio cada periodo. El pago se carga a tu cuenta de la tienda al confirmar, y puedes desactivar la renovación automática hasta 24 horas antes de que termine el periodo.",
     "subscribe": "Suscribirme",
     "creating": "Creando afirmaciones solo para ti…",
-    "perMonth": "Son {{price}} al mes."
+    "perMonth": "Son {{price}} al mes.",
+    "confirming": "Confirmando tu suscripción…",
+    "settling": "Pago recibido. Todavía lo estamos confirmando con la tienda; esta página se abrirá en cuanto llegue."
   },
   "nudge": {
     "eyebrow": "Hazlo más tuyo",
@@ -448,9 +451,6 @@
   "locked": {
     "title": "Saydle se escribe para ti",
     "body": "Cada frase que lees aquí se genera a partir de tus respuestas, en tu tono, para el momento en el que estás. Eso es el producto entero, y es lo que paga una suscripción.",
-    "perk1": "Una frase nueva cada mañana, escrita a partir de tus respuestas y no elegida de una lista.",
-    "perk2": "Una sesión de escucha que te la lee, con la voz que elijas.",
-    "perk3": "Todo lo que guardas en un mismo sitio: tus favoritas, tus propias palabras, tu racha.",
     "signedInAs": "Sesión iniciada como {{email}}",
     "wrongAccount": "¿No eres tú?",
     "support": "Escribe a support@saydle.com",

@@ -150,3 +150,60 @@ describe("the flow", () => {
     expect(keys.slice(-2)).toEqual(["email", "password"]);
   });
 });
+
+/**
+ * The paywall's standing terms.
+ *
+ * Guideline 3.1.2 wants the renewal terms where the purchase is made, not only
+ * in a linked document. Missing auto-renewal language beside a subscription CTA
+ * is one of the most routinely cited subscription rejections, and the entire
+ * fixed copy here used to be the words "Cancel anytime."
+ */
+describe("the onboarding paywall", () => {
+  const Paywall = require("../../components/onboarding/Paywall.jsx").default;
+
+  const ANNUAL = {
+    identifier: "$rc_annual",
+    packageType: "ANNUAL",
+    product: { title: "Saydle Premium, Annual", priceString: "$49.99", price: 49.99 },
+  };
+
+  const renderPaywall = (props = {}) =>
+    render(wrap(<Paywall onSubscribe={() => {}} canPurchase packages={[ANNUAL]} {...props} />));
+
+  it("says the subscription renews, and who takes the money", async () => {
+    const view = await renderPaywall();
+
+    expect(await view.findByText(/renews automatically/i)).toBeTruthy();
+    expect(await view.findByText(/charged to your store account/i)).toBeTruthy();
+  });
+
+  it("says how to stop it, and by when", async () => {
+    const view = await renderPaywall();
+
+    expect(await view.findByText(/24 hours before the period ends/i)).toBeTruthy();
+  });
+
+  it("states the terms even when there is nothing to sell", async () => {
+    // No RevenueCat key means no buttons, but the screen is still a paywall and
+    // the price line is still on it.
+    const view = await renderPaywall({ canPurchase: false, packages: [] });
+
+    expect(await view.findByText(/renews automatically/i)).toBeTruthy();
+  });
+
+  it("promises only what a subscription actually buys", async () => {
+    const view = await renderPaywall();
+
+    // It used to promise "instant offline access to your saved favorites",
+    // which under a hard paywall an unpaid reader does not have at all.
+    expect(await view.findByText(/A new line each morning/i)).toBeTruthy();
+    expect(view.queryByText(/offline access/i)).toBeNull();
+  });
+
+  it("prices from the store, never from a literal in the repo", async () => {
+    const view = await renderPaywall();
+
+    expect(await view.findByText(/Saydle Premium, Annual — \$49\.99/)).toBeTruthy();
+  });
+});

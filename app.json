@@ -51,7 +51,8 @@
       [
         "expo-notifications",
         {
-          "color": "#FF6F61"
+          "color": "#FF6F61",
+          "mode": "production"
         }
       ],
       "@react-native-community/datetimepicker",
@@ -87,7 +88,7 @@
           "ios": {
             "src": "./widgets/ios",
             "devTeamId": "$APPLE_TEAM_ID",
-            "mode": "development",
+            "mode": "production",
             "moduleDependencies": [],
             "useLiveActivities": false,
             "frequentUpdates": false,

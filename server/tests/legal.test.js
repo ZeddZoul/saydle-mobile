@@ -42,6 +42,22 @@ describe("the legal pages", () => {
     }
   });
 
+  it("says what the AI service actually receives", async () => {
+    // Guideline 5.1.2 wants third-party sharing disclosed, and the free-text
+    // onboarding answers are the most personal thing Saydle holds: how someone
+    // has been feeling, what they want to stop believing. Naming Vertex without
+    // saying what reaches it is a disclosure in name only.
+    const res = await request(app).get("/legal/privacy");
+
+    expect(res.text).toMatch(/Vertex AI receives your profile and onboarding answers/i);
+    expect(res.text).toMatch(/first\s+name if you have asked to be addressed by it/i);
+  });
+
+  it("says where the data is processed", async () => {
+    const res = await request(app).get("/legal/privacy");
+    expect(res.text).toMatch(/United States/i);
+  });
+
   it("describes deletion the way the code actually behaves", async () => {
     // 30-day grace, cancel by signing back in, hashed-email tombstone — the
     // policy must match deletion.service.js, not a template.

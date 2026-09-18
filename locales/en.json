@@ -123,13 +123,16 @@
   "paywall": {
     "title": "Saydle has created a safe space for you",
     "subtitle": "Crafted around everything you shared.",
-    "perk1": "Personalized affirmations, crafted just for your journey",
-    "perk2": "Gentle, timed reminders right when you need a boost",
-    "perk3": "Instant offline access to your saved favorites",
+    "perk1": "A new line each morning, written from your answers rather than picked from a list.",
+    "perk2": "A listening session that reads it back to you, in a voice you choose.",
+    "perk3": "Everything you keep in one place: your favorites, your own words, your streak.",
     "price": "Cancel anytime.",
+    "renewal": "Your subscription renews automatically at the same price each period. Payment is charged to your store account when you confirm, and you can turn off auto-renew any time up to 24 hours before the period ends.",
     "subscribe": "Subscribe now",
     "creating": "Crafting affirmations just for you…",
-    "perMonth": "That's {{price}} a month."
+    "perMonth": "That's {{price}} a month.",
+    "confirming": "Confirming your subscription…",
+    "settling": "Payment received. We're still confirming it with the store; this page will open the moment it lands."
   },
   "nudge": {
     "eyebrow": "Make it more yours",
@@ -296,9 +299,6 @@
   "locked": {
     "title": "Saydle is written for you",
     "body": "Every line you read here is generated for your answers, in your tone, for where you are right now. That is the whole product, and it is what a subscription pays for.",
-    "perk1": "A new line each morning, written from your answers rather than picked from a list.",
-    "perk2": "A listening session that reads it back to you, in a voice you choose.",
-    "perk3": "Everything you keep in one place: your favorites, your own words, your streak.",
     "signedInAs": "Signed in as {{email}}",
     "wrongAccount": "Not you?",
     "support": "Email support@saydle.com",

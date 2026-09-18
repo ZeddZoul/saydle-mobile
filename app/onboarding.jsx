@@ -12,8 +12,9 @@ import {
   purchasePackage,
   purchasesAvailable,
 } from "../lib/purchases.js";
+import { FAST_SETTLE, pollUntil } from "../lib/settle.js";
 import { ONBOARDING_QUESTIONS } from "../lib/onboardingQuestions.js";
-import { buildSignupPayload } from "../lib/onboardingSubmit.js";
+import { buildSignupPayload, routeAfterPurchase } from "../lib/onboardingSubmit.js";
 import { requestPermission } from "../lib/notifications.js";
 import { useAuth } from "../contexts/AuthContext.jsx";
 import { useToast } from "../contexts/ToastContext.jsx";
@@ -34,10 +35,10 @@ const EMAIL_INDEX = ONBOARDING_QUESTIONS.findIndex((q) => q.key === "email");
 const Onboarding = () => {
   const { t } = useT();
   const router = useRouter();
-  const { signUp, updatePreferences, client } = useAuth();
+  const { signUp, updatePreferences, refreshUser, client } = useAuth();
   const toast = useToast();
 
-  // questions | paywall | creating
+  // questions | paywall | creating | confirming
   const [phase, setPhase] = useState("questions");
   const [packages, setPackages] = useState([]);
   const [index, setIndex] = useState(0);
@@ -76,12 +77,16 @@ const Onboarding = () => {
   const back = () => setIndex((i) => Math.max(0, prevVisible(i)));
 
   /**
-   * Attempts the purchase at the end of the flow.
+   * Attempts the purchase at the end of the flow, and reports what happened.
    *
    * Best-effort on purpose: the account already exists by this point, so a
-   * billing hiccup must not strand someone inside signup. They land in the app
-   * unentitled and meet the paywall again, which is the correct outcome for a
-   * hard paywall - there is nothing to grant on failure.
+   * billing hiccup must not strand someone inside signup. They land on the
+   * paywall again, which is the correct outcome for a hard paywall - there is
+   * nothing to grant on failure.
+   *
+   * The return value is not the grant. Entitlement is server-truth and arrives
+   * by webhook; this only says whether the store took the money, which is what
+   * decides whether anyone should be asked to wait for that webhook.
    */
   const grantAccess = async (intent, userId, chosen = null) => {
     try {
@@ -111,14 +116,16 @@ const Onboarding = () => {
         if (pick) {
           const result = await purchasePackage(pick);
           // A real purchase is confirmed by the server via RevenueCat's
-          // webhook, never by this return value — so there is nothing to record
-          // here.
-          if (result.purchased) return;
+          // webhook, never by this return value — so this is the cue to wait
+          // for the server, not a grant in itself.
+          if (result.purchased) return true;
         }
       }
     } catch {
       /* Non-fatal: the account exists, and they can subscribe from Profile. */
     }
+
+    return false;
   };
 
   /**
@@ -182,9 +189,16 @@ const Onboarding = () => {
         }
       }
 
-      await grantAccess(intent, created?.id, chosen);
+      const destination = await routeAfterPurchase({
+        purchase: () => grantAccess(intent, created?.id, chosen),
+        readSubscription: () => client.subscription().then((r) => r.subscription),
+        refreshUser: () => refreshUser().catch(() => {}),
+        onConfirming: () => setPhase("confirming"),
+        poll: pollUntil,
+        delays: FAST_SETTLE,
+      });
 
-      router.replace("/dashboard");
+      router.replace(destination);
     } catch (err) {
       // The one bad end-of-flow surprise: email already taken. Drop them back on
       // the email step rather than stranding them on the paywall.
@@ -199,12 +213,12 @@ const Onboarding = () => {
     }
   };
 
-  if (phase === "creating") {
+  if (phase === "creating" || phase === "confirming") {
     return (
       <GradientBackground style={styles.center}>
         <ActivityIndicator size="large" color={colors.coral} />
         <DisplayText weight="italic" style={styles.finishText}>
-          {t("paywall.creating")}
+          {t(phase === "confirming" ? "paywall.confirming" : "paywall.creating")}
         </DisplayText>
       </GradientBackground>
     );

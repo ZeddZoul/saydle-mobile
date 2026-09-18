@@ -125,3 +125,90 @@ describe("buildSignupPayload", () => {
     expect(payload.preferences.focus.length).toBeLessThanOrEqual(500);
   });
 });
+
+/**
+ * What happens between the store saying yes and the app opening.
+ *
+ * The version before this navigated to /dashboard the instant StoreKit
+ * returned, and the route guard bounced the buyer back to the paywall because
+ * the webhook had not landed yet. It went untested because it lived inline in
+ * the onboarding screen, which is the reason it is a function now.
+ */
+describe("routeAfterPurchase", () => {
+  const { routeAfterPurchase } = require("../../lib/onboardingSubmit.js");
+  const { pollUntil } = require("../../lib/settle.js");
+
+  const run = (overrides = {}) =>
+    routeAfterPurchase({
+      purchase: async () => true,
+      readSubscription: async () => ({ entitled: true }),
+      refreshUser: async () => {},
+      poll: pollUntil,
+      delays: [0, 0, 0],
+      ...overrides,
+    });
+
+  it("opens the app once the server agrees the account is entitled", async () => {
+    expect(await run()).toBe("/dashboard");
+  });
+
+  it("waits for the server rather than trusting the store", async () => {
+    // The whole bug: the first read is genuinely too early, because a sale goes
+    // store → RevenueCat → our webhook before it is true here.
+    const readSubscription = jest
+      .fn()
+      .mockResolvedValueOnce({ entitled: false })
+      .mockResolvedValueOnce({ entitled: false })
+      .mockResolvedValueOnce({ entitled: true });
+
+    expect(await run({ readSubscription })).toBe("/dashboard");
+    expect(readSubscription).toHaveBeenCalledTimes(3);
+  });
+
+  it("re-reads the session, which is what the route guard actually consults", async () => {
+    const refreshUser = jest.fn(async () => {});
+
+    await run({ refreshUser });
+
+    expect(refreshUser).toHaveBeenCalled();
+  });
+
+  it("hands a slow webhook to the locked screen instead of holding a spinner", async () => {
+    // Eighty seconds is a measured figure, not a hypothetical. Nobody watches a
+    // spinner for that, so the screen says the payment landed and keeps asking.
+    const destination = await run({ readSubscription: async () => ({ entitled: false }) });
+
+    expect(destination).toBe("/locked?settling=1");
+  });
+
+  it("does not claim a sale the session cannot see", async () => {
+    const refreshUser = jest.fn(async () => {});
+
+    await run({ readSubscription: async () => ({ entitled: false }), refreshUser });
+
+    // Refreshing on a read that never went entitled would replace a good user
+    // object with an identical one and imply something happened.
+    expect(refreshUser).not.toHaveBeenCalled();
+  });
+
+  it("sends someone who did not buy to the paywall, not through the dashboard", async () => {
+    const readSubscription = jest.fn();
+
+    const destination = await run({ purchase: async () => false, readSubscription });
+
+    // Via /dashboard it would be one frame of a screen they cannot have, and
+    // the server is not worth asking about a purchase that never happened.
+    expect(destination).toBe("/locked");
+    expect(readSubscription).not.toHaveBeenCalled();
+  });
+
+  it("only says it is confirming once there is something to confirm", async () => {
+    const onConfirming = jest.fn();
+
+    await run({ purchase: async () => false, onConfirming });
+    expect(onConfirming).not.toHaveBeenCalled();
+
+    await run({ onConfirming });
+    expect(onConfirming).toHaveBeenCalledTimes(1);
+  });
+});
