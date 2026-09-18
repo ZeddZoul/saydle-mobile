@@ -245,3 +245,30 @@ describe("the hard paywall", () => {
     expect(res.body.subscription).not.toHaveProperty("trialEndsAt");
   });
 });
+
+/**
+ * The sample line is captioned "here's one Saydle wrote for you", on the one
+ * screen where someone is deciding whether to pay. It may only ever hold a line
+ * the model actually wrote for that account.
+ */
+describe("the paywall sample is proof or nothing", () => {
+  it("is null on an account the model never wrote for", async () => {
+    const me = await registerUser(app);
+    const user = await User.findById(me.user.id);
+    user.sampleLine = null;
+    await user.save();
+
+    const res = await request(app).get("/api/subscription").set("Authorization", me.auth);
+
+    // Not a curated line standing in for one. The screen shows the promises
+    // instead; a bank line under that caption would be a false claim.
+    expect(res.body.subscription.sampleLine).toBeNull();
+  });
+
+  it("never substitutes a curated line", async () => {
+    // There was a fallbackSample() that returned the first curated line "so the
+    // card is never empty". Nothing called it, and it is gone.
+    const mod = await import("../src/services/sampleLine.service.js");
+    expect(mod.fallbackSample).toBeUndefined();
+  });
+});

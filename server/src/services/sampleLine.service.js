@@ -5,7 +5,6 @@ import { generateAffirmations } from "./vertex.service.js";
 import { filterAffirmations, focusNeedsCare } from "./moderation.service.js";
 import { profileNeedsCare } from "../config/profileFields.js";
 import { resolveLocale, LANGUAGE_NAMES } from "../config/locales.js";
-import { curatedFor } from "../data/curated.js";
 
 /**
  * One affirmation, written for this person, shown on the paywall.
@@ -29,8 +28,14 @@ export async function ensureSampleLine(user, { force = false } = {}) {
   const locale = resolveLocale(user.locale);
 
   if (!env.AI_ENABLED) {
-    // No model configured (local dev, CI). A curated line is a poor sample —
-    // it is not personal — so we simply have none rather than pretend.
+    // No model configured (local dev, CI). Return nothing rather than
+    // substitute: the card this feeds is captioned "here's one Saydle wrote for
+    // you", so a curated line there is not a weaker sample, it is a false
+    // claim — made on the one screen where someone is deciding whether to pay.
+    //
+    // There was a `fallbackSample()` here that returned the first curated line
+    // "so the card is never empty". Nothing called it. An empty card is the
+    // correct state, and the paywall already omits it when there is no line.
     return null;
   }
 
@@ -72,10 +77,4 @@ export async function ensureSampleLine(user, { force = false } = {}) {
     logger.warn({ err, userId: String(user._id) }, "sample line failed");
     return null;
   }
-}
-
-/** Something to show when generation is unavailable, so the card is never empty. */
-export function fallbackSample(locale) {
-  const bank = curatedFor(resolveLocale(locale));
-  return bank.length > 0 ? bank[0].text : null;
 }

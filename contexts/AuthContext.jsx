@@ -168,6 +168,36 @@ export function AuthProvider({
       outbox,
       syncToken,
 
+      /**
+       * Re-reads the account from the server.
+       *
+       * Entitlement is server-truth, arriving by webhook some seconds after a
+       * purchase, and `user` here is what the route guard reads to decide
+       * whether the app is reachable at all. Without this nothing updates it
+       * between launches: someone would pay, the webhook would land, and they
+       * would still be held at the paywall until they force-quit the app.
+       *
+       * A network failure keeps the user we already have, for the same reason
+       * it does not sign anyone out — entitlement is whatever we last heard,
+       * and locking someone out of what they paid for because a train went
+       * into a tunnel is worse than trusting a stale yes.
+       */
+      async refreshUser() {
+        try {
+          const { user: fresh } = await client.me();
+          setUser(fresh);
+          setOffline(false);
+          await cache.saveUser(fresh);
+          return fresh;
+        } catch (err) {
+          if (err instanceof NetworkError) {
+            setOffline(true);
+            return null;
+          }
+          throw err;
+        }
+      },
+
       async signIn({ email, password }) {
         return adoptSession(await client.login({ email, password }));
       },

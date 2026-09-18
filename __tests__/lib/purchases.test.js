@@ -378,3 +378,36 @@ describe("when logIn fails", () => {
     expect(logIn).toHaveBeenCalledTimes(2);
   });
 });
+
+describe("monthlyEquivalent", () => {
+  const annual = (price, currencyCode = "USD") => ({
+    packageType: "ANNUAL",
+    product: { price, currencyCode },
+  });
+
+  it("divides the store's own annual price by twelve", () => {
+    const purchases = loadFresh({ key: "appl_key", module: fakePurchases() });
+    expect(purchases.monthlyEquivalent(annual(49.99))).toBe("USD 4.17");
+  });
+
+  it("carries the currency, because a bare number is ambiguous", () => {
+    // The locked screen had a second copy of this that dropped the code and
+    // rendered "That's 4.17 a month" beside a price in dollars.
+    const purchases = loadFresh({ key: "appl_key", module: fakePurchases() });
+    expect(purchases.monthlyEquivalent(annual(59.88, "GBP"))).toBe("GBP 4.99");
+  });
+
+  it("says nothing about a monthly package", () => {
+    // "That's 9.99 a month" under a monthly plan is noise.
+    const purchases = loadFresh({ key: "appl_key", module: fakePurchases() });
+    expect(
+      purchases.monthlyEquivalent({ packageType: "MONTHLY", product: { price: 9.99 } }),
+    ).toBeNull();
+  });
+
+  it("says nothing when the store gave no price", () => {
+    const purchases = loadFresh({ key: "appl_key", module: fakePurchases() });
+    expect(purchases.monthlyEquivalent({ packageType: "ANNUAL", product: {} })).toBeNull();
+    expect(purchases.monthlyEquivalent(undefined)).toBeNull();
+  });
+});

@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { AppState } from "react-native";
 import { useAuth } from "../contexts/AuthContext.jsx";
 import { NetworkError } from "../lib/errors.js";
@@ -39,7 +39,7 @@ const signature = (s) => `${s?.status}|${s?.expiresAt ?? ""}|${s?.verified}`;
  * bank, which is exactly what a free reader gets anyway.
  */
 export function useSubscription() {
-  const { user, client } = useAuth();
+  const { user, client, refreshUser } = useAuth();
   const userId = user?.id;
 
   const [subscription, setSubscription] = useState(null);
@@ -49,12 +49,32 @@ export function useSubscription() {
 
   const canPurchase = purchasesAvailable();
 
+  // Held in a ref, not a dependency. `refreshUser` is rebuilt whenever `user`
+  // changes, so depending on it directly would hand `refresh` a new identity
+  // every time it synced and re-fire every effect that lists it.
+  const refreshUserRef = useRef(refreshUser);
+  refreshUserRef.current = refreshUser;
+
+  // Seeded from what the session already believes, so the first read can
+  // reconcile a cached "yes" against the server's answer.
+  const lastEntitled = useRef(user?.subscription?.entitled ?? null);
+
   const refresh = useCallback(async () => {
     if (!userId) return null;
 
     try {
       const { subscription: fresh } = await client.subscription();
       setSubscription(fresh);
+
+      // This endpoint does not touch the AuthContext user, and the route guard
+      // decides whether the app is reachable at all from exactly that. Without
+      // this a reader pays, the webhook lands up to eighty seconds later, and
+      // they stay held at the paywall until they force-quit the app.
+      if (fresh?.entitled !== lastEntitled.current) {
+        lastEntitled.current = fresh?.entitled ?? null;
+        refreshUserRef.current?.()?.catch?.(() => {});
+      }
+
       return fresh;
     } catch (err) {
       // Offline: entitlement is whatever we last heard. Locking someone out of

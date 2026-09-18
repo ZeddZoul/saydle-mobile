@@ -445,6 +445,14 @@
     "compareRow3": "Tus propias palabras, guardadas",
     "compareRow4": "Guardar frases para volver a ellas"
   },
+  "locked": {
+    "title": "Saydle se escribe para ti",
+    "body": "Cada frase que lees aquí se genera a partir de tus respuestas, en tu tono, para el momento en el que estás. Eso es el producto entero, y es lo que paga una suscripción.",
+    "signedInAs": "Sesión iniciada como {{email}}",
+    "wrongAccount": "¿No eres tú?",
+    "support": "Escribe a support@saydle.com",
+    "supportHint": "¿Problemas para suscribirte, o una duda antes de hacerlo?"
+  },
   "themes": {
     "preview": "Así se verá tu afirmación."
   },

@@ -85,6 +85,9 @@ const DashboardLayout = () => {
           the title is translated rather than inferred from the filename. */}
       <Tabs.Screen name="themes" options={{ href: null, title: t("profile.theme") }} />
       <Tabs.Screen name="billing" options={{ href: null, title: t("billing.title") }} />
+      {/* The whole app for an account that has not paid. The route guard
+          sends every other screen here — see lib/routeGuard.js. */}
+      <Tabs.Screen name="locked" options={{ href: null, title: t("locked.title") }} />
     </Tabs>
   );
 };

@@ -8,6 +8,9 @@ import Spacer from "../Spacer.jsx";
 import { colors, spacing, type } from "../../theme/tokens.js";
 import { useT } from "../../lib/i18n.js";
 import { PRIVACY_URL, TERMS_URL } from "../../lib/config.js";
+// Shared with the locked screen: a second copy there quietly dropped the
+// currency code and rendered "That's 4.17 a month" beside a price in dollars.
+import { monthlyEquivalent } from "../../lib/purchases.js";
 
 /**
  * The end-of-flow paywall. This is where the account gets created — either path
@@ -22,16 +25,6 @@ import { PRIVACY_URL, TERMS_URL } from "../../lib/config.js";
  * money is written into this file.
  */
 
-/** Per-month equivalent, so the two terms can actually be compared. */
-const monthlyEquivalent = (pkg) => {
-  const price = pkg?.product?.price;
-  const period = pkg?.packageType;
-  if (typeof price !== "number" || period !== "ANNUAL") return null;
-
-  const currency = pkg.product.currencyCode ?? "";
-  const per = (price / 12).toFixed(2);
-  return `${currency} ${per}`.trim();
-};
 const PERK_KEYS = ["paywall.perk1", "paywall.perk2", "paywall.perk3"];
 
 const Paywall = ({ onSubscribe, canPurchase = false, packages = [] }) => {

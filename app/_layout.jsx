@@ -14,6 +14,7 @@ import { AuthProvider, useAuth } from "../contexts/AuthContext.jsx";
 import { ToastProvider } from "../contexts/ToastContext.jsx";
 import { ThemeProvider, useAppTheme } from "../contexts/ThemeContext.jsx";
 import GradientBackground from "../components/GradientBackground.jsx";
+import { nextRoute } from "../lib/routeGuard.js";
 
 // Hold the native splash until fonts are ready, so no screen flashes in the
 // system font before Fraunces loads.
@@ -24,9 +25,18 @@ SplashScreen.preventAutoHideAsync().catch(() => {});
  *
  * Nothing renders until bootstrap settles, so a signed-in user opening the app
  * never sees the login screen flash while tokens are read from the Keychain.
+ *
+ * The paywall is hard: an account that has not paid reaches Billing and Profile
+ * and nothing else — see lib/routeGuard.js, which owns that decision and is
+ * where its reasoning lives. Entitlement is read from the session rather than
+ * asked for here, which is what makes it survive a tunnel — `AuthContext` keeps
+ * the cached user on a network failure, so a subscriber offline stays a
+ * subscriber. Locking someone out of what they paid for because the server was
+ * briefly unreachable would be worse than trusting a stale yes.
  */
 const RootNavigator = () => {
-  const { isLoading, isSignedIn } = useAuth();
+  const { isLoading, isSignedIn, user } = useAuth();
+  const entitled = Boolean(user?.subscription?.entitled);
   // This screen renders inside ThemeProvider, so it can follow the reader's
   // theme — the native splash before it cannot; see app.json.
   const { theme } = useAppTheme();
@@ -36,18 +46,9 @@ const RootNavigator = () => {
   useEffect(() => {
     if (isLoading) return;
 
-    const seg = segments[0];
-    const inDashboard = seg === "(dashboard)";
-
-    if (!isSignedIn) {
-      // The onboarding flow IS the sign-up — the account isn't created until its
-      // end — so signed-out users are allowed to be in it. Only the app is gated.
-      if (inDashboard) router.replace("/login");
-    } else if (!inDashboard) {
-      // Signed in (including the moment the flow creates the account) → the app.
-      router.replace("/dashboard");
-    }
-  }, [isLoading, isSignedIn, segments, router]);
+    const target = nextRoute({ isSignedIn, entitled, segments });
+    if (target) router.replace(target);
+  }, [isLoading, isSignedIn, entitled, segments, router]);
 
   if (isLoading) {
     return (

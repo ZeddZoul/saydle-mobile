@@ -293,6 +293,14 @@
     "compareRow3": "Your own words, kept",
     "compareRow4": "Save lines to come back to"
   },
+  "locked": {
+    "title": "Saydle is written for you",
+    "body": "Every line you read here is generated for your answers, in your tone, for where you are right now. That is the whole product, and it is what a subscription pays for.",
+    "signedInAs": "Signed in as {{email}}",
+    "wrongAccount": "Not you?",
+    "support": "Email support@saydle.com",
+    "supportHint": "Trouble subscribing, or a question before you do?"
+  },
   "themes": {
     "preview": "This is how your affirmation will look."
   },
