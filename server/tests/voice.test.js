@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach, vi } from "vitest";
 import request from "supertest";
 import { createApp } from "../src/app.js";
-import { registerUser } from "./helpers.js";
+import { registerUser, entitle } from "./helpers.js";
 import { User } from "../src/models/User.js";
 import { Affirmation } from "../src/models/Affirmation.js";
 import { VoiceClip, clipKey } from "../src/models/VoiceClip.js";
@@ -54,6 +54,7 @@ describe("POST /api/voice/session", () => {
   it("renders each line and hands back a clip per line, in order", async () => {
     const me = await registerUser(app);
     const user = await User.findById(me.user.id);
+    await entitle(user);
     const lines = await makeLines(user, ["I can begin again.", "Rest is not a reward."]);
 
     const res = await request(app)
@@ -76,6 +77,7 @@ describe("POST /api/voice/session", () => {
   it("never renders the same line twice in the same voice", async () => {
     const me = await registerUser(app);
     const user = await User.findById(me.user.id);
+    await entitle(user);
     const lines = await makeLines(user, ["I can begin again."]);
     const body = { affirmationIds: [String(lines[0]._id)], today: "2026-08-24" };
 
@@ -90,6 +92,8 @@ describe("POST /api/voice/session", () => {
   it("shares one clip between two readers given the same line", async () => {
     const a = await registerUser(app);
     const b = await registerUser(app);
+    await entitle(await User.findById(a.user.id));
+    await entitle(await User.findById(b.user.id));
     // A curated line: no owner, so both readers can see it.
     const [line] = await makeLines(null, ["I am allowed to take up space."]);
     const body = { affirmationIds: [String(line._id)], today: "2026-08-24" };
@@ -104,6 +108,7 @@ describe("POST /api/voice/session", () => {
   it("renders again when the voice differs, because a clip is per voice", async () => {
     const me = await registerUser(app);
     const user = await User.findById(me.user.id);
+    await entitle(user);
     const lines = await makeLines(user, ["I can begin again."]);
     const body = { affirmationIds: [String(lines[0]._id)], today: "2026-08-24" };
 
@@ -122,6 +127,8 @@ describe("POST /api/voice/session", () => {
   it("will not read a line belonging to someone else", async () => {
     const a = await registerUser(app);
     const b = await registerUser(app);
+    await entitle(await User.findById(a.user.id));
+    await entitle(await User.findById(b.user.id));
     const owner = await User.findById(b.user.id);
     const lines = await makeLines(owner, ["Something private."]);
 
@@ -138,6 +145,7 @@ describe("POST /api/voice/session", () => {
   it("caps a session at seven lines", async () => {
     const me = await registerUser(app);
     const user = await User.findById(me.user.id);
+    await entitle(user);
     const lines = await makeLines(
       user,
       Array.from({ length: 12 }, (_, i) => `Line number ${i}.`),
@@ -154,6 +162,7 @@ describe("POST /api/voice/session", () => {
 
   it("rejects a request with nothing to read", async () => {
     const me = await registerUser(app);
+    await entitle(await User.findById(me.user.id));
 
     const res = await request(app)
       .post("/api/voice/session")
@@ -161,6 +170,44 @@ describe("POST /api/voice/session", () => {
       .send({ affirmationIds: [] });
 
     expect(res.status).toBe(400);
+  });
+
+  /**
+   * The listening session is one of the four things both store listings name as
+   * a premium unlock, and rendering is the most expensive thing Saydle does:
+   * voice is ten to twenty times the model cost, and the only line that scales
+   * with how much someone listens. It shipped ungated.
+   */
+  it("refuses a free reader, because the listing sells this as premium", async () => {
+    const me = await registerUser(app);
+    const user = await User.findById(me.user.id);
+    const lines = await makeLines(user, ["I can begin again."]);
+
+    const res = await request(app)
+      .post("/api/voice/session")
+      .set("Authorization", me.auth)
+      .send({ affirmationIds: [String(lines[0]._id)], today: "2026-08-24" });
+
+    expect(res.status).toBe(403);
+    // And it costs nothing: refused before anything reaches ElevenLabs.
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it("refuses a reader whose subscription has lapsed", async () => {
+    // isEntitled reads the date, not a stored flag, so a subscription that ran
+    // out overnight stops paying for renders without a sweep job.
+    const me = await registerUser(app);
+    const user = await User.findById(me.user.id);
+    await entitle(user, { days: -1 });
+    const lines = await makeLines(user, ["I can begin again."]);
+
+    const res = await request(app)
+      .post("/api/voice/session")
+      .set("Authorization", me.auth)
+      .send({ affirmationIds: [String(lines[0]._id)], today: "2026-08-24" });
+
+    expect(res.status).toBe(403);
+    expect(fetchMock).not.toHaveBeenCalled();
   });
 
   it("requires a session", async () => {
@@ -175,6 +222,7 @@ describe("POST /api/voice/session", () => {
 
     const me = await registerUser(app);
     const user = await User.findById(me.user.id);
+    await entitle(user);
     const lines = await makeLines(user, ["I can begin again."]);
 
     const res = await request(app)
@@ -193,6 +241,7 @@ describe("GET /api/voice/clip/:id", () => {
   const clipFor = async () => {
     const me = await registerUser(app);
     const user = await User.findById(me.user.id);
+    await entitle(user);
     const lines = await makeLines(user, ["I can begin again."]);
 
     const session = await request(app)
@@ -339,6 +388,7 @@ describe("the voice preference", () => {
   it("takes effect the next day, and renders in the new voice then", async () => {
     const me = await registerUser(app);
     const user = await User.findById(me.user.id);
+    await entitle(user);
     const lines = await makeLines(user, ["I can begin again."]);
 
     await request(app)
@@ -398,6 +448,7 @@ describe("without an API key", () => {
 
     const me = await registerUser(bare);
     const user = await User.findById(me.user.id);
+    await entitle(user);
     const lines = await makeLines(user, ["I can begin again."]);
 
     const res = await request(bare)

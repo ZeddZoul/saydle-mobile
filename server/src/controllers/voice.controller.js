@@ -3,6 +3,7 @@ import { VoiceClip } from "../models/VoiceClip.js";
 import { User } from "../models/User.js";
 import { AppError } from "../utils/AppError.js";
 import { clipFor, clipsForSession, voiceAvailable } from "../services/voice.service.js";
+import { isEntitled } from "../services/subscription.service.js";
 import { DEFAULT_VOICE, VOICE_IDS, isVoiceKey, resolveVoice } from "../config/voices.js";
 
 /**
@@ -27,8 +28,28 @@ function localDay(req) {
  * listening to, and accepting arbitrary text here would be an open invitation
  * to spend our ElevenLabs credits rendering anything at all.
  */
+/**
+ * The listening session is premium, and this is where that is enforced.
+ *
+ * Both store listings sell it as one of the four things a subscription unlocks,
+ * and rendering is the most expensive thing Saydle does: voice is ten to twenty
+ * times the model cost and the only line that scales with how much someone
+ * listens. The gate lives on the server because the client is never evidence.
+ *
+ * Clips themselves stay open (see the routes): a clip belongs to a line, not to
+ * a person, two readers given the same line share one, and the id reveals
+ * nothing. What is gated is asking us to *render* a session.
+ */
+function gate(user) {
+  if (isEntitled(user)) return;
+
+  throw AppError.forbidden("The listening session is part of Saydle Premium.");
+}
+
 export async function session(req, res, next) {
   try {
+    gate(req.user);
+
     const ids = Array.isArray(req.body?.affirmationIds)
       ? req.body.affirmationIds.slice(0, 7)
       : [];
