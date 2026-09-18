@@ -5,6 +5,10 @@ user, and whether it is used for tracking. These answers are derived from what
 the code actually does, not from a template — the sources are cited so a
 future change knows to update this.
 
+**Religion and beliefs are asked, and that makes them Sensitive Info** — an
+ASC category of its own, and the one most easily missed because the questions
+are optional and skippable. Optional is not the same as not collected.
+
 **Global answers:** no data is used for **tracking** (there is no ads SDK, no
 analytics SDK, no fingerprinting — nothing to track _with_). Everything below
 is **linked to identity** (it hangs off the account) and used for **App
@@ -12,21 +16,27 @@ Functionality** only.
 
 ## Declare these
 
-| ASC category | ASC type            | What it actually is                                                                                                  | Source of truth                                    |
-| ------------ | ------------------- | -------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------- |
-| Contact Info | Name                | First/last name at signup; first name may greet you on Today                                                         | `User.js`                                          |
-| Contact Info | Email Address       | Sign-in, verification, password reset                                                                                | `User.js`, `mailer.service.js`                     |
-| User Content | Other User Content  | Profile answers (mood, focus free-text), My Words affirmations, favourites and bookmarks, voice notes stay on-device | `User.profile`, `Affirmation`, `Favorite`, `Saved` |
-| Identifiers  | User ID             | The account id; also the app-user id handed to RevenueCat                                                            | `AuthContext`, `lib/purchases.js`                  |
-| Purchases    | Purchase History    | Subscription status from the store via RevenueCat — never card details                                               | `subscription.service.js`                          |
-| Usage Data   | Product Interaction | Days read and streaks, stored server-side per account                                                                | `streak.service.js`, `FeedEntry`                   |
+| ASC category   | ASC type            | What it actually is                                                                                                  | Source of truth                                      |
+| -------------- | ------------------- | -------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------- |
+| Contact Info   | Name                | First/last name at signup; first name may greet you on Today                                                         | `User.js`                                            |
+| Contact Info   | Email Address       | Sign-in, verification, password reset                                                                                | `User.js`, `mailer.service.js`                       |
+| User Content   | Other User Content  | Profile answers (mood, focus free-text), My Words affirmations, favourites and bookmarks, voice notes stay on-device | `User.profile`, `Affirmation`, `Favorite`, `Saved`   |
+| Identifiers    | User ID             | The account id; also the app-user id handed to RevenueCat                                                            | `AuthContext`, `lib/purchases.js`                    |
+| Purchases      | Purchase History    | Subscription status from the store via RevenueCat — never card details                                               | `subscription.service.js`                            |
+| Usage Data     | Product Interaction | Days read and streaks, stored server-side per account                                                                | `streak.service.js`, `FeedEntry`                     |
+| Sensitive Info | Sensitive Info      | Religion and belief tradition, asked during onboarding so affirmations do not cut against what someone believes      | `lib/onboardingQuestions.js` (`religion`, `beliefs`) |
 
 ## Explicitly NOT collected — answer "no" with confidence
 
 - **Location** — never requested.
 - **Contacts, Photos, Files** — never requested. (Share/export writes _out_
   through the OS share sheet; nothing is read.)
-- **Health & Fitness** — nothing integrates with HealthKit.
+- **Health & Fitness** — a judgement call, not an oversight. The type covers
+  health information however it is collected, so "no HealthKit" is not the
+  reason. What Saydle holds is a coarse mood band and self-care preferences
+  chosen from a list, which is not a health record, and it is already declared
+  under User Content. **If a symptom tracker, a mood history, or anything a
+  clinician would recognise is ever added, declare Health here first.**
 - **Browsing/Search History** — no web views, no search.
 - **Diagnostics / Crash Data** — there is no crash SDK in the app today. **If
   Sentry is ever added, this page and the ASC answers must change first.**

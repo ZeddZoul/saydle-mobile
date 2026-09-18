@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import {
   AccessibilityInfo,
+  ActivityIndicator,
   Animated,
   Easing,
   Linking,
@@ -120,7 +121,7 @@ const LockedScreen = () => {
   const { t } = useT();
   const toast = useToast();
 
-  const { subscription, packages, canPurchase, busy, purchase, restore, refresh } =
+  const { subscription, packages, canPurchase, loading, busy, purchase, restore, refresh } =
     useSubscription();
 
   // Set by onboarding when the store took the money and the webhook had not
@@ -267,6 +268,12 @@ const LockedScreen = () => {
                   );
                 })}
               </View>
+            ) : loading ? (
+              // Not "purchases aren't available on this device": an offering
+              // takes a round-trip to RevenueCat, and for that second every
+              // visitor was told the store was broken. It is the sentence a
+              // reviewer would screenshot, and it was never true when shown.
+              <ActivityIndicator color={theme.accent} testID="locked-offering" />
             ) : (
               <Text style={[styles.unavailable, { color: theme.sub }]}>
                 {t("billing.storeUnavailable")}

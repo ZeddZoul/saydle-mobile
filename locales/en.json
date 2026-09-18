@@ -129,6 +129,7 @@
     "price": "Cancel anytime.",
     "renewal": "Your subscription renews automatically at the same price each period. Payment is charged to your store account when you confirm, and you can turn off auto-renew any time up to 24 hours before the period ends.",
     "subscribe": "Subscribe now",
+    "haveAccount": "Already subscribed? Sign in",
     "creating": "Crafting affirmations just for you…",
     "perMonth": "That's {{price}} a month.",
     "confirming": "Confirming your subscription…",
@@ -353,5 +354,8 @@
   "legal": {
     "terms": "Terms of Use",
     "privacy": "Privacy Policy"
+  },
+  "questions": {
+    "aiNote": "Your answers are sent to the service that writes your affirmations. Nothing here is shared with anyone else, and you can skip any question."
   }
 }

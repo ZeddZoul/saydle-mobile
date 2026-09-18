@@ -1,21 +1,20 @@
 # App Store listing — paste-ready
 
 Every field below maps to a box in App Store Connect. Character limits are
-Apple's, and each entry here is already inside them. `REPLACE-ME` marks the two
-values that cannot exist until the API is deployed.
+Apple's, and each entry here is already inside them.
 
 ## Identity
 
-| Field          | Value                                                                   |
-| -------------- | ----------------------------------------------------------------------- |
-| Name (30)      | `Saydle — Daily Affirmations`                                           |
-| Subtitle (30)  | `Affirmations written for you`                                          |
-| Category       | Lifestyle (secondary: Health & Fitness)                                 |
-| Age rating     | 4+ (see the questionnaire notes below)                                  |
-| Support URL    | `REPLACE-ME` (API domain works: `/legal/terms` page links support mail) |
-| Marketing URL  | optional — leave empty for v1                                           |
-| Privacy Policy | `REPLACE-ME/legal/privacy`                                              |
-| Support email  | `support@saydle.com` — **must receive mail before submission**          |
+| Field          | Value                                                                                                  |
+| -------------- | ------------------------------------------------------------------------------------------------------ |
+| Name (30)      | `Saydle — Daily Affirmations`                                                                          |
+| Subtitle (30)  | `Affirmations written for you`                                                                         |
+| Category       | Lifestyle (secondary: Health & Fitness)                                                                |
+| Age rating     | 4+ (see the questionnaire notes below)                                                                 |
+| Support URL    | `https://saydle.com` — the FAQ links `support@saydle.com`; a dedicated `/support` page would be better |
+| Marketing URL  | optional — leave empty for v1                                                                          |
+| Privacy Policy | `https://saydle.com/privacy`                                                                           |
+| Support email  | `support@saydle.com` — **must receive mail before submission**                                         |
 
 ## Promotional text (170 chars, changeable without review)
 

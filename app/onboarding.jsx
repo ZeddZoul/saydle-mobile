@@ -229,6 +229,7 @@ const Onboarding = () => {
       <Paywall
         packages={packages}
         onSubscribe={(pkg) => createAccount("subscribe", pkg)}
+        onSignIn={() => router.replace("/login")}
         canPurchase={purchasesAvailable()}
       />
     );

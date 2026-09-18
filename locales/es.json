@@ -129,6 +129,7 @@
     "price": "Cancela cuando quieras.",
     "renewal": "Tu suscripción se renueva automáticamente al mismo precio cada periodo. El pago se carga a tu cuenta de la tienda al confirmar, y puedes desactivar la renovación automática hasta 24 horas antes de que termine el periodo.",
     "subscribe": "Suscribirme",
+    "haveAccount": "¿Ya estás suscrito? Inicia sesión",
     "creating": "Creando afirmaciones solo para ti…",
     "perMonth": "Son {{price}} al mes.",
     "confirming": "Confirmando tu suscripción…",
@@ -303,7 +304,8 @@
       "title": "¿Hay algo que te pese estos días?",
       "subtitle": "No hace falta contarlo todo.",
       "placeholder": "Todo lo que quieras contar, o muy poco"
-    }
+    },
+    "aiNote": "Tus respuestas se envían al servicio que escribe tus afirmaciones. Nada de esto se comparte con nadie más, y puedes saltarte cualquier pregunta."
   },
   "verify": {
     "eyebrow": "Confirma tu correo",

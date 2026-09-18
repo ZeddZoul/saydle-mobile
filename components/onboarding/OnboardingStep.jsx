@@ -290,6 +290,14 @@ const OnboardingStep = ({ question, value, onChange, onNext, onBack, onSkip, isF
                     onSubmitEditing={canContinue ? onNext : undefined}
                   />
                 )}
+
+                {/* Said once, where the typing starts, rather than on all ten
+                    text steps. The privacy policy carries the full version;
+                    this is the part someone should not have to go looking for
+                    before they answer. */}
+                {question.aiNote ? (
+                  <Text style={styles.aiNote}>{t("questions.aiNote")}</Text>
+                ) : null}
               </View>
             </ScrollView>
           </Animated.View>
@@ -308,6 +316,14 @@ const OnboardingStep = ({ question, value, onChange, onNext, onBack, onSkip, isF
 export default OnboardingStep;
 
 const styles = StyleSheet.create({
+  aiNote: {
+    fontSize: 12,
+    lineHeight: 17,
+    color: colors.mauveDeep,
+    textAlign: "center",
+    marginTop: spacing.lg,
+    paddingHorizontal: spacing.md,
+  },
   safe: { flex: 1 },
   flex: { flex: 1 },
   header: {

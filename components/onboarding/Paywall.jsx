@@ -27,7 +27,7 @@ import { monthlyEquivalent } from "../../lib/purchases.js";
 
 const PERK_KEYS = ["paywall.perk1", "paywall.perk2", "paywall.perk3"];
 
-const Paywall = ({ onSubscribe, canPurchase = false, packages = [] }) => {
+const Paywall = ({ onSubscribe, onSignIn, canPurchase = false, packages = [] }) => {
   const { t } = useT();
 
   return (
@@ -93,6 +93,26 @@ const Paywall = ({ onSubscribe, canPurchase = false, packages = [] }) => {
               sale. */}
           <Text style={styles.renewal}>{t("paywall.renewal")}</Text>
 
+          {/* The only way off this screen, and the answer for someone who
+              already pays.
+              
+              Not "Restore purchases": there is no account yet, so a restore
+              here would land the receipt on RevenueCat's anonymous customer
+              rather than on the reader. Entitlement is held by the Saydle
+              account, so signing in is both the correct route and the honest
+              description of it. */}
+          {onSignIn ? (
+            <Pressable
+              onPress={onSignIn}
+              accessibilityRole="link"
+              hitSlop={8}
+              testID="paywall-signin"
+              style={styles.signIn}
+            >
+              <Text style={styles.signInText}>{t("paywall.haveAccount")}</Text>
+            </Pressable>
+          ) : null}
+
           {/* Required next to a subscription CTA (App Review 3.1.2), and the
               decent thing regardless: what the money buys, on what terms, one
               tap away rather than buried. */}
@@ -143,6 +163,13 @@ const styles = StyleSheet.create({
     opacity: 0.6,
   },
   planWrap: { marginBottom: spacing.sm },
+  signIn: { alignItems: "center", marginTop: spacing.md },
+  signInText: {
+    ...type.body,
+    fontSize: 14,
+    color: colors.ink,
+    textDecorationLine: "underline",
+  },
   perMonth: {
     ...type.body,
     fontSize: 12,

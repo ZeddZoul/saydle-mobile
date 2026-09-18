@@ -159,6 +159,56 @@ describe("the flow", () => {
  * is one of the most routinely cited subscription rejections, and the entire
  * fixed copy here used to be the words "Cancel anytime."
  */
+/**
+ * Consent where the data is given.
+ *
+ * Guideline 5.1.2 wants permission before user data goes to a third party, and
+ * the onboarding free text is the most personal thing Saydle holds: how someone
+ * has been feeling, what they want to stop believing. It goes to Google Vertex.
+ * A linked privacy policy is the full disclosure; this is the part nobody
+ * should have to go looking for before they answer.
+ */
+describe("the third-party disclosure", () => {
+  const { ONBOARDING_QUESTIONS: QUESTIONS } = require("../../lib/onboardingQuestions.js");
+
+  const flagged = QUESTIONS.filter((q) => q.aiNote);
+
+  it("is carried by a question that actually collects free text", () => {
+    expect(flagged.length).toBeGreaterThan(0);
+    for (const q of flagged) expect(q.kind).toBe("text");
+  });
+
+  it("is said once rather than on all ten text steps", () => {
+    // Repeated on every step it stops being read, which is the same as not
+    // saying it.
+    expect(flagged).toHaveLength(1);
+  });
+
+  it("appears before anything personal has been typed", async () => {
+    const [question] = flagged;
+    const view = await renderStep({ question, value: "" });
+
+    expect(
+      await view.findByText(/sent to the service that writes your affirmations/i),
+    ).toBeTruthy();
+  });
+
+  it("says the answer can be skipped, and means it", async () => {
+    const [question] = flagged;
+    const view = await renderStep({ question, value: "" });
+
+    expect(await view.findByText(/skip any question/i)).toBeTruthy();
+    expect(question.skippable).toBe(true);
+  });
+
+  it("stays off the steps that ask for nothing personal", async () => {
+    const theme = QUESTIONS.find((q) => q.kind === "theme");
+    const view = await renderStep({ question: theme, value: undefined });
+
+    expect(view.queryByText(/sent to the service/i)).toBeNull();
+  });
+});
+
 describe("the onboarding paywall", () => {
   const Paywall = require("../../components/onboarding/Paywall.jsx").default;
 
@@ -199,6 +249,32 @@ describe("the onboarding paywall", () => {
     // which under a hard paywall an unpaid reader does not have at all.
     expect(await view.findByText(/A new line each morning/i)).toBeTruthy();
     expect(view.queryByText(/offline access/i)).toBeNull();
+  });
+
+  /**
+   * The only way off this screen.
+   *
+   * Someone who already subscribes can end up here by tapping "Get started"
+   * instead of "Login", and until now the flow had no exit: no back, no skip,
+   * and a purchase they should not be asked to make twice. A reviewer doing the
+   * same thing is a 2.1 rejection.
+   */
+  it("offers a way out to someone who already subscribes", async () => {
+    const onSignIn = jest.fn();
+    const view = await renderPaywall({ onSignIn });
+
+    await fireEvent.press(await view.findByTestId("paywall-signin"));
+
+    expect(onSignIn).toHaveBeenCalled();
+  });
+
+  it("calls it signing in rather than restoring", async () => {
+    const view = await renderPaywall({ onSignIn: () => {} });
+
+    // A restore here would land the receipt on RevenueCat's anonymous customer:
+    // there is no account yet, and entitlement is held by the Saydle account.
+    expect(await view.findByText(/Sign in/i)).toBeTruthy();
+    expect(view.queryByText(/Restore/i)).toBeNull();
   });
 
   it("prices from the store, never from a literal in the repo", async () => {

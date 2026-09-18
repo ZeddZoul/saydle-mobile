@@ -157,6 +157,26 @@ describe("the locked screen", () => {
     expect(await findByText(/USD 4\.17 a month/)).toBeTruthy();
   });
 
+  it("waits rather than claiming the store is broken", async () => {
+    // An offering is a round-trip to RevenueCat. For that second every visitor
+    // was told "purchases aren't available on this device" — the sentence a
+    // reviewer would screenshot, and never true when it was shown.
+    let release;
+    mockPurchases.getOffering.mockReturnValue(
+      new Promise((resolve) => {
+        release = () => resolve({ available: true, packages: [ANNUAL] });
+      }),
+    );
+
+    const { findByTestId, queryByText, findByText } = await renderLocked();
+
+    expect(await findByTestId("locked-offering")).toBeTruthy();
+    expect(queryByText(/aren't available on this device/i)).toBeNull();
+
+    release();
+    expect(await findByText(/Saydle Premium, Annual — \$49\.99/)).toBeTruthy();
+  });
+
   it("says so plainly when there is nothing to sell, rather than showing a dead button", async () => {
     mockPurchases.getOffering.mockResolvedValue({ available: false, packages: [] });
 

@@ -59,7 +59,7 @@ const Page = ({ item, height, theme, favorited, saved, onFavorite, onSave, onSha
         onPress={onFavorite}
         accessibilityRole="button"
         accessibilityState={{ selected: favorited }}
-        accessibilityLabel={t("today.favorite")}
+        accessibilityLabel={t(favorited ? "today.unsave" : "today.save")}
         hitSlop={12}
         testID="library-favorite"
       >
