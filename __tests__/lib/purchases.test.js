@@ -411,3 +411,67 @@ describe("monthlyEquivalent", () => {
     expect(purchases.monthlyEquivalent(undefined)).toBeNull();
   });
 });
+
+/**
+ * The SDK logs a user declining a purchase at ERROR level, and React Native
+ * turns console.error into a LogBox toast — so cancelling popped a red banner
+ * reading "[RevenueCat] 🍎‼️ Purchase was cancelled." over the paywall. It is
+ * not a crash, not an error, and not ours to show: cancelling is the commonest
+ * outcome of showing a paywall, which is why nothing in the app says anything
+ * about it.
+ */
+describe("the SDK's own logging", () => {
+  it("is routed through a handler rather than left on the console", async () => {
+    const module = fakePurchases({ setLogHandler: jest.fn() });
+    const purchases = loadFresh({ key: "appl_key", module });
+
+    await purchases.ensureConfigured();
+
+    expect(module.setLogHandler).toHaveBeenCalled();
+  });
+
+  it("is set before configure, so nothing escapes on the way up", async () => {
+    const order = [];
+    const module = fakePurchases({
+      setLogHandler: jest.fn(() => order.push("handler")),
+      configure: jest.fn(async () => order.push("configure")),
+    });
+    const purchases = loadFresh({ key: "appl_key", module });
+
+    await purchases.ensureConfigured();
+
+    expect(order).toEqual(["handler", "configure"]);
+  });
+
+  it("never reaches console.error, whatever level the SDK used", async () => {
+    const module = fakePurchases({ setLogHandler: jest.fn() });
+    const purchases = loadFresh({ key: "appl_key", module });
+    const error = jest.spyOn(console, "error").mockImplementation(() => {});
+
+    await purchases.ensureConfigured();
+    const handler = module.setLogHandler.mock.calls[0][0];
+    handler("ERROR", "🍎‼️ Purchase was cancelled.");
+
+    expect(error).not.toHaveBeenCalled();
+    error.mockRestore();
+  });
+
+  it("does not fail a purchase on an SDK too old to have the handler", async () => {
+    // Noisy logs are not worth refusing to sell anything over.
+    const module = fakePurchases({ setLogHandler: undefined });
+    const purchases = loadFresh({ key: "appl_key", module });
+
+    await expect(purchases.ensureConfigured()).resolves.toEqual({ available: true });
+  });
+
+  it("survives a handler that throws", async () => {
+    const module = fakePurchases({
+      setLogHandler: jest.fn(() => {
+        throw new TypeError("not a function");
+      }),
+    });
+    const purchases = loadFresh({ key: "appl_key", module });
+
+    await expect(purchases.ensureConfigured()).resolves.toEqual({ available: true });
+  });
+});
