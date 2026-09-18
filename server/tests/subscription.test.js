@@ -123,6 +123,58 @@ describe("applyWebhookEvent", () => {
     expect(isEntitled(user)).toBe(true);
   });
 
+  /**
+   * A Play Store pause is scheduled, not immediate.
+   *
+   * It begins at the end of the period already paid for, and the event carries
+   * that date. Marking it expired on arrival took away days someone had bought,
+   * which is the same mistake as reading CANCELLATION as the end of access.
+   */
+  it("keeps a paused subscription until the period already paid for runs out", () => {
+    const pauseStarts = Date.now() + 10 * DAY;
+
+    applyWebhookEvent(user, {
+      type: "SUBSCRIPTION_PAUSED",
+      store: "PLAY_STORE",
+      expiration_at_ms: pauseStarts,
+    });
+
+    expect(isEntitled(user, new Date(Date.now() + 5 * DAY))).toBe(true);
+    // And it ends on its own when the pause begins — no follow-up event needed,
+    // because entitlement is read from the date rather than from the status.
+    expect(isEntitled(user, new Date(Date.now() + 11 * DAY))).toBe(false);
+  });
+
+  /**
+   * The failure that would have been invisible.
+   *
+   * `isEntitled` reads an active subscription with no expiry as a lifetime one,
+   * which is right for a one-off purchase and catastrophic for anything else.
+   * A RENEWAL that arrived malformed used to null the expiry and hand out
+   * permanent access, with nothing logged anywhere.
+   */
+  it("does not turn a missing expiry into a lifetime subscription", () => {
+    const expiresAt = new Date(Date.now() + 30 * DAY);
+    applyWebhookEvent(user, {
+      type: "INITIAL_PURCHASE",
+      store: "APP_STORE",
+      expiration_at_ms: expiresAt.getTime(),
+    });
+
+    applyWebhookEvent(user, { type: "RENEWAL", store: "APP_STORE" });
+
+    expect(user.subscription.expiresAt).toEqual(expiresAt);
+    expect(isEntitled(user, new Date(Date.now() + 40 * DAY))).toBe(false);
+  });
+
+  it("still lets a one-off purchase be a lifetime one", () => {
+    // The one event where no expiry genuinely means forever.
+    applyWebhookEvent(user, { type: "NON_RENEWING_PURCHASE", store: "APP_STORE" });
+
+    expect(user.subscription.expiresAt).toBeNull();
+    expect(isEntitled(user, new Date(Date.now() + 3650 * DAY))).toBe(true);
+  });
+
   it("ignores an event for somebody else's entitlement", () => {
     expect(
       applyWebhookEvent(user, {
@@ -145,6 +197,46 @@ describe("POST /api/subscription/webhook", () => {
       store: "APP_STORE",
       ...over,
     },
+  });
+
+  /**
+   * TRANSFER names the accounts in `transferred_from` / `transferred_to`, not
+   * in `app_user_id`, so it arrived with none and was answered 400 — which
+   * RevenueCat reads as a delivery failure and retries forever, for an event
+   * we were never going to act on.
+   */
+  it("acknowledges an event that names no app_user_id instead of retrying forever", async () => {
+    vi.stubEnv("REVENUECAT_WEBHOOK_SECRET", "correct-secret");
+
+    const res = await request(app)
+      .post("/api/subscription/webhook")
+      .set("Authorization", "Bearer correct-secret")
+      .send({
+        event: {
+          type: "TRANSFER",
+          store: "APP_STORE",
+          transferred_from: ["someone-else"],
+          transferred_to: [userId],
+        },
+      });
+
+    expect(res.status).toBe(204);
+  });
+
+  it("grants nothing on a transfer, because acting on a guess could lock out a payer", async () => {
+    vi.stubEnv("REVENUECAT_WEBHOOK_SECRET", "correct-secret");
+
+    await request(app)
+      .post("/api/subscription/webhook")
+      .set("Authorization", "Bearer correct-secret")
+      .send({
+        event: { type: "TRANSFER", store: "APP_STORE", transferred_to: [userId] },
+      });
+
+    // Entitlement is server-truth and arrives with a real purchase event. A
+    // transfer carries no product and no expiry, so there is nothing here that
+    // could honestly be granted.
+    expect((await User.findById(userId)).subscription.status).toBe("none");
   });
 
   it("refuses everything when no secret is configured", async () => {

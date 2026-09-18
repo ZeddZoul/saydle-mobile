@@ -42,7 +42,25 @@ export async function revenueCatWebhook(req, res, next) {
     // RevenueCat is told our user id as the app_user_id at configure() time.
     const userId = event?.app_user_id;
 
-    if (!userId) throw AppError.badRequest("Event is missing app_user_id.");
+    if (!userId) {
+      // TRANSFER is the event that brought this here: it moves a subscription
+      // between app user ids and names them in `transferred_from` /
+      // `transferred_to` rather than in `app_user_id`, so it arrived with none
+      // and was answered 400 — which RevenueCat reads as a delivery failure and
+      // retries, forever, for an event we were never going to act on.
+      //
+      // Acknowledged and logged instead. Deliberately NOT acted on: moving
+      // entitlement off the from-account on an event shape we have never seen
+      // in production risks locking out someone who is paying, and the
+      // receiving account picks its entitlement up on the next renewal anyway.
+      // If transfers turn out to be common, this log is where to start.
+      req.log?.warn(
+        { type: event?.type, from: event?.transferred_from, to: event?.transferred_to },
+        "subscription event carried no app_user_id; acknowledged without acting",
+      );
+
+      return res.status(204).end();
+    }
 
     const user = await User.findById(userId).catch(() => null);
 

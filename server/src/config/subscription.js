@@ -57,8 +57,27 @@ export const EVENT_STATUS = {
   CANCELLATION: "active",
   BILLING_ISSUE: "active",
 
-  // These do end it. EXPIRATION fires when the term actually runs out, grace
+  // A Play Store pause is scheduled, not immediate: it begins at the end of the
+  // period already paid for, and `expiration_at_ms` carries that date. Marking
+  // it expired here took away the days they had bought, which is the same
+  // mistake as treating CANCELLATION as the end of access. Trusting the date
+  // gets it right with no follow-up event needed — once the pause begins,
+  // `isEntitled` stops returning true on its own.
+  SUBSCRIPTION_PAUSED: "active",
+
+  // This does end it. EXPIRATION fires when the term actually runs out, grace
   // period included.
   EXPIRATION: "expired",
-  SUBSCRIPTION_PAUSED: "expired",
 };
+
+/**
+ * The only events where "no expiry" legitimately means forever.
+ *
+ * `isEntitled` reads an active subscription with no expiry as a lifetime one,
+ * which is right for a one-off purchase and catastrophic for anything else: a
+ * RENEWAL that arrived without `expiration_at_ms` would hand out permanent
+ * access, and nothing would ever log it. Everywhere else a missing expiry means
+ * the event did not carry one, and the honest response is to keep the expiry we
+ * already had rather than to invent an unlimited one.
+ */
+export const LIFETIME_EVENTS = new Set(["NON_RENEWING_PURCHASE"]);

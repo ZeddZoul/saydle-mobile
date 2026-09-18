@@ -1,4 +1,4 @@
-import { EVENT_STATUS, ENTITLEMENT_ID } from "../config/subscription.js";
+import { EVENT_STATUS, ENTITLEMENT_ID, LIFETIME_EVENTS } from "../config/subscription.js";
 import { logger } from "../lib/logger.js";
 
 /**
@@ -107,12 +107,28 @@ export function applyWebhookEvent(user, event, { now = new Date() } = {}) {
 
   user.subscription.status = status;
   user.subscription.productId = event.product_id ?? user.subscription.productId;
+
   // The grace period expiry wins when there is one. During a billing retry the
   // original expiry has already passed, so reading that would expire someone
-  // Apple still considers a subscriber. A null expiry stays null: that is a
-  // lifetime or non-renewing purchase, which `isEntitled` treats as no expiry.
+  // Apple still considers a subscriber.
   const expiry = event.grace_period_expiration_at_ms ?? event.expiration_at_ms;
-  user.subscription.expiresAt = expiry ? new Date(expiry) : null;
+
+  if (expiry) {
+    user.subscription.expiresAt = new Date(expiry);
+  } else if (LIFETIME_EVENTS.has(event.type)) {
+    // A one-off purchase genuinely has no end, and `isEntitled` reads a null
+    // expiry as exactly that.
+    user.subscription.expiresAt = null;
+  } else {
+    // An event that should have carried an expiry and did not. Nulling it here
+    // would read as "lifetime" and hand out permanent access off a malformed
+    // payload, silently. Keeping what we already had is the conservative
+    // reading, and it is logged so it is not invisible.
+    logger.warn(
+      { type: event.type, userId: user.id },
+      "subscription event carried no expiry; keeping the one already stored",
+    );
+  }
   user.subscription.source = event.store === "PLAY_STORE" ? "play_store" : "app_store";
   user.subscription.verifiedAt = now;
 
