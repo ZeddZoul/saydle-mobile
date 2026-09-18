@@ -26,7 +26,7 @@ import { monthlyEquivalent } from "../../lib/purchases.js";
 import { SLOW_SETTLE, pollUntil } from "../../lib/settle.js";
 import { useT } from "../../lib/i18n.js";
 import { PRIVACY_URL, TERMS_URL, DELETION_GRACE_DAYS } from "../../lib/config.js";
-import { radius, shadow, spacing, type } from "../../theme/tokens.js";
+import { radius, spacing, type } from "../../theme/tokens.js";
 
 const SUPPORT_MAILTO = "mailto:support@saydle.com";
 
@@ -109,11 +109,16 @@ function useEntrance(delay = 0) {
  *      promises it, so a paywall in front of it would be a rejection and a
  *      broken promise at once.
  *
- * Those four are not equals, and the layout has to say so. The offer sits in a
- * raised surface holding the only two filled buttons on the screen; everything
- * else is text. Sign out and delete are a quiet footer well below the decision —
- * reachable, never competing. The first pass had them as full-width buttons
- * identical to the purchase, which read as four equally likely things to do.
+ * Those four are not equals, and the layout has to say so. The offer holds the
+ * only two filled buttons on the screen; everything else is text. Sign out and
+ * delete are a quiet footer well below the decision — reachable, never
+ * competing. The first pass had them as full-width buttons identical to the
+ * purchase, which read as four equally likely things to do.
+ *
+ * The grouping is rhythm, not a surface. A raised panel around the offer put a
+ * rounded container inside a rounded container and the two edges argued; the
+ * only card on the screen now is the one holding the affirmation, which is the
+ * one thing that should read as a thing rather than as part of the page.
  */
 const LockedScreen = () => {
   const { user, signOut, deleteAccount } = useAuth();
@@ -214,17 +219,23 @@ const LockedScreen = () => {
             <Text style={[styles.lede, { color: theme.sub }]}>{t("locked.body")}</Text>
           </Animated.View>
 
-          {/* The offer, raised off the backdrop. Everything a reader needs in
-              order to decide is inside this one surface; nothing that isn't, is. */}
-          <Animated.View
-            style={[styles.offer, { backgroundColor: theme.surfaceStrong }, offer]}
-          >
+          {/* The offer. Grouped by rhythm and by entrance rather than by a
+              surface: a raised panel here put a rounded container inside a
+              rounded container, and the two edges argued with each other.
+              Everything a reader needs in order to decide is in this block;
+              nothing that isn't, is. */}
+          <Animated.View style={[styles.offer, offer]}>
             {/* Proof where we have it, promise where we do not — never a claim
                 we cannot back. The card is captioned "here's one Saydle wrote
                 for you", so it may only ever hold a line the model actually
                 wrote for this account. */}
             {subscription?.sampleLine ? (
-              <View style={[styles.sample, { borderColor: theme.border }]}>
+              <View
+                style={[
+                  styles.sample,
+                  { borderColor: theme.border, backgroundColor: theme.surface },
+                ]}
+              >
                 <Text style={[styles.eyebrow, { color: theme.accent }]}>
                   {t("billing.sampleEyebrow")}
                 </Text>
@@ -414,11 +425,9 @@ const styles = StyleSheet.create({
     maxWidth: 330,
   },
 
-  offer: {
-    borderRadius: radius.xl,
-    padding: spacing.xl,
-    ...shadow.card,
-  },
+  // No fill, no edge, no lift — only the spacing that sets it apart from the
+  // hero above and the Restore link below.
+  offer: { marginBottom: spacing.xl },
   sample: {
     borderWidth: 1,
     borderRadius: radius.lg,
@@ -473,7 +482,7 @@ const styles = StyleSheet.create({
   legalLink: { ...type.subtitle, fontSize: 13, textDecorationLine: "underline" },
   legalDot: { ...type.subtitle, fontSize: 13, opacity: 0.6 },
 
-  restoreWrap: { alignItems: "center", marginTop: spacing.lg },
+  restoreWrap: { alignItems: "center", marginTop: spacing.sm },
   restore: {
     ...type.body,
     fontSize: 15,
