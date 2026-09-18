@@ -448,6 +448,9 @@
   "locked": {
     "title": "Saydle se escribe para ti",
     "body": "Cada frase que lees aquí se genera a partir de tus respuestas, en tu tono, para el momento en el que estás. Eso es el producto entero, y es lo que paga una suscripción.",
+    "perk1": "Una frase nueva cada mañana, escrita a partir de tus respuestas y no elegida de una lista.",
+    "perk2": "Una sesión de escucha que te la lee, con la voz que elijas.",
+    "perk3": "Todo lo que guardas en un mismo sitio: tus favoritas, tus propias palabras, tu racha.",
     "signedInAs": "Sesión iniciada como {{email}}",
     "wrongAccount": "¿No eres tú?",
     "support": "Escribe a support@saydle.com",

@@ -296,6 +296,9 @@
   "locked": {
     "title": "Saydle is written for you",
     "body": "Every line you read here is generated for your answers, in your tone, for where you are right now. That is the whole product, and it is what a subscription pays for.",
+    "perk1": "A new line each morning, written from your answers rather than picked from a list.",
+    "perk2": "A listening session that reads it back to you, in a voice you choose.",
+    "perk3": "Everything you keep in one place: your favorites, your own words, your streak.",
     "signedInAs": "Signed in as {{email}}",
     "wrongAccount": "Not you?",
     "support": "Email support@saydle.com",

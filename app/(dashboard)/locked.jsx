@@ -1,11 +1,20 @@
-import { useState } from "react";
-import { Linking, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import { useEffect, useRef, useState } from "react";
+import {
+  AccessibilityInfo,
+  Animated,
+  Easing,
+  Linking,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  View,
+} from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { SafeAreaView } from "react-native-safe-area-context";
 import GradientBackground from "../../components/GradientBackground.jsx";
 import DisplayText from "../../components/DisplayText.jsx";
 import Button from "../../components/Button.jsx";
-import Spacer from "../../components/Spacer.jsx";
 import DeleteAccountSheet from "../../components/DeleteAccountSheet.jsx";
 import { useAuth } from "../../contexts/AuthContext.jsx";
 import { useAppTheme } from "../../contexts/ThemeContext.jsx";
@@ -14,12 +23,62 @@ import { useSubscription } from "../../hooks/useSubscription.js";
 import { monthlyEquivalent } from "../../lib/purchases.js";
 import { useT } from "../../lib/i18n.js";
 import { PRIVACY_URL, TERMS_URL, DELETION_GRACE_DAYS } from "../../lib/config.js";
-import { radius, spacing, type } from "../../theme/tokens.js";
+import { colors, radius, shadow, spacing, type } from "../../theme/tokens.js";
 
 const SUPPORT_MAILTO = "mailto:support@saydle.com";
 
-/** The same three promises the first paywall makes, shown when we have no proof. */
-const PERK_KEYS = ["paywall.perk1", "paywall.perk2", "paywall.perk3"];
+/** Three promises, all in the register the headline sets: what gets written. */
+const PERK_KEYS = ["locked.perk1", "locked.perk2", "locked.perk3"];
+
+/**
+ * One rise-and-fade, used for both tiers.
+ *
+ * The screen arrives by redirect rather than by a tap, so without this it pops
+ * into place. The card is offset behind the hero by a beat — enough to read as
+ * sequence, short enough that nobody waits for it.
+ */
+function useEntrance(delay = 0) {
+  const anim = useRef(new Animated.Value(0)).current;
+  const [reduced, setReduced] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    AccessibilityInfo.isReduceMotionEnabled()
+      .then((on) => {
+        if (cancelled) return;
+        if (on) {
+          // The static version, not a faster one: someone who asked for less
+          // motion has asked for none, not for the same thing hurried.
+          setReduced(true);
+          anim.setValue(1);
+          return;
+        }
+        Animated.timing(anim, {
+          toValue: 1,
+          duration: 420,
+          delay,
+          // Decelerating: quick off the mark, settling rather than stopping.
+          easing: Easing.bezier(0.22, 1, 0.36, 1),
+          useNativeDriver: true,
+        }).start();
+      })
+      .catch(() => {
+        if (!cancelled) anim.setValue(1);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [anim, delay]);
+
+  return {
+    opacity: anim,
+    transform: reduced
+      ? []
+      : [{ translateY: anim.interpolate({ inputRange: [0, 1], outputRange: [14, 0] }) }],
+  };
+}
 
 /**
  * What an account that has not paid sees, and the only thing it sees.
@@ -29,22 +88,22 @@ const PERK_KEYS = ["paywall.perk1", "paywall.perk2", "paywall.perk3"];
  *
  *   1. Sell. It leads with the argument and, where there is one, the line
  *      Saydle actually wrote for this person at signup — proof rather than
- *      promise, and the only thing on the screen that cannot be claimed by a
- *      competitor.
+ *      promise, and the only thing here a competitor could not also claim.
  *   2. Let them buy, and let them restore. Restore is required by Apple
  *      wherever a subscription is sold, and it is how someone who reinstalled
  *      gets back what they already paid for.
  *   3. Show the terms. Required beside a subscription CTA (App Review 3.1.2).
- *   4. Let them leave. Sign out and delete account are on this page rather
- *      than on Profile because Profile is behind the same gate: account
- *      deletion has to be reachable inside the app (guideline 5.1.1(v)) and the
- *      privacy policy promises it, so a paywall in front of it would be a
- *      rejection and a broken promise at once.
+ *   4. Let them leave. Sign out and delete account are here rather than on
+ *      Profile because Profile is behind the same gate: account deletion has to
+ *      be reachable inside the app (guideline 5.1.1(v)) and the privacy policy
+ *      promises it, so a paywall in front of it would be a rejection and a
+ *      broken promise at once.
  *
- * Deliberately not billing.jsx with a branch. That screen is an account page —
- * "You're on the free plan", "Manage or cancel" with nothing to manage, a back
- * button to a screen this reader cannot reach. Every one of those is wrong
- * here, and the two pages disagree about what they are for.
+ * Those four are not equals, and the layout has to say so. The offer sits in a
+ * raised surface holding the only two filled buttons on the screen; everything
+ * else is text. Sign out and delete are a quiet footer well below the decision —
+ * reachable, never competing. The first pass had them as full-width buttons
+ * identical to the purchase, which read as four equally likely things to do.
  */
 const LockedScreen = () => {
   const { user, signOut, deleteAccount } = useAuth();
@@ -56,6 +115,8 @@ const LockedScreen = () => {
     useSubscription();
 
   const [deleting, setDeleting] = useState(false);
+  const hero = useEntrance(0);
+  const offer = useEntrance(90);
 
   const onPurchase = async (pkg) => {
     const result = await purchase(pkg);
@@ -84,129 +145,149 @@ const LockedScreen = () => {
     <GradientBackground>
       <SafeAreaView style={styles.safe} edges={["top", "bottom"]}>
         <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
-          <DisplayText weight="bold" style={[styles.title, { color: theme.ink }]}>
-            {t("locked.title")}
-          </DisplayText>
+          <Animated.View style={[styles.hero, hero]}>
+            <DisplayText weight="bold" style={[styles.title, { color: theme.ink }]}>
+              {t("locked.title")}
+            </DisplayText>
+            <Text style={[styles.lede, { color: theme.sub }]}>{t("locked.body")}</Text>
+          </Animated.View>
 
-          <Text style={[styles.body, { color: theme.sub }]}>{t("locked.body")}</Text>
-
-          {/* Proof where we have it, promise where we do not — never a claim we
-              cannot back. The card is captioned "here's one Saydle wrote for
-              you", so it may only ever hold a line the model actually wrote for
-              this account. When generation never landed there is nothing
-              truthful to put in it, and the three promises the first paywall
-              makes are the honest substitute: they are what a subscription
-              will do, stated as future tense rather than dressed as evidence. */}
-          {subscription?.sampleLine ? (
-            <View style={[styles.sample, { borderColor: theme.border }]}>
-              <Text style={[styles.eyebrow, { color: theme.accent }]}>
-                {t("billing.sampleEyebrow")}
-              </Text>
-              <DisplayText style={[styles.sampleText, { color: theme.ink }]}>
-                {subscription.sampleLine}
-              </DisplayText>
-              <Text style={[styles.hint, { color: theme.sub }]}>
-                {t("billing.sampleFooter")}
-              </Text>
-            </View>
-          ) : (
-            <View style={styles.perks}>
-              {PERK_KEYS.map((key) => (
-                <View key={key} style={styles.perk}>
-                  <Ionicons name="checkmark-circle" size={22} color={theme.accent} />
-                  <Text style={[styles.perkText, { color: theme.ink }]}>{t(key)}</Text>
-                </View>
-              ))}
-            </View>
-          )}
-
-          <Spacer height={spacing.lg} />
-
-          {/* Hidden rather than disabled when there is nothing to sell: a
-              button that cannot complete is worse than no button. */}
-          {canPurchase && packages.length > 0 ? (
-            <>
-              {packages.map((pkg) => {
-                const annual = pkg.packageType === "ANNUAL";
-                const per = monthlyEquivalent(pkg);
-
-                return (
-                  <View key={pkg.identifier} style={styles.planWrap}>
-                    <Button
-                      title={`${pkg.product?.title ?? pkg.identifier} — ${
-                        pkg.product?.priceString ?? ""
-                      }`}
-                      variant={annual ? "primary" : "secondary"}
-                      disabled={busy}
-                      onPress={() => onPurchase(pkg)}
-                    />
-                    {per ? (
-                      <Text style={[styles.perMonth, { color: theme.sub }]}>
-                        {t("paywall.perMonth", { price: per })}
-                      </Text>
-                    ) : null}
-                  </View>
-                );
-              })}
-            </>
-          ) : (
-            <Text style={[styles.hint, { color: theme.sub }]}>
-              {t("billing.storeUnavailable")}
-            </Text>
-          )}
-
-          <Text style={[styles.cancelAnytime, { color: theme.sub }]}>{t("paywall.price")}</Text>
-
-          {/* Required beside a subscription CTA, and the decent thing anyway. */}
-          <View style={styles.legal}>
-            <Pressable onPress={() => open(TERMS_URL)} accessibilityRole="link" hitSlop={8}>
-              <Text style={[styles.legalLink, { color: theme.sub }]}>{t("legal.terms")}</Text>
-            </Pressable>
-            <Text style={[styles.legalDot, { color: theme.sub }]}>·</Text>
-            <Pressable onPress={() => open(PRIVACY_URL)} accessibilityRole="link" hitSlop={8}>
-              <Text style={[styles.legalLink, { color: theme.sub }]}>{t("legal.privacy")}</Text>
-            </Pressable>
-          </View>
-
-          <Spacer height={spacing.lg} />
-
-          <Button
-            title={t("billing.restore")}
-            variant="secondary"
-            disabled={busy}
-            onPress={onRestore}
-          />
-
-          <View style={[styles.rule, { backgroundColor: theme.border }]} />
-
-          <Text style={[styles.hint, { color: theme.sub }]}>{t("locked.supportHint")}</Text>
-          <Pressable onPress={() => open(SUPPORT_MAILTO)} accessibilityRole="link" hitSlop={8}>
-            <Text style={[styles.supportLink, { color: theme.accent }]}>
-              {t("locked.support")}
-            </Text>
-          </Pressable>
-
-          <Spacer height={spacing.lg} />
-
-          {/* The way out. Behind the same gate as everything else this would be
-              a trap: someone signed in as the wrong person with no way back,
-              and an account nobody can delete. */}
-          {user?.email ? (
-            <Text style={[styles.signedIn, { color: theme.sub }]}>
-              {t("locked.signedInAs", { email: user.email })}
-            </Text>
-          ) : null}
-
-          <Button title={t("profile.signOut")} variant="secondary" onPress={signOut} />
-
-          <Pressable
-            onPress={() => setDeleting(true)}
-            accessibilityRole="button"
-            style={styles.deleteButton}
-            testID="locked-delete"
+          {/* The offer, raised off the backdrop. Everything a reader needs in
+              order to decide is inside this one surface; nothing that isn't, is. */}
+          <Animated.View
+            style={[styles.offer, { backgroundColor: theme.surfaceStrong }, offer]}
           >
-            <Text style={styles.deleteText}>{t("profile.deleteAccount")}</Text>
+            {/* Proof where we have it, promise where we do not — never a claim
+                we cannot back. The card is captioned "here's one Saydle wrote
+                for you", so it may only ever hold a line the model actually
+                wrote for this account. */}
+            {subscription?.sampleLine ? (
+              <View style={[styles.sample, { borderColor: theme.border }]}>
+                <Text style={[styles.eyebrow, { color: theme.accent }]}>
+                  {t("billing.sampleEyebrow")}
+                </Text>
+                <DisplayText style={[styles.sampleText, { color: theme.ink }]}>
+                  {subscription.sampleLine}
+                </DisplayText>
+                <Text style={[styles.sampleFoot, { color: theme.sub }]}>
+                  {t("billing.sampleFooter")}
+                </Text>
+              </View>
+            ) : (
+              <View style={styles.perks}>
+                {PERK_KEYS.map((key) => (
+                  <View key={key} style={styles.perk}>
+                    <Ionicons name="checkmark-circle" size={20} color={theme.accent} />
+                    <Text style={[styles.perkText, { color: theme.ink }]}>{t(key)}</Text>
+                  </View>
+                ))}
+              </View>
+            )}
+
+            {/* Hidden rather than disabled when there is nothing to sell: a
+                button that cannot complete is worse than no button. */}
+            {canPurchase && packages.length > 0 ? (
+              <View style={styles.plans}>
+                {packages.map((pkg) => {
+                  const annual = pkg.packageType === "ANNUAL";
+                  const per = monthlyEquivalent(pkg);
+
+                  return (
+                    <View key={pkg.identifier}>
+                      <Button
+                        title={`${pkg.product?.title ?? pkg.identifier} — ${
+                          pkg.product?.priceString ?? ""
+                        }`}
+                        variant={annual ? "primary" : "secondary"}
+                        disabled={busy}
+                        onPress={() => onPurchase(pkg)}
+                      />
+                      {per ? (
+                        <Text style={[styles.perMonth, { color: theme.sub }]}>
+                          {t("paywall.perMonth", { price: per })}
+                        </Text>
+                      ) : null}
+                    </View>
+                  );
+                })}
+              </View>
+            ) : (
+              <Text style={[styles.unavailable, { color: theme.sub }]}>
+                {t("billing.storeUnavailable")}
+              </Text>
+            )}
+
+            <Text style={[styles.cancelAnytime, { color: theme.sub }]}>
+              {t("paywall.price")}
+            </Text>
+
+            {/* Required beside a subscription CTA, and the decent thing anyway. */}
+            <View style={styles.legal}>
+              <Pressable onPress={() => open(TERMS_URL)} accessibilityRole="link" hitSlop={8}>
+                <Text style={[styles.legalLink, { color: theme.sub }]}>{t("legal.terms")}</Text>
+              </Pressable>
+              <Text style={[styles.legalDot, { color: theme.sub }]}>·</Text>
+              <Pressable onPress={() => open(PRIVACY_URL)} accessibilityRole="link" hitSlop={8}>
+                <Text style={[styles.legalLink, { color: theme.sub }]}>
+                  {t("legal.privacy")}
+                </Text>
+              </Pressable>
+            </View>
+          </Animated.View>
+
+          {/* Outside the card and unfilled: findable, which is what Apple asks,
+              without competing with the thing the card is for. */}
+          <Pressable
+            onPress={onRestore}
+            disabled={busy}
+            accessibilityRole="button"
+            hitSlop={8}
+            style={styles.restoreWrap}
+          >
+            <Text style={[styles.restore, { color: theme.ink }]}>{t("billing.restore")}</Text>
           </Pressable>
+
+          {/* The way out, and a way to ask. Quiet on purpose: reachable for the
+              person who needs it, invisible to the person deciding. */}
+          <View style={styles.footer}>
+            <View style={[styles.rule, { backgroundColor: theme.border }]} />
+
+            <Text style={[styles.footNote, { color: theme.sub }]}>
+              {t("locked.supportHint")}
+            </Text>
+            <Pressable
+              onPress={() => open(SUPPORT_MAILTO)}
+              accessibilityRole="link"
+              hitSlop={8}
+            >
+              <Text style={[styles.footLink, { color: theme.sub }]}>{t("locked.support")}</Text>
+            </Pressable>
+
+            {user?.email ? (
+              <Text style={[styles.footNote, styles.signedIn, { color: theme.sub }]}>
+                {t("locked.signedInAs", { email: user.email })}
+              </Text>
+            ) : null}
+
+            <View style={styles.footActions}>
+              <Pressable onPress={signOut} accessibilityRole="button" hitSlop={8}>
+                <Text style={[styles.footLink, { color: theme.sub }]}>
+                  {t("profile.signOut")}
+                </Text>
+              </Pressable>
+              <Text style={[styles.legalDot, { color: theme.sub }]}>·</Text>
+              <Pressable
+                onPress={() => setDeleting(true)}
+                accessibilityRole="button"
+                hitSlop={8}
+                testID="locked-delete"
+              >
+                <Text style={[styles.footLink, styles.danger]}>
+                  {t("profile.deleteAccount")}
+                </Text>
+              </Pressable>
+            </View>
+          </View>
         </ScrollView>
       </SafeAreaView>
 
@@ -227,56 +308,98 @@ const styles = StyleSheet.create({
   safe: { flex: 1 },
   content: {
     paddingHorizontal: spacing.lg,
-    paddingTop: spacing.xl,
+    paddingTop: spacing.xxl,
     paddingBottom: spacing.xxxl,
   },
-  title: { ...type.screenTitle, textAlign: "center" },
-  body: { ...type.body, textAlign: "center", marginTop: spacing.sm },
+
+  hero: { alignItems: "center", marginBottom: spacing.xl },
+  title: {
+    ...type.screenTitle,
+    // Display type tightens; body loosens. At 32px, zero tracking reads as
+    // merely big rather than composed — the project already tracks its
+    // affirmation face for the same reason.
+    letterSpacing: -0.5,
+    textAlign: "center",
+  },
+  lede: {
+    ...type.subtitle,
+    textAlign: "center",
+    marginTop: spacing.md,
+    // A measure rather than a full-bleed line: ~50 characters reads far better
+    // than the whole width of the screen.
+    maxWidth: 330,
+  },
+
+  offer: {
+    borderRadius: radius.xl,
+    padding: spacing.xl,
+    ...shadow.card,
+  },
   sample: {
     borderWidth: 1,
     borderRadius: radius.lg,
     padding: spacing.lg,
-    marginTop: spacing.lg,
+    marginBottom: spacing.xl,
   },
   eyebrow: {
     ...type.label,
     fontSize: 11,
-    letterSpacing: 1.1,
+    letterSpacing: 1.2,
     textTransform: "uppercase",
   },
-  sampleText: { ...type.sectionTitle, fontSize: 22, marginTop: spacing.xs },
-  hint: { ...type.body, fontSize: 13, marginTop: spacing.xs, textAlign: "center" },
-  perks: {
-    // width:100% so each row has a defined width — without it the flex:1 label
-    // collapses to zero and only the checkmark shows.
-    width: "100%",
-    maxWidth: 360,
-    alignSelf: "center",
-    gap: spacing.lg,
-    marginTop: spacing.xl,
-  },
-  perk: { flexDirection: "row", alignItems: "center", gap: spacing.md },
-  perkText: { ...type.body, flex: 1 },
-  planWrap: { marginBottom: spacing.sm },
-  perMonth: { ...type.body, fontSize: 13, textAlign: "center", marginTop: spacing.xs },
-  cancelAnytime: { ...type.body, fontSize: 12, textAlign: "center", marginTop: spacing.md },
-  legal: {
-    flexDirection: "row",
-    justifyContent: "center",
-    alignItems: "center",
+  sampleText: {
+    ...type.sectionTitle,
+    fontSize: 22,
+    lineHeight: 30,
     marginTop: spacing.sm,
   },
-  legalLink: { ...type.body, fontSize: 12, textDecorationLine: "underline" },
-  legalDot: { ...type.body, fontSize: 12, paddingHorizontal: spacing.xs },
-  rule: { height: 1, marginVertical: spacing.xl, opacity: 0.6 },
-  supportLink: {
-    ...type.body,
+  sampleFoot: { ...type.subtitle, fontSize: 13, marginTop: spacing.sm },
+
+  perks: { gap: spacing.md, marginBottom: spacing.xl },
+  // flex:1 on the label needs the row to have a width, or it collapses to zero
+  // and only the checkmark shows.
+  perk: { flexDirection: "row", alignItems: "flex-start", gap: spacing.md },
+  perkText: { ...type.body, flex: 1, fontSize: 15, lineHeight: 21 },
+
+  plans: { gap: spacing.sm },
+  perMonth: { ...type.subtitle, fontSize: 13, textAlign: "center", marginTop: spacing.sm },
+  unavailable: { ...type.subtitle, fontSize: 13, textAlign: "center" },
+  cancelAnytime: {
+    ...type.subtitle,
     fontSize: 13,
     textAlign: "center",
-    textDecorationLine: "underline",
-    marginTop: spacing.xs,
+    marginTop: spacing.lg,
   },
-  signedIn: { ...type.body, fontSize: 13, textAlign: "center", marginBottom: spacing.sm },
-  deleteButton: { alignItems: "center", marginTop: spacing.lg },
-  deleteText: { ...type.body, fontSize: 13, color: "#B3261E" },
+
+  legal: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: spacing.sm,
+    marginTop: spacing.sm,
+  },
+  legalLink: { ...type.subtitle, fontSize: 13, textDecorationLine: "underline" },
+  legalDot: { ...type.subtitle, fontSize: 13, opacity: 0.6 },
+
+  restoreWrap: { alignItems: "center", marginTop: spacing.lg },
+  restore: {
+    ...type.body,
+    fontSize: 15,
+    fontWeight: "600",
+    textDecorationLine: "underline",
+  },
+
+  footer: { alignItems: "center", marginTop: spacing.xxxl },
+  rule: { height: 1, alignSelf: "stretch", opacity: 0.35, marginBottom: spacing.xl },
+  footNote: { ...type.subtitle, fontSize: 13, textAlign: "center" },
+  footLink: { ...type.subtitle, fontSize: 13, textDecorationLine: "underline" },
+  signedIn: { marginTop: spacing.xl },
+  footActions: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.sm,
+    marginTop: spacing.sm,
+  },
+  // The token, not a second red invented for this screen.
+  danger: { color: colors.danger },
 });
