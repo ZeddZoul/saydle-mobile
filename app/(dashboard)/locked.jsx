@@ -151,19 +151,24 @@ const LockedScreen = () => {
 
   useEffect(() => {
     if (!awaitingWebhook) return;
-    let cancelled = false;
+
+    // A flag read after the fact would not have stopped anything: the ladder's
+    // sleeps are already running, so the poll went on asking the API for the
+    // best part of a minute after the screen was gone.
+    const controller = new AbortController();
 
     pollUntil(
       () => refreshRef.current(),
       (fresh) => fresh.entitled,
       SLOW_SETTLE,
+      {
+        signal: controller.signal,
+      },
     ).finally(() => {
-      if (!cancelled) setAwaitingWebhook(false);
+      if (!controller.signal.aborted) setAwaitingWebhook(false);
     });
 
-    return () => {
-      cancelled = true;
-    };
+    return () => controller.abort();
   }, [awaitingWebhook]);
 
   const onPurchase = async (pkg) => {
@@ -283,6 +288,11 @@ const LockedScreen = () => {
             <Text style={[styles.cancelAnytime, { color: theme.sub }]}>
               {t("paywall.price")}
             </Text>
+
+            {/* The same renewal terms the onboarding paywall carries. This is
+                the screen a reviewer actually lands on, so if only one of the
+                two were to have it, it would be this one. */}
+            <Text style={[styles.renewal, { color: theme.ink }]}>{t("paywall.renewal")}</Text>
 
             {/* Required beside a subscription CTA, and the decent thing anyway. */}
             <View style={styles.legal}>
@@ -443,6 +453,14 @@ const styles = StyleSheet.create({
     fontSize: 13,
     textAlign: "center",
     marginTop: spacing.lg,
+  },
+
+  renewal: {
+    ...type.body,
+    fontSize: 12,
+    lineHeight: 16,
+    textAlign: "center",
+    marginTop: spacing.sm,
   },
 
   legal: {

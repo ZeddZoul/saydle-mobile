@@ -75,10 +75,25 @@ describe("signed in and paid", () => {
     expect(nextRoute({ ...paid, ...at("(dashboard)", "billing") })).toBeNull();
   });
 
-  it("keeps the locked screen reachable, so a lapse lands somewhere sane", () => {
-    // Not a redirect target for them, but not a trap either: entitlement can
-    // drop mid-session and the guard moves them here on the next render.
-    expect(nextRoute({ ...paid, ...at("(dashboard)", "locked") })).toBeNull();
+  /**
+   * The bug this replaced, which shipped green.
+   *
+   * The locked screen does not navigate — it polls, and the most it can do is
+   * sync entitlement into the session. So when a webhook landed while someone
+   * watched the "payment received" banner, `entitled` flipped true, the guard
+   * answered null, and the payer sat looking at the plan buttons with no way
+   * through but relaunching the app. The same dead end caught Restore and the
+   * foreground refresh, since all three end in the same place.
+   */
+  it("is let into the app the moment entitlement lands on the paywall screen", () => {
+    expect(nextRoute({ ...paid, ...at("(dashboard)", "locked") })).toBe("/dashboard");
+  });
+
+  it("is put back on the paywall if entitlement lapses", () => {
+    // The other direction still holds, which is what makes the redirect safe.
+    expect(
+      nextRoute({ isSignedIn: true, entitled: false, ...at("(dashboard)", "locked") }),
+    ).toBeNull();
   });
 });
 

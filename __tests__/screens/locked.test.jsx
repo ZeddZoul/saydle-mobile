@@ -19,7 +19,10 @@ const mockRouter = jest.requireMock("expo-router");
 // screen keeps asking and stops when the answer changes.
 jest.mock("../../lib/settle.js", () => ({
   ...jest.requireActual("../../lib/settle.js"),
-  SLOW_SETTLE: [0, 10, 10, 10],
+  // The long last rung matters: with every rung short, a test asserting "the
+  // banner cleared" passes whether the server agreed or the ladder simply ran
+  // out, which is the difference the test exists to see.
+  SLOW_SETTLE: [0, 20, 60_000],
 }));
 
 // The factory cannot close over a const: jest.mock is hoisted above every
@@ -96,6 +99,17 @@ const metrics = {
   frame: { x: 0, y: 0, width: 390, height: 844 },
   insets: { top: 47, left: 0, right: 0, bottom: 34 },
 };
+
+const renderClient = (client) =>
+  render(
+    <SafeAreaProvider initialMetrics={metrics}>
+      <AuthProvider store={makeStore()} cache={makeCache()} client={client}>
+        <ToastProvider>
+          <Locked />
+        </ToastProvider>
+      </AuthProvider>
+    </SafeAreaProvider>,
+  );
 
 const renderLocked = (sub, after) =>
   render(
@@ -317,15 +331,34 @@ describe("the locked screen", () => {
       expect(await findByText(/Payment received/i)).toBeTruthy();
     });
 
-    it("keeps asking, and stops the moment the server agrees", async () => {
+    it("keeps asking until the server agrees", async () => {
       mockRouter.useLocalSearchParams.mockReturnValue({ settling: "1" });
+      const client = makeClient(UNPAID, PAID);
 
-      const { findByText, queryByText } = await renderLocked(UNPAID, PAID);
+      const { queryByText } = await renderClient(client);
 
-      // The poll re-reads; the second answer is the entitled one, which is what
-      // lets the route guard open the app without anyone tapping Restore.
+      // The banner clears because the second answer came back entitled, not
+      // because the ladder ran out — the mocked ladder's last rung is a minute
+      // long, so exhaustion cannot be what happened inside this test.
       await waitFor(() => expect(queryByText(/Payment received/i)).toBeNull());
-      expect(await findByText(/Saydle is written for you/i)).toBeTruthy();
+      expect(client.subscription.mock.calls.length).toBeGreaterThan(1);
+    });
+
+    /**
+     * Syncing entitlement into the session is the whole job here.
+     *
+     * This screen cannot navigate, and for a while nothing else did either: the
+     * poll landed, `entitled` went true, and the route guard answered null, so
+     * the payer sat on the plan buttons. The guard owns the exit now
+     * (lib/routeGuard.js), and __tests__/lib/routeGuard.test.js pins it.
+     */
+    it("re-reads the session, which is what the guard consults", async () => {
+      mockRouter.useLocalSearchParams.mockReturnValue({ settling: "1" });
+      const client = makeClient(UNPAID, PAID);
+
+      await renderClient(client);
+
+      await waitFor(() => expect(client.me.mock.calls.length).toBeGreaterThan(0));
     });
 
     it("says nothing to someone who is merely deciding", async () => {

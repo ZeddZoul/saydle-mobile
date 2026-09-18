@@ -15,8 +15,10 @@ describe("the settle ladders", () => {
     expect(FAST_SETTLE[0]).toBe(0);
   });
 
-  it("covers the measured eighty seconds across both phases", () => {
-    expect(total(FAST_SETTLE) + total(SLOW_SETTLE)).toBeGreaterThanOrEqual(60_000);
+  it("outlasts the measured eighty seconds rather than stopping short of it", () => {
+    // The bar was 60s while the name said 80 and the ladders reached 63.8 — a
+    // poll that gives up before the event it waits for typically arrives.
+    expect(total(FAST_SETTLE) + total(SLOW_SETTLE)).toBeGreaterThan(80_000);
   });
 
   it("keeps the blocking phase short enough to wait through", () => {
@@ -115,10 +117,13 @@ describe("pollUntil", () => {
   it("does not accept a read that came back empty", async () => {
     const read = jest.fn().mockResolvedValue(null);
 
-    // `accept` would have to guard against null in every caller otherwise.
-    const result = await pollUntil(read, () => true, [0, 0]);
+    // Dereferenced the way every real caller does, so deleting the null guard
+    // in pollUntil throws here rather than passing quietly. `() => true` was
+    // green either way, which made this a test of nothing.
+    const result = await pollUntil(read, (v) => v.entitled, [0, 0]);
 
     expect(result).toBeNull();
+    expect(read).toHaveBeenCalledTimes(2);
   });
 
   it("waits between rungs", async () => {
@@ -128,5 +133,56 @@ describe("pollUntil", () => {
     await pollUntil(read, (v) => v.entitled, [0, 30, 30]);
 
     expect(Date.now() - started).toBeGreaterThanOrEqual(50);
+  });
+});
+
+describe("stopping a poll", () => {
+  const { pollUntil: poll } = require("../../lib/settle.js");
+
+  it("stops asking once it is called off", async () => {
+    // The slow ladder is nearly a minute long. Without this the poll outlived
+    // the screen that started it, still asking the API on behalf of someone
+    // who had navigated away.
+    const read = jest.fn().mockResolvedValue({ entitled: false });
+    const controller = new AbortController();
+
+    const running = poll(read, (v) => v.entitled, [0, 30, 30, 30], {
+      signal: controller.signal,
+    });
+    controller.abort();
+
+    expect(await running).toBeNull();
+    expect(read.mock.calls.length).toBeLessThanOrEqual(1);
+  });
+
+  it("cuts a long wait short rather than sitting it out", async () => {
+    const read = jest.fn().mockResolvedValue({ entitled: false });
+    const controller = new AbortController();
+    const started = Date.now();
+
+    const running = poll(read, (v) => v.entitled, [0, 60_000], {
+      signal: controller.signal,
+    });
+    // Let the first rung land, then call it off mid-sleep.
+    await new Promise((resolve) => setTimeout(resolve, 20));
+    controller.abort();
+    await running;
+
+    expect(Date.now() - started).toBeLessThan(1_000);
+  });
+
+  it("refuses to start when it is already called off", async () => {
+    const read = jest.fn();
+    const controller = new AbortController();
+    controller.abort();
+
+    expect(await poll(read, () => true, [0, 0], { signal: controller.signal })).toBeNull();
+    expect(read).not.toHaveBeenCalled();
+  });
+
+  it("still works with no signal at all", async () => {
+    const read = jest.fn().mockResolvedValue({ entitled: true });
+
+    expect(await poll(read, (v) => v.entitled, [0])).toEqual({ entitled: true });
   });
 });

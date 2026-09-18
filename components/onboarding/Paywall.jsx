@@ -151,16 +151,17 @@ const styles = StyleSheet.create({
     gap: spacing.sm,
     marginTop: spacing.md,
   },
+  // White on the Dawn gradient is 1.4:1 — the links were an almost invisible
+  // smear on pink, which is a poor way to satisfy the guideline that put them
+  // there. The locked screen had it right and this did not.
   legalLink: {
     ...type.body,
     fontSize: 13,
-    color: colors.white,
+    color: colors.ink,
     textDecorationLine: "underline",
-    opacity: 0.85,
   },
   legalDot: {
-    color: colors.white,
-    opacity: 0.6,
+    color: colors.mauveDeep,
   },
   planWrap: { marginBottom: spacing.sm },
   signIn: { alignItems: "center", marginTop: spacing.md },
@@ -226,11 +227,14 @@ const styles = StyleSheet.create({
     textAlign: "center",
     marginBottom: spacing.sm,
   },
+  // Fine print because it is small and centred, not because it is faint. At
+  // subtitle mauve and 0.8 opacity this was 2.9:1 — the least readable text on
+  // a screen where it is the one thing Apple requires be read.
   renewal: {
-    ...type.subtitle,
-    fontSize: 11,
-    lineHeight: 15,
+    ...type.body,
+    fontSize: 12,
+    lineHeight: 16,
+    color: colors.ink,
     textAlign: "center",
-    opacity: 0.8,
   },
 });

@@ -15,6 +15,7 @@ import DisplayText from "../../components/DisplayText.jsx";
 import FormField from "../../components/FormField";
 import Button from "../../components/Button";
 import { useAuth } from "../../contexts/AuthContext.jsx";
+import { useAppTheme } from "../../contexts/ThemeContext.jsx";
 import { ApiError, messageFor } from "../../lib/errors.js";
 import { validateLogin, hasErrors } from "../../lib/validation.js";
 import { colors, spacing, type } from "../../theme/tokens.js";
@@ -24,6 +25,7 @@ const Login = () => {
   const { t } = useT();
   const router = useRouter();
   const { signIn } = useAuth();
+  const { theme } = useAppTheme();
   const [form, setForm] = useState({ email: "", password: "" });
   const [fieldErrors, setFieldErrors] = useState({});
   const [formError, setFormError] = useState(null);
@@ -131,7 +133,10 @@ const Login = () => {
               </Pressable>
 
               {formError ? (
-                <Text style={styles.formError} accessibilityRole="alert">
+                <Text
+                  style={[styles.formError, { color: theme.danger }]}
+                  accessibilityRole="alert"
+                >
                   {formError}
                 </Text>
               ) : null}
@@ -206,7 +211,6 @@ const styles = StyleSheet.create({
     fontWeight: "600",
   },
   formError: {
-    color: colors.danger,
     marginBottom: spacing.md,
     fontSize: 14,
   },
