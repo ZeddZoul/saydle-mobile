@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Pressable, StyleSheet, Text, TextInput, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import { useAppTheme } from "../contexts/ThemeContext.jsx";
 import { colors, radius, spacing, type } from "../theme/tokens.js";
 
 /**
@@ -9,14 +10,21 @@ import { colors, radius, spacing, type } from "../theme/tokens.js";
  *
  * `error` takes the message the API returned for this field, so server-side
  * validation surfaces in the same place as anything checked locally.
+ *
+ * The field itself is white in every theme — it is a sheet of paper laid on the
+ * page, and the ink and placeholder inside it are read against that. The label
+ * and the error are not: they sit on whatever backdrop the host screen is
+ * painted in, which on Dusk is a dark plum that swallowed both. Those two take
+ * their colour from the theme; everything inside the white box does not.
  */
 const FormField = ({ label, error, icon, secureTextEntry, style, ...inputProps }) => {
+  const { theme } = useAppTheme();
   const [focused, setFocused] = useState(false);
   const [hidden, setHidden] = useState(Boolean(secureTextEntry));
 
   return (
     <View style={styles.group}>
-      <Text style={styles.label}>{label}</Text>
+      <Text style={[styles.label, { color: theme.sub }]}>{label}</Text>
 
       <View style={[styles.field, focused && styles.fieldFocused, error && styles.fieldError]}>
         {icon ? (
@@ -56,7 +64,7 @@ const FormField = ({ label, error, icon, secureTextEntry, style, ...inputProps }
       </View>
 
       {error ? (
-        <Text style={styles.error} accessibilityRole="alert">
+        <Text style={[styles.error, { color: theme.danger }]} accessibilityRole="alert">
           {error}
         </Text>
       ) : null}
@@ -108,6 +116,5 @@ const styles = StyleSheet.create({
   error: {
     marginTop: spacing.xs,
     fontSize: 12,
-    color: colors.danger,
   },
 });

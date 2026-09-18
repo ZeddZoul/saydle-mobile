@@ -8,7 +8,7 @@ import Button from "./Button.jsx";
 import { useAppTheme } from "../contexts/ThemeContext.jsx";
 import { useT } from "../lib/i18n.js";
 import { messageFor } from "../lib/errors.js";
-import { colors, radius, spacing, type } from "../theme/tokens.js";
+import { radius, spacing, type } from "../theme/tokens.js";
 
 /**
  * Two locks on the door out.
@@ -129,7 +129,7 @@ const DeleteAccountSheet = ({ visible, email, graceDays, onClose, onConfirm }) =
           />
 
           {error && !details.password && !details.confirmEmail ? (
-            <Text style={styles.error} accessibilityRole="alert">
+            <Text style={[styles.error, { color: theme.danger }]} accessibilityRole="alert">
               {messageFor(error)}
             </Text>
           ) : null}
@@ -175,6 +175,6 @@ const styles = StyleSheet.create({
     marginVertical: spacing.lg,
   },
   noticeText: { flex: 1, fontSize: 13, lineHeight: 18 },
-  error: { color: colors.danger, fontSize: 13, marginTop: spacing.sm },
+  error: { fontSize: 13, marginTop: spacing.sm },
   actions: { marginTop: spacing.lg },
 });

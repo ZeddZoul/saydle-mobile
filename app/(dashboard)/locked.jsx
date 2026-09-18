@@ -23,7 +23,7 @@ import { useSubscription } from "../../hooks/useSubscription.js";
 import { monthlyEquivalent } from "../../lib/purchases.js";
 import { useT } from "../../lib/i18n.js";
 import { PRIVACY_URL, TERMS_URL, DELETION_GRACE_DAYS } from "../../lib/config.js";
-import { colors, radius, shadow, spacing, type } from "../../theme/tokens.js";
+import { radius, shadow, spacing, type } from "../../theme/tokens.js";
 
 const SUPPORT_MAILTO = "mailto:support@saydle.com";
 
@@ -282,7 +282,7 @@ const LockedScreen = () => {
                 hitSlop={8}
                 testID="locked-delete"
               >
-                <Text style={[styles.footLink, styles.danger]}>
+                <Text style={[styles.footLink, { color: theme.danger }]}>
                   {t("profile.deleteAccount")}
                 </Text>
               </Pressable>
@@ -400,6 +400,4 @@ const styles = StyleSheet.create({
     gap: spacing.sm,
     marginTop: spacing.sm,
   },
-  // The token, not a second red invented for this screen.
-  danger: { color: colors.danger },
 });

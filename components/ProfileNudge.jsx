@@ -178,7 +178,7 @@ const ProfileNudge = ({ suggestion, completeness, onAnswer, onDismiss, style }) 
       )}
 
       {error ? (
-        <Text style={styles.error} accessibilityRole="alert">
+        <Text style={[styles.error, { color: theme.danger }]} accessibilityRole="alert">
           {messageFor(error)}
         </Text>
       ) : null}
@@ -319,7 +319,6 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   error: {
-    color: colors.danger,
     fontSize: 13,
     marginTop: spacing.md,
   },

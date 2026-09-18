@@ -179,7 +179,7 @@ const Profile = () => {
         </View>
 
         {error ? (
-          <Text style={styles.error} accessibilityRole="alert">
+          <Text style={[styles.error, { color: theme.danger }]} accessibilityRole="alert">
             {messageFor(error)}
           </Text>
         ) : null}
@@ -369,7 +369,9 @@ const Profile = () => {
           accessibilityRole="button"
           style={styles.deleteButton}
         >
-          <Text style={styles.deleteText}>{t("profile.deleteAccount")}</Text>
+          <Text style={[styles.deleteText, { color: theme.danger }]}>
+            {t("profile.deleteAccount")}
+          </Text>
         </Pressable>
       </ScrollView>
 
@@ -493,7 +495,6 @@ const styles = StyleSheet.create({
     marginTop: spacing.md,
   },
   error: {
-    color: colors.danger,
     marginBottom: spacing.md,
     textAlign: "center",
   },
@@ -503,7 +504,6 @@ const styles = StyleSheet.create({
     marginTop: spacing.sm,
   },
   deleteText: {
-    color: colors.danger,
     fontSize: 15,
   },
 });

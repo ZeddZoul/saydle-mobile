@@ -131,7 +131,7 @@ const VerifyEmailCard = ({ style, compact = false }) => {
       />
 
       {error ? (
-        <Text style={styles.error} accessibilityRole="alert">
+        <Text style={[styles.error, { color: theme.danger }]} accessibilityRole="alert">
           {messageFor(error)}
         </Text>
       ) : null}
@@ -263,7 +263,6 @@ const styles = StyleSheet.create({
     fontWeight: "700",
   },
   error: {
-    color: colors.danger,
     fontSize: 13,
     marginTop: spacing.md,
   },

@@ -14,6 +14,7 @@
  *   accentSoft  lighter accent, for the primary button's gradient
  *   surface     translucent card fill that sits on the backdrop
  *   border      hairlines: chip outlines, unfilled dots
+ *   danger      destructive actions and error text, legible on THIS backdrop
  *   dark        backdrop is dark, so chrome should sit with it
  *
  * Gradients only for now — real photo/video themes need an asset pipeline. When
@@ -22,12 +23,26 @@
 const light = {
   surface: "rgba(255,255,255,0.35)",
   surfaceStrong: "rgba(255,255,255,0.72)",
+  // A shade below the brand red, which was picked to sit on white and lands at
+  // 3.6:1 on the pink page. This clears 4.5:1 on every light backdrop.
+  danger: "#9C2A1E",
   dark: false,
 };
 
 const dark = {
   surface: "rgba(255,255,255,0.08)",
   surfaceStrong: "rgba(255,255,255,0.14)",
+  // The brand red inverted rather than reused. On Dusk it lands at 1.8:1
+  // against the backdrop and reads as a smudge rather than a warning — the one
+  // colour on screen whose whole job is to be noticed.
+  //
+  // 4.5:1 is not reachable here and chasing it is the wrong instinct: against a
+  // plum backdrop the only reds that clear it are pale enough to collide with
+  // `sub`, and iOS's own destructive red does not clear it either. This clears
+  // 4.8:1 where destructive *actions* sit (the backdrop) and 3.2:1 at its worst
+  // — a translucent card over the lightest end of the gradient, where the only
+  // thing painted in it is a line of error text.
+  danger: "#FF9E99",
   dark: true,
 };
 
