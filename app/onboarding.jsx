@@ -6,7 +6,8 @@ import DisplayText from "../components/DisplayText.jsx";
 import OnboardingStep from "../components/onboarding/OnboardingStep.jsx";
 import Paywall from "../components/onboarding/Paywall.jsx";
 import {
-  configurePurchases,
+  ensureConfigured,
+  identifyUser,
   getOffering,
   purchasePackage,
   purchasesAvailable,
@@ -85,7 +86,21 @@ const Onboarding = () => {
   const grantAccess = async (intent, userId, chosen = null) => {
     try {
       if (intent === "subscribe" && purchasesAvailable()) {
-        await configurePurchases(userId);
+        // The account exists by now, so name it to RevenueCat before buying.
+        // This aliases the anonymous customer the paywall configured onto the
+        // real one, which is what makes the webhook's app_user_id resolvable.
+        //
+        // The result is checked, and that is load-bearing. `logIn` is a backend
+        // round-trip, unlike `configure`, which assigns identity locally and
+        // cannot fail on a network. When it rejects the SDK stays the anonymous
+        // customer, and buying then charges the card and posts an event whose
+        // app_user_id is `$RCAnonymousID:…` — which `User.findById` cannot
+        // resolve, so the webhook answers 204 and the purchase grants nothing,
+        // silently. Better unsold than charged and unentitled: the account
+        // exists, so Profile offers the same purchase once RevenueCat answers.
+        const identity = await identifyUser(userId);
+        if (!identity.available) return;
+
         const { packages } = await getOffering();
 
         // The one they tapped, not whichever RevenueCat happened to list
@@ -118,7 +133,12 @@ const Onboarding = () => {
     if (phase !== "paywall" || !purchasesAvailable()) return;
 
     let cancelled = false;
-    getOffering()
+    // Configure first. getOfferings() on an unconfigured SDK throws, which the
+    // boundary turns into an empty package list, which hides every purchase
+    // button - and the only other thing that configures is behind those
+    // buttons. Nobody could subscribe and nothing logged an error.
+    ensureConfigured()
+      .then(() => getOffering())
       .then(({ packages: found }) => {
         if (!cancelled) setPackages(found ?? []);
       })

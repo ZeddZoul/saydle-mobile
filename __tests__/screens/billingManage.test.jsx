@@ -14,7 +14,8 @@ jest.mock("expo-router", () => ({
 // declaration in the file, so a closure reads it as undefined at import time.
 jest.mock("../../lib/purchases.js", () => ({
   purchasesAvailable: jest.fn(() => true),
-  configurePurchases: jest.fn(async () => ({ available: true })),
+  ensureConfigured: jest.fn(async () => ({ available: true })),
+  identifyUser: jest.fn(async () => ({ available: true })),
   getOffering: jest.fn(async () => ({ available: true, packages: [] })),
   purchasePackage: jest.fn(async () => ({ available: true, purchased: true })),
   restorePurchases: jest.fn(async () => ({ available: true, entitled: false })),
@@ -71,7 +72,19 @@ const renderBilling = (sub) =>
     </SafeAreaProvider>,
   );
 
-beforeEach(() => jest.clearAllMocks());
+beforeEach(() => {
+  jest.clearAllMocks();
+  // clearAllMocks resets calls and instances, NOT implementations: a
+  // mockResolvedValue set by one test silently governs every test after it, and
+  // the failure lands on whichever test happens to run next rather than on the
+  // one that caused it. Restoring the factory defaults makes order irrelevant.
+  mockPurchases.purchasesAvailable.mockReturnValue(true);
+  mockPurchases.ensureConfigured.mockResolvedValue({ available: true });
+  mockPurchases.identifyUser.mockResolvedValue({ available: true });
+  mockPurchases.getOffering.mockResolvedValue({ available: true, packages: [] });
+  mockPurchases.purchasePackage.mockResolvedValue({ available: true, purchased: true });
+  mockPurchases.restorePurchases.mockResolvedValue({ available: true, entitled: false });
+});
 
 /**
  * Managing a subscription, without RevenueCat's Customer Center.
@@ -169,6 +182,36 @@ describe("managing a subscription", () => {
     // It used to say "Couldn't save that. Try again." — the generic save
     // failure. Nothing was being saved, and the one thing someone needs after a
     // failed payment is to know their money is where they left it.
+    expect(await findByText(/you haven't been charged/i)).toBeTruthy();
+  });
+
+  /**
+   * The regression that nearly shipped.
+   *
+   * Identity moved from `Purchases.configure()` — synchronous, local, cannot
+   * fail on a network — to `Purchases.logIn()`, a backend round-trip. For a
+   * while the result was discarded, so a rejected logIn left the SDK as its
+   * anonymous customer and the purchase went ahead anyway: the card is charged,
+   * the webhook receives `app_user_id: "$RCAnonymousID:…"`, `User.findById`
+   * finds nobody, and it answers 204. Paid, unentitled, nothing logged.
+   */
+  it("refuses to charge a card the SDK cannot attribute to the account", async () => {
+    mockPurchases.getOffering.mockResolvedValue({
+      available: true,
+      packages: [{ identifier: "monthly", product: { priceString: "$4.99" } }],
+    });
+    mockPurchases.identifyUser.mockResolvedValue({
+      available: false,
+      error: new Error("network"),
+    });
+
+    const { findByText } = await renderBilling(FREE);
+    await fireEvent.press(await findByText(/Subscribe now — \$4\.99/));
+
+    // The store is never reached, so there is nothing to refund and nothing
+    // stranded on an id we cannot resolve.
+    await waitFor(() => expect(mockPurchases.purchasePackage).not.toHaveBeenCalled());
+    // And it is said out loud, rather than leaving them on a dead button.
     expect(await findByText(/you haven't been charged/i)).toBeTruthy();
   });
 

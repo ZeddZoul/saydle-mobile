@@ -29,6 +29,7 @@ const loadFresh = ({ key, module } = {}) => {
 
 const fakePurchases = (over = {}) => ({
   configure: jest.fn(async () => {}),
+  logIn: jest.fn(async () => ({})),
   getOfferings: jest.fn(async () => ({
     current: { availablePackages: [{ identifier: "monthly" }] },
   })),
@@ -51,7 +52,7 @@ describe("with no native module (Expo Go)", () => {
 
     expect(purchases.purchasesAvailable()).toBe(false);
     // Importing must not take down every screen that touches this file.
-    await expect(purchases.configurePurchases("u1")).resolves.toEqual({ available: false });
+    await expect(purchases.identifyUser("u1")).resolves.toEqual({ available: false });
   });
 
   it("returns an empty offering instead of failing the paywall", async () => {
@@ -72,7 +73,7 @@ describe("with no key configured (no store listing yet)", () => {
     const module = fakePurchases();
     const purchases = loadFresh({ key: undefined, module });
 
-    await purchases.configurePurchases("u1");
+    await purchases.identifyUser("u1");
     await purchases.getOffering();
     await purchases.purchasePackage({ identifier: "monthly" });
 
@@ -110,11 +111,9 @@ describe("with a Test Store key", () => {
       const purchases = loadFresh({ key: "test_abc123", module });
 
       expect(purchases.purchasesAvailable()).toBe(true);
-      await purchases.configurePurchases("u1");
-      expect(module.configure).toHaveBeenCalledWith({
-        apiKey: "test_abc123",
-        appUserID: "u1",
-      });
+      await purchases.identifyUser("u1");
+      expect(module.configure).toHaveBeenCalledWith({ apiKey: "test_abc123" });
+      expect(module.logIn).toHaveBeenCalledWith("u1");
     });
   });
 
@@ -124,7 +123,7 @@ describe("with a Test Store key", () => {
       const purchases = loadFresh({ key: "test_abc123", module });
 
       expect(purchases.purchasesAvailable()).toBe(false);
-      await expect(purchases.configurePurchases("u1")).resolves.toEqual({
+      await expect(purchases.identifyUser("u1")).resolves.toEqual({
         available: false,
       });
       // Never handed to the SDK: reaching configure() is the crash.
@@ -158,14 +157,14 @@ describe("fully configured", () => {
     const module = fakePurchases();
     const purchases = loadFresh({ key: "appl_key", module });
 
-    await purchases.configurePurchases("user-123");
+    await purchases.identifyUser("user-123");
 
-    // RevenueCat's anonymous ids change on reinstall; an entitlement we can't
-    // match back to an account is one someone paid for and lost.
-    expect(module.configure).toHaveBeenCalledWith({
-      apiKey: "appl_key",
-      appUserID: "user-123",
-    });
+    // configure() never claims an id - it cannot, the paywall runs before the
+    // account exists - so logIn is what attaches the customer. RevenueCat's
+    // anonymous ids change on reinstall, and an entitlement we cannot match
+    // back to an account is one someone paid for and lost.
+    expect(module.configure).toHaveBeenCalledWith({ apiKey: "appl_key" });
+    expect(module.logIn).toHaveBeenCalledWith("user-123");
   });
 
   it("returns the current offering's packages", async () => {
@@ -239,5 +238,143 @@ describe("fully configured", () => {
 
     const offering = await purchases.getOffering();
     expect(offering.packages).toEqual([]);
+  });
+});
+
+/**
+ * The deadlock that shipped.
+ *
+ * The onboarding paywall fetched offerings before anything configured the SDK.
+ * getOfferings() threw, the boundary turned that into `packages: []`, and the
+ * render guard hid every purchase button — while the only code that configured
+ * the SDK sat behind those buttons. A new user could never subscribe, and with
+ * a hard paywall that means never become a customer. Nothing logged an error,
+ * because an empty offering is a state the paywall is designed to handle.
+ */
+describe("pricing the paywall before anyone has an account", () => {
+  it("configures without an id, so the offering can be fetched pre-signup", async () => {
+    const module = fakePurchases();
+    const purchases = loadFresh({ key: "appl_key", module });
+
+    await purchases.ensureConfigured();
+
+    expect(module.configure).toHaveBeenCalledWith({ apiKey: "appl_key" });
+    // No appUserID: there is no user yet. logIn attaches one later.
+    expect(module.configure.mock.calls[0][0]).not.toHaveProperty("appUserID");
+    expect(module.logIn).not.toHaveBeenCalled();
+  });
+
+  it("returns real packages once configured", async () => {
+    const purchases = loadFresh({ key: "appl_key", module: fakePurchases() });
+
+    await purchases.ensureConfigured();
+
+    expect(await purchases.getOffering()).toEqual({
+      available: true,
+      packages: [{ identifier: "monthly" }],
+    });
+  });
+
+  it("configures only once, however many times the paywall mounts", async () => {
+    // The SDK may only be configured once; a second call with a different id
+    // does not switch user, it keeps the first and warns. The paywall effect
+    // can run repeatedly, so this has to be idempotent.
+    const module = fakePurchases();
+    const purchases = loadFresh({ key: "appl_key", module });
+
+    await purchases.ensureConfigured();
+    await purchases.ensureConfigured();
+    await purchases.ensureConfigured();
+
+    expect(module.configure).toHaveBeenCalledTimes(1);
+  });
+
+  it("identifies without configuring a second time", async () => {
+    const module = fakePurchases();
+    const purchases = loadFresh({ key: "appl_key", module });
+
+    await purchases.ensureConfigured();
+    await purchases.identifyUser("user-123");
+
+    expect(module.configure).toHaveBeenCalledTimes(1);
+    expect(module.logIn).toHaveBeenCalledWith("user-123");
+  });
+
+  it("configures on demand when identify is called first", async () => {
+    // Profile → billing reaches identifyUser without the paywall having run.
+    const module = fakePurchases();
+    const purchases = loadFresh({ key: "appl_key", module });
+
+    await purchases.identifyUser("user-123");
+
+    expect(module.configure).toHaveBeenCalledTimes(1);
+    expect(module.logIn).toHaveBeenCalledWith("user-123");
+  });
+
+  it("refuses to identify nobody rather than logging in as undefined", async () => {
+    const module = fakePurchases();
+    const purchases = loadFresh({ key: "appl_key", module });
+
+    const result = await purchases.identifyUser(undefined);
+
+    expect(result.available).toBe(false);
+    expect(module.logIn).not.toHaveBeenCalled();
+  });
+
+  it("stays quiet when configure itself fails", async () => {
+    const module = fakePurchases({
+      configure: jest.fn(async () => {
+        throw new Error("network");
+      }),
+    });
+    const purchases = loadFresh({ key: "appl_key", module });
+
+    const result = await purchases.ensureConfigured();
+
+    expect(result.available).toBe(false);
+    // Not latched: a transient failure must not permanently disable purchases.
+    await purchases.ensureConfigured();
+    expect(module.configure).toHaveBeenCalledTimes(2);
+  });
+});
+
+/**
+ * Identity is a network call, and callers must treat it as one.
+ *
+ * `Purchases.configure()` is synchronous and void — it assigns identity
+ * locally and cannot fail on a network. `Purchases.logIn()` is a backend
+ * round-trip that can reject, and when it does the SDK stays the anonymous
+ * customer it was configured as. A purchase made in that state charges the card
+ * and posts `app_user_id: "$RCAnonymousID:…"`, which the server cannot resolve.
+ */
+describe("when logIn fails", () => {
+  it("reports it rather than pretending the user is identified", async () => {
+    const module = fakePurchases({
+      logIn: jest.fn(async () => {
+        throw new Error("network");
+      }),
+    });
+    const purchases = loadFresh({ key: "appl_key", module });
+
+    const result = await purchases.identifyUser("user-123");
+
+    expect(result.available).toBe(false);
+    expect(result.error).toBeDefined();
+  });
+
+  it("leaves the SDK configured, so a later attempt can still succeed", async () => {
+    const logIn = jest
+      .fn()
+      .mockRejectedValueOnce(new Error("network"))
+      .mockResolvedValueOnce({});
+    const module = fakePurchases({ logIn });
+    const purchases = loadFresh({ key: "appl_key", module });
+
+    expect((await purchases.identifyUser("user-123")).available).toBe(false);
+    expect((await purchases.identifyUser("user-123")).available).toBe(true);
+
+    // configure() is once-only; the retry must not attempt it again.
+    expect(module.configure).toHaveBeenCalledTimes(1);
+    expect(logIn).toHaveBeenCalledTimes(2);
   });
 });

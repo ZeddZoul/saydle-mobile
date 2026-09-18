@@ -3,7 +3,7 @@ import { AppState } from "react-native";
 import { useAuth } from "../contexts/AuthContext.jsx";
 import { NetworkError } from "../lib/errors.js";
 import {
-  configurePurchases,
+  identifyUser,
   getOffering,
   purchasePackage,
   purchasesAvailable,
@@ -74,7 +74,7 @@ export function useSubscription() {
     (async () => {
       // RevenueCat is told our own user id, so its webhooks name an account we
       // can find. Anonymous ids change on reinstall.
-      await configurePurchases(userId);
+      await identifyUser(userId);
       if (cancelled) return;
 
       const offering = await getOffering();
@@ -145,6 +145,14 @@ export function useSubscription() {
     async (pkg) => {
       setBusy(true);
       try {
+        // Re-established per purchase rather than trusted from mount: `logIn`
+        // is a network call, the one at mount may have failed on a blip, and a
+        // purchase made while the SDK is still the anonymous customer reaches
+        // our webhook as `$RCAnonymousID:…` and grants nothing. Refusing is the
+        // honest outcome — the alternative is a charged card and no access.
+        const identity = await identifyUser(userId);
+        if (!identity.available) return { failed: true, error: identity.error };
+
         const result = await purchasePackage(pkg);
 
         // Cancelling is the most common outcome of showing a paywall, not a
@@ -171,7 +179,7 @@ export function useSubscription() {
     },
     // `subscription` matters: it is the before-state the signature compares
     // against, and reading a stale one would make every poll look like a change.
-    [settle, subscription],
+    [settle, subscription, userId],
   );
 
   const restore = useCallback(async () => {

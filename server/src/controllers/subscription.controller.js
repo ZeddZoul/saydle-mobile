@@ -47,9 +47,23 @@ export async function revenueCatWebhook(req, res, next) {
     const user = await User.findById(userId).catch(() => null);
 
     if (!user) {
-      // A deleted account still gets events for a while. Acknowledge, or
-      // RevenueCat retries forever.
-      req.log?.info({ userId }, "subscription event for unknown user");
+      // An id RevenueCat minted rather than one of ours means a purchase
+      // completed before `logIn` attached the customer to an account. The money
+      // moved and nothing was granted, so this is not the same event as a
+      // deleted account still receiving traffic, and it must not read like one.
+      const stranded = typeof userId === "string" && userId.startsWith("$RCAnonymousID:");
+
+      if (stranded) {
+        req.log?.warn(
+          { userId, type: event.type },
+          "purchase arrived on an anonymous RevenueCat id and granted nothing",
+        );
+      } else {
+        // A deleted account still gets events for a while. Acknowledge, or
+        // RevenueCat retries forever.
+        req.log?.info({ userId }, "subscription event for unknown user");
+      }
+
       return res.status(204).end();
     }
 
